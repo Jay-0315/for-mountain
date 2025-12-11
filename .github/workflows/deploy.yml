@@ -7,7 +7,7 @@ on:
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   REGION: asia-northeast3
-  REPO_NAME: for-mountain       # 아까 만든 Artifact Registry 이름
+  REPO_NAME: for-mountain
   IMAGE_NAME: for-mountain-api
   SERVICE_NAME: for-mountain-service
 
@@ -51,7 +51,6 @@ jobs:
           service: ${{ env.SERVICE_NAME }}
           image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
           region: ${{ env.REGION }}
-          # MySQL 연결 플래그 제거됨 (깔끔!)
-          flags: '--allow-unauthenticated'
+          flags: '--allow-unauthenticated --memory=1024Mi' # 메모리 1GB로 증설 (안전빵)
           env_vars: |
-            SPRING_PROFILES_ACTIVE=prodG_PROFILES_ACTIVE=prod
+            SPRING_PROFILES_ACTIVE=prod
