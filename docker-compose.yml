@@ -12,6 +12,36 @@ services:
       MYSQL_PASSWORD: password
       TZ: Asia/Seoul
     ports:
-      - "3306:3306"
+      - "3307:3306"
     command:
       --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    networks:
+      - mountain-network
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+
+
+  backend:
+    build: .
+    container_name: mountain-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/mountain_db?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: password
+    networks:
+      - mountain-network
+
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+
+networks:
+  mountain-network:
+    driver: bridge
