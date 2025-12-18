@@ -1,7 +1,6 @@
 spring:
   application:
     name: for-mountain
-
   profiles:
     active: dev
 
