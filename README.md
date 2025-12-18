@@ -6,17 +6,17 @@
   Spring Boot 기반의 RESTful API 서버 프로젝트입니다. 계산기 기능과 환율 조회 기능을 제공합니다.
 
   ## 기술 스택
-  Java: 17
-  Spring Boot: 3.4.0 
-  Build Tool: Gradle
-  Database: 
-    - MySQL 8.0 (개발 환경)
-    - H2 (운영 환경)
-  ORM: Spring Data JPA
-  API Documentation: SpringDoc OpenAPI (Swagger) 2.8.0
-  Container: Docker, Docker Compose 
-  Validation: Spring Boot Validation
-  Lombok: 코드 간소화
+- Java: 17
+- Spring Boot: 3.4.0 
+- Build Tool: Gradle
+- Database: 
+- MySQL 8.0 (개발 환경)
+- H2 (운영 환경)
+- ORM: Spring Data JPA
+- API Documentation: SpringDoc OpenAPI (Swagger) 2.8.0
+- Container: Docker, Docker Compose 
+- Validation: Spring Boot Validation
+- Lombok: 코드 간소화
 
   ## 도메인
 
@@ -26,7 +26,7 @@
 
   ## 주요 기능
 
-  1. 계산기 API 
+  ## 1. 계산기 API 
   기본 사칙연산 (덧셈, 뺄셈, 곱셈, 나눗셈) 지원
   계산 이력 자동 저장 (MySQL/H2 데이터베이스)
   0으로 나누기 예외 처리
@@ -146,10 +146,10 @@
 계산을 수행하고 결과를 데이터베이스에 저장합니다.
 
 ## 지원 연산자: 
-  - + (덧셈)
-  - - (뺄셈)
-  - * (곱셈)
-  - / (나눗셈)
+## + (덧셈)
+## - (뺄셈)
+## * (곱셈)
+## / (나눗셈)
 
 
 #### 2. 환율 조회 API
@@ -267,17 +267,17 @@ NOTICE:
 A Spring Boot-based RESTful API server project. Provides calculator functions and exchange rate lookup functions.
 
 ## Tech Stack
-Java: 17
-Spring Boot: 3.4.0
-Build Tool: Gradle
-Database:
+- Java: 17
+- Spring Boot: 3.4.0
+- Build Tool: Gradle
+- Database:
 - MySQL 8.0 (Development Environment)
 - H2 (Production Environment)
-  ORM: Spring Data JPA
-  API Documentation: SpringDoc OpenAPI (Swagger) 2.8.0
-  Container: Docker, Docker Compose
-  Validation: Spring Boot Validation
-  Lombok: Code simplification
+- ORM: Spring Data JPA
+- API Documentation: SpringDoc OpenAPI (Swagger) 2.8.0
+- Container: Docker, Docker Compose
+- Validation: Spring Boot Validation
+- Lombok: Code simplification
 
 ## Domain
 
@@ -405,10 +405,10 @@ java -jar build/libs/for-mountain-0.0.1-SNAPSHOT.jar
 Performs a calculation and saves the result to the database.
 
 ## Supported Operators:
-- + (Addition)
-- - (Subtraction)
-- * (Multiplication)
-- / (Division)
+## + (Addition)
+## - (Subtraction)
+## * (Multiplication)
+## / (Division)
 
 
 #### 2. Exchange Rate API
@@ -527,17 +527,17 @@ NOTICE:
 Spring BootベースのRESTful APIサーバープロジェクトです。計算機機能と為替レート照会機能を提供します。
 
 ## 技術スタック
-Java: 17
-Spring Boot: 3.4.0
-Build Tool: Gradle
-Database:
+- Java: 17
+- Spring Boot: 3.4.0
+- Build Tool: Gradle
+- Database:
 - MySQL 8.0 (開発環境)
 - H2 (運営環境)
-  ORM: Spring Data JPA
-  API Documentation: SpringDoc OpenAPI (Swagger) 2.8.0
-  Container: Docker, Docker Compose
-  Validation: Spring Boot Validation
-  Lombok: コード簡素化
+- ORM: Spring Data JPA
+- API Documentation: SpringDoc OpenAPI (Swagger) 2.8.0
+- Container: Docker, Docker Compose
+- Validation: Spring Boot Validation
+- Lombok: コード簡素化
 
 ## ドメイン
 
@@ -666,10 +666,10 @@ java -jar build/libs/for-mountain-0.0.1-SNAPSHOT.jar
 計算を実行し、結果をデータベースに保存します。
 
 ## サポートする演算子:
-- + (加算)
-- - (減算)
-- * (乗算)
-- / (除算)
+## + (加算)
+## - (減算)
+## * (乗算)
+## / (除算)
 
 
 #### 2. 為替レート照会 API
