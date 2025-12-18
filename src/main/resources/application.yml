@@ -1,33 +1,17 @@
 spring:
   application:
     name: for-mountain
+
+  profiles:
+    active: dev
+
   messages:
     basename: messages
     encoding: UTF-8
     cache-duration: 3600
 
-  datasource:
-    url: jdbc:mysql://localhost:3307/mountain_db?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&serverTimezone=Asia/Seoul
-    username: user
-    password: password
-    driver-class-name: com.mysql.cj.jdbc.Driver
-
-  jpa:
-    hibernate:
-      ddl-auto: update
-    properties:
-      hibernate:
-        format_sql: true
-        show_sql: true
-        dialect: org.hibernate.dialect.MySQLDialect
-
-  logging:
-    level:
-      org.hibernate.SQL: debug
-
 server:
   forward-headers-strategy: framework
-
   tomcat:
     remote-ip-header: x-forwarded-for
     protocol-header: x-forwarded-proto
