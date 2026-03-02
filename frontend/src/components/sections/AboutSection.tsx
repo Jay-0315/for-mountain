@@ -1,0 +1,288 @@
+"use client";
+
+import { useRef, useState } from "react";
+import { useGSAP } from "@gsap/react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+// ── 데이터 ────────────────────────────────────────────────────
+const companyInfo = [
+  { label: "社名",         value: "株式会社 MOUNTAIN（Mountain Co.,Ltd）" },
+  { label: "設立",         value: "2022年2月7日" },
+  { label: "代表取締役",   value: "盧 鍾錫" },
+  { label: "所在地",       value: "東京都千代田区岩本町二丁目１３番６号\nリアライズ岩本町ビル ５階" },
+  { label: "電話・FAX",    value: "TEL：03-5829-6357\nFAX：03-5829-8032" },
+  { label: "URL",          value: "mountain-info.co.jp" },
+  { label: "主な取引銀行", value: "朝日信用金庫、ハナ銀行" },
+  { label: "事業内容",     value: "製品開発、ITソリューション、コンサル事業等" },
+  { label: "適格請求書",   value: "T3010001224503" },
+  { label: "加入団体",     value: "日本商工会議所\n東京中小企業家同友会\n韓国企業連合会（KOBA）" },
+];
+
+const tabs = [
+  {
+    id: "philosophy",
+    label: "企業理念",
+    icon: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+          d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+      </svg>
+    ),
+    content: (
+      <p className="text-slate-600 leading-relaxed text-sm md:text-base">
+        私たちはモノの価値を最大限生み出し、社会の変化と調和しながら
+        <strong className="text-slate-800">便利で豊かな人間社会を実現するために</strong>
+        、常に挑戦し人と社会に信頼される企業を目指します。
+      </p>
+    ),
+  },
+  {
+    id: "goal",
+    label: "企業目標",
+    icon: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+          d="M13 10V3L4 14h7v7l9-11h-7z" />
+      </svg>
+    ),
+    content: (
+      <div className="space-y-3 text-sm md:text-base text-slate-600 leading-relaxed">
+        <p>
+          弊社はITの総合サポート企業として、<strong className="text-slate-800">ソリューションと開発を通じて便利で豊かな社会を実現する</strong>
+          ことを目標にしております。
+        </p>
+        <p>
+          現在は、世の中が必要としているセキュリティ製品とクラウド製品を提供し、
+          構築・運用・保守までを行っており、マネージドサービスを展開しております。
+          今後AI製品にも対応していきます。
+        </p>
+        <p>
+          開発は高い技術力をもって要件定義・設計・製造・テスト・保守の業務全体を対応しております。
+          弊社は高い技術力と特化したマネージドサービスを持つ<strong className="text-slate-800">MSP企業として成長</strong>
+          していきます。
+        </p>
+      </div>
+    ),
+  },
+];
+
+// ── コンポーネント ─────────────────────────────────────────────
+export default function AboutSection() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const [activeTab, setActiveTab] = useState("philosophy");
+
+  useGSAP(
+    () => {
+      gsap.registerPlugin(ScrollTrigger);
+
+      // 섹션 헤더
+      gsap.from(".about-header > *", {
+        opacity: 0,
+        y: 40,
+        duration: 0.8,
+        stagger: 0.12,
+        ease: "power3.out",
+        scrollTrigger: {
+          trigger: ".about-header",
+          start: "top 80%",
+          once: true,
+        },
+      });
+
+      // 탭 패널 + 텍스트
+      gsap.from(".about-tab-panel", {
+        opacity: 0,
+        y: 30,
+        duration: 0.7,
+        ease: "power3.out",
+        scrollTrigger: {
+          trigger: ".about-tab-panel",
+          start: "top 82%",
+          once: true,
+        },
+      });
+
+      // 기업 정보 테이블 행 stagger
+      gsap.from(".about-table-row", {
+        opacity: 0,
+        x: -25,
+        duration: 0.55,
+        stagger: 0.07,
+        ease: "power2.out",
+        scrollTrigger: {
+          trigger: ".about-table",
+          start: "top 80%",
+          once: true,
+        },
+      });
+
+      // 오른쪽 info 카드들
+      gsap.from(".info-card", {
+        opacity: 0,
+        x: 45,
+        duration: 0.7,
+        stagger: 0.13,
+        ease: "power3.out",
+        scrollTrigger: {
+          trigger: ".info-card",
+          start: "top 82%",
+          once: true,
+        },
+      });
+    },
+    { scope: sectionRef }
+  );
+
+  const activeTabData = tabs.find((t) => t.id === activeTab)!;
+
+  return (
+    <section ref={sectionRef} id="about" className="py-24 bg-slate-50 overflow-hidden">
+      <div className="max-w-6xl mx-auto px-6">
+
+        {/* 섹션 헤더 */}
+        <div className="about-header text-center mb-14">
+          <p className="text-orange-600 text-sm font-semibold uppercase tracking-widest mb-3">
+            About Us
+          </p>
+          <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
+            企業情報
+          </h2>
+          <p className="text-slate-500 text-lg max-w-xl mx-auto">
+            株式会社マウンテン &gt; About Us
+          </p>
+        </div>
+
+        {/* 기업이념 / 기업목표 탭 */}
+        <div className="about-tab-panel mb-14">
+          {/* 탭 버튼 */}
+          <div className="flex gap-2 mb-6">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200
+                  ${activeTab === tab.id
+                    ? "bg-orange-500 text-white shadow-md shadow-orange-200"
+                    : "bg-white text-slate-500 border border-slate-200 hover:border-orange-200 hover:text-orange-500"
+                  }`}
+              >
+                {tab.icon}
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* 탭 콘텐츠 */}
+          <div className="bg-white rounded-2xl border border-slate-100 p-8 shadow-sm min-h-[140px]">
+            <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+              <span className="w-1 h-5 bg-orange-500 rounded-full inline-block" />
+              {activeTabData.label}
+            </h3>
+            {activeTabData.content}
+          </div>
+        </div>
+
+        {/* 2컬럼: 회사개요 테이블 + 인포 카드 */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-10 items-start">
+
+          {/* 왼쪽: 회사개요 (3/5) */}
+          <div className="lg:col-span-3">
+            <h3 className="text-xl font-bold text-slate-900 mb-5 flex items-center gap-2">
+              <span className="w-1 h-5 bg-orange-500 rounded-full inline-block" />
+              会社概要
+            </h3>
+            <div className="about-table bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
+              {companyInfo.map((row, i) => (
+                <div
+                  key={row.label}
+                  className={`about-table-row flex gap-0 ${i !== companyInfo.length - 1 ? "border-b border-slate-100" : ""}`}
+                >
+                  <span className="text-xs font-semibold text-slate-500 bg-slate-50 w-28 shrink-0 px-4 py-3.5 flex items-start pt-3.5">
+                    {row.label}
+                  </span>
+                  <span className="text-sm text-slate-800 px-5 py-3.5 leading-relaxed whitespace-pre-line flex-1">
+                    {row.value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 오른쪽: 인포 카드 (2/5) */}
+          <div className="lg:col-span-2 space-y-4">
+
+            {/* 소재지 카드 */}
+            <div className="info-card p-6 bg-orange-500 rounded-2xl text-white shadow-lg shadow-orange-200">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <div>
+                  <p className="font-semibold mb-1.5">所在地</p>
+                  <p className="text-orange-100 text-sm leading-relaxed">
+                    東京都千代田区岩本町<br />
+                    二丁目１３番６号<br />
+                    リアライズ岩本町ビル ５階
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 연락처 카드 */}
+            <div className="info-card p-6 bg-white rounded-2xl border border-slate-100 shadow-sm">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 bg-orange-50 text-orange-500 rounded-lg flex items-center justify-center shrink-0">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="font-semibold text-slate-800 mb-1.5 text-sm">お問い合わせ</p>
+                  <p className="text-slate-500 text-sm">TEL：03-5829-6357</p>
+                  <p className="text-slate-500 text-sm">FAX：03-5829-8032</p>
+                </div>
+              </div>
+            </div>
+
+            {/* 설립 / 대표 카드 */}
+            <div className="info-card p-6 bg-white rounded-2xl border border-slate-100 shadow-sm">
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-orange-50 text-orange-500 rounded-lg flex items-center justify-center shrink-0">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400 font-medium">設立</p>
+                    <p className="text-sm font-semibold text-slate-800">2022年2月7日</p>
+                  </div>
+                </div>
+                <div className="w-full h-px bg-slate-100" />
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-orange-50 text-orange-500 rounded-lg flex items-center justify-center shrink-0">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400 font-medium">代表取締役社長</p>
+                    <p className="text-sm font-semibold text-slate-800">盧 鍾錫</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}

@@ -8,11 +8,10 @@ env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   REGION: asia-northeast3
   REPO_NAME: for-mountain
-  IMAGE_NAME: for-mountain-api
-  SERVICE_NAME: for-mountain-service
 
 jobs:
-  deploy:
+  # ── 백엔드 (Spring Boot) ─────────────────────────────────────
+  deploy-backend:
     runs-on: ubuntu-latest
 
     steps:
@@ -31,26 +30,62 @@ jobs:
           ./gradlew clean bootJar -x test
 
       - name: Google Auth
-        id: auth
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
       - name: Docker Auth
-        run: |
-          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
 
-      - name: Build and Push Container
+      - name: Build and Push Backend Image
         run: |
-          docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }} .
-          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          docker build \
+            -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/for-mountain-api:${{ github.sha }} .
+          docker push \
+            ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/for-mountain-api:${{ github.sha }}
 
-      - name: Deploy to Cloud Run
+      - name: Deploy Backend to Cloud Run
         uses: google-github-actions/deploy-cloudrun@v2
         with:
-          service: ${{ env.SERVICE_NAME }}
-          image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          service: for-mountain-service
+          image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/for-mountain-api:${{ github.sha }}
           region: ${{ env.REGION }}
-          flags: '--allow-unauthenticated --memory=1024Mi' # 메모리 1GB로 증설 (안전빵)
+          flags: '--allow-unauthenticated --memory=1024Mi'
           env_vars: |
             SPRING_PROFILES_ACTIVE=prod
+
+  # ── 프론트엔드 (Next.js) ─────────────────────────────────────
+  deploy-frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Google Auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Docker Auth
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+
+      - name: Build and Push Frontend Image
+        run: |
+          docker build \
+            --build-arg NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }} \
+            --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }} \
+            -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/for-mountain-frontend:${{ github.sha }} \
+            ./frontend
+          docker push \
+            ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/for-mountain-frontend:${{ github.sha }}
+
+      - name: Deploy Frontend to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: for-mountain-frontend
+          image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/for-mountain-frontend:${{ github.sha }}
+          region: ${{ env.REGION }}
+          flags: '--allow-unauthenticated --memory=512Mi'
+          env_vars: |
+            RESEND_API_KEY=${{ secrets.RESEND_API_KEY }},RESEND_TO=${{ secrets.RESEND_TO }}
