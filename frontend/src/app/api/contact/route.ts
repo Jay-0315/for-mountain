@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8080";
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,46 +12,27 @@ export async function POST(req: NextRequest) {
       message: string;
     };
 
-    // 필수값 서버 사이드 체크
     if (!name || !nameKana || !email || !message) {
       return NextResponse.json({ error: "必須項目が不足しています。" }, { status: 400 });
     }
 
-    const to = process.env.RESEND_TO;
-    if (!to) {
-      console.error("RESEND_TO is not set");
-      return NextResponse.json({ error: "サーバー設定エラーです。" }, { status: 500 });
-    }
-
-    const { error } = await resend.emails.send({
-      from: "onboarding@resend.dev",   // Resend 검증 전 기본 송신자
-      to,
-      replyTo: email,
-      subject: `【お問い合わせ】${name} 様`,
-      text: [
-        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
-        "株式会社マウンテン お問い合わせフォーム",
-        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
-        `氏名       : ${name}`,
-        `フリガナ   : ${nameKana}`,
-        `メール     : ${email}`,
-        "",
-        "【お問い合わせ内容】",
-        message,
-        "",
-        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
-        "このメールはウェブサイトのお問い合わせフォームから自動送信されました。",
-      ].join("\n"),
+    const res = await fetch(`${BACKEND_URL}/api/v1/contact`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, nameKana, email, message }),
     });
 
-    if (error) {
-      console.error("Resend error:", error);
-      return NextResponse.json({ error: "メール送信に失敗しました。" }, { status: 500 });
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      return NextResponse.json(
+        { error: (json as { message?: string }).message ?? "メール送信に失敗しました。" },
+        { status: res.status }
+      );
     }
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("Contact API error:", err);
+    console.error("Contact proxy error:", err);
     return NextResponse.json({ error: "サーバーエラーが発生しました。" }, { status: 500 });
   }
 }
