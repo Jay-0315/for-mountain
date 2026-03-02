@@ -9,10 +9,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @RequiredArgsConstructor
 public class CalculatorRequest {
 
-    @Schema(example = "123")
+
+    @Schema(description = "NUM1", example = "123")
     private double num1;
 
-    @Schema(example = "123")
+    @Schema(description = "NUM2", example = "123")
     private double num2;
 
     @Schema(example = "*")
