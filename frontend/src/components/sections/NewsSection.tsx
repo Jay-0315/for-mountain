@@ -4,21 +4,23 @@ import { useRef, useState, useEffect, useCallback } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { type NewsItem } from "@/lib/supabase";
+import { fetchBoardList } from "@/lib/api";
 
-// ── Supabase 미설정 시 더미 데이터 fallback ───────────────────
+type NewsItem = {
+  id: number;
+  date: string;
+  category: string;
+  title: string;
+};
+
+// ── 백엔드 미연결 시 fallback 데이터 ──────────────────────────
 const FALLBACK_NEWS: NewsItem[] = [
-  { id: 1, date: "2025-03-01", category: "お知らせ", title: "株式会社マウンテン ウェブサイトをリニューアルしました", created_at: "" },
-  { id: 2, date: "2025-02-07", category: "会社",     title: "会社設立3周年を迎えました", created_at: "" },
-  { id: 3, date: "2025-01-15", category: "採用",     title: "2025年度 新卒採用・中途採用を開始しました", created_at: "" },
-  { id: 4, date: "2024-12-01", category: "製品",     title: "AI マモリージ 新バージョンをリリースしました", created_at: "" },
-  { id: 5, date: "2024-10-20", category: "製品",     title: "Network BlackBox クラウド対応プランを追加しました", created_at: "" },
+  { id: 1, date: "2025-03-01", category: "お知らせ", title: "株式会社マウンテン ウェブサイトをリニューアルしました" },
+  { id: 2, date: "2025-02-07", category: "会社",     title: "会社設立3周年を迎えました" },
+  { id: 3, date: "2025-01-15", category: "採用",     title: "2025年度 新卒採用・中途採用を開始しました" },
+  { id: 4, date: "2024-12-01", category: "製品",     title: "AI マモリージ 新バージョンをリリースしました" },
+  { id: 5, date: "2024-10-20", category: "製品",     title: "Network BlackBox クラウド対応プランを追加しました" },
 ];
-
-const isSupabaseConfigured =
-  typeof process.env.NEXT_PUBLIC_SUPABASE_URL === "string" &&
-  process.env.NEXT_PUBLIC_SUPABASE_URL.startsWith("https://") &&
-  !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("xxxxxxxxxxxxxxxx");
 
 // ── 카테고리 색상 ─────────────────────────────────────────────
 const categoryColors: Record<string, string> = {
@@ -51,42 +53,39 @@ export default function NewsSection() {
   const [loading, setLoading]   = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore]   = useState(true);
-  const [offset, setOffset]     = useState(0);
+  const [page, setPage]         = useState(0);
 
   // ── 데이터 fetch ─────────────────────────────────────────
-  const fetchNews = useCallback(async (from: number) => {
-    // Supabase 미설정 시 더미 데이터 반환
-    if (!isSupabaseConfigured) {
+  const fetchNews = useCallback(async (currentPage: number) => {
+    try {
+      const data = await fetchBoardList(currentPage, PAGE_SIZE);
+      return {
+        items: data.posts.map((post) => ({
+          id: post.id,
+          date: post.createdAt.substring(0, 10),
+          category: post.category,
+          title: post.title,
+        })),
+        isLast: data.last,
+      };
+    } catch {
+      const from = currentPage * PAGE_SIZE;
       const slice = FALLBACK_NEWS.slice(from, from + PAGE_SIZE);
-      return slice;
+      return {
+        items: slice,
+        isLast: from + PAGE_SIZE >= FALLBACK_NEWS.length,
+      };
     }
-
-    const { createClient } = await import("@supabase/supabase-js");
-    const client = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-    const { data, error } = await client
-      .from("news")
-      .select("*")
-      .order("date", { ascending: false })
-      .range(from, from + PAGE_SIZE - 1);
-
-    if (error) {
-      console.error("NewsSection fetch error:", error.message);
-      return FALLBACK_NEWS.slice(from, from + PAGE_SIZE);
-    }
-    return (data ?? []) as NewsItem[];
   }, []);
 
   // 초기 로드
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const data = await fetchNews(0);
+      const { items: data, isLast } = await fetchNews(0);
       setItems(data);
-      setOffset(PAGE_SIZE);
-      setHasMore(data.length === PAGE_SIZE);
+      setPage(1);
+      setHasMore(!isLast);
       setLoading(false);
     })();
   }, [fetchNews]);
@@ -95,10 +94,10 @@ export default function NewsSection() {
   const loadMore = async () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
-    const data = await fetchNews(offset);
+    const { items: data, isLast } = await fetchNews(page);
     setItems((prev) => [...prev, ...data]);
-    setOffset((prev) => prev + PAGE_SIZE);
-    setHasMore(data.length === PAGE_SIZE);
+    setPage((prev) => prev + 1);
+    setHasMore(!isLast);
     setLoadingMore(false);
 
     // 새로 추가된 행에 스타거 애니메이션

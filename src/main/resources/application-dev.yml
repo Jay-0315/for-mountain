@@ -20,3 +20,25 @@ spring:
   logging:
     level:
       org.hibernate.SQL: debug
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:your-email@gmail.com}
+    password: ${MAIL_PASSWORD:your-app-password}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:dev-secret-key-must-be-at-least-32-chars-long}
+    expiration-ms: 86400000
+  admin:
+    code: ${ADMIN_CODE:mountain-admin-2024}
+  mail:
+    to: ${MAIL_TO:info@for-mountain.co.jp}

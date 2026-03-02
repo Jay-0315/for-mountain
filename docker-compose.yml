@@ -45,6 +45,11 @@ services:
       SPRING_DATASOURCE_PASSWORD: password
       SPRING_DATA_REDIS_HOST: mountain-redis
       SPRING_DATA_REDIS_PORT: 6379
+      MAIL_USERNAME: ${MAIL_USERNAME:-your-email@gmail.com}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-your-app-password}
+      MAIL_TO: ${MAIL_TO:-info@for-mountain.co.jp}
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-key-must-be-at-least-32-chars-long}
+      ADMIN_CODE: ${ADMIN_CODE:-mountain-admin-2024}
     networks:
       - mountain-network
 
@@ -61,10 +66,8 @@ services:
       - "3000:3000"
     environment:
       NODE_ENV: production
-      RESEND_API_KEY: ${RESEND_API_KEY}
-      RESEND_TO: ${RESEND_TO}
-      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      BACKEND_URL: http://mountain-backend:8080
+      NEXT_PUBLIC_API_URL: http://localhost:8080
     networks:
       - mountain-network
 
