@@ -67,7 +67,6 @@ services:
     environment:
       NODE_ENV: production
       BACKEND_URL: http://mountain-backend:8080
-      NEXT_PUBLIC_API_URL: http://localhost:8080
     networks:
       - mountain-network
 
