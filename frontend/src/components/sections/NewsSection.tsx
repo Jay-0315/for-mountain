@@ -129,21 +129,48 @@ export default function NewsSection() {
   }, [loading, items]);
 
   // ── GSAP 진입 애니메이션
+// ── 1. 헤더 애니메이션 (마운트 시 딱 1번만 실행)
   useGSAP(
-    () => {
-      gsap.registerPlugin(ScrollTrigger);
+      () => {
+        gsap.registerPlugin(ScrollTrigger);
+        // fromTo를 사용하여 최종 투명도(opacity: 1)를 강제로 못 박아줍니다.
+        gsap.fromTo(".news-header > *",
+            { opacity: 0, y: 40 },
+            {
+              opacity: 1,
+              y: 0,
+              duration: 0.8,
+              stagger: 0.1,
+              ease: "power3.out",
+              scrollTrigger: { trigger: ".news-header", start: "top 82%", once: true }
+            }
+        );
+      },
+      { scope: sectionRef } // 의존성 배열을 비워서 다시 실행되지 않게 함
+  );
 
-      gsap.from(".news-header > *", {
-        opacity: 0, y: 40, duration: 0.8, stagger: 0.1, ease: "power3.out",
-        scrollTrigger: { trigger: ".news-header", start: "top 82%", once: true },
-      });
+  // ── 2. 더보기 버튼 애니메이션 (로딩이 끝나서 버튼이 생겼을 때 실행)
+  useGSAP(
+      () => {
+        gsap.registerPlugin(ScrollTrigger);
+        // 이전 코드에서 클래스명이 .news-cta-container 였는지 .news-cta 였는지 주의!
+        // JSX 부분을 보면 .news-cta 를 사용하고 계십니다.
+        const ctaElement = sectionRef.current?.querySelector(".news-cta");
 
-      gsap.from(".news-cta", {
-        opacity: 0, y: 20, duration: 0.6, ease: "power3.out",
-        scrollTrigger: { trigger: ".news-cta", start: "top 88%", once: true },
-      });
-    },
-    { scope: sectionRef, dependencies: [loading] }
+        if (ctaElement) {
+          gsap.fromTo(ctaElement,
+              { opacity: 0, y: 20 },
+              {
+                opacity: 1,
+                y: 0,
+                duration: 0.6,
+                ease: "power3.out",
+                scrollTrigger: { trigger: ctaElement, start: "top 88%", once: true }
+              }
+          );
+        }
+      },
+      { scope: sectionRef, dependencies: [loading] } // 로딩이 끝날 때 버튼을 찾아서 애니메이션 적용
   );
 
   // 날짜 포맷 YYYY-MM-DD → YYYY.MM.DD
