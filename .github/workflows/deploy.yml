@@ -84,4 +84,4 @@ jobs:
           image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/for-mountain-frontend:${{ github.sha }}
           region: ${{ env.REGION }}
           flags: '--allow-unauthenticated --memory=512Mi'
-          env_vars: "BACKEND_URL=https://for-mountain-service-${{ secrets.GCP_PROJECT_ID }}.asia-northeast3.run.app"
+          env_vars: "BACKEND_URL=https://for-mountain-service-505197475308.asia-northeast3.run.app"
