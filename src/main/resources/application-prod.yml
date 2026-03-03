@@ -19,7 +19,6 @@ spring:
         settings:
           web-allow-others: true
 
-
   jpa:
     hibernate:
       ddl-auto: create
@@ -27,3 +26,28 @@ spring:
       hibernate:
         show_sql: false
         dialect: org.hibernate.dialect.H2Dialect
+
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
+server:
+  port: ${PORT:8080}
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration-ms: 86400000
+  admin:
+    code: ${ADMIN_CODE}
+  mail:
+    to: ${MAIL_TO}
