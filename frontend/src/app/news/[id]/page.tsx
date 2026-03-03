@@ -106,18 +106,18 @@ export default function NewsDetailPage() {
           </article>
         )}
 
-        {/* 하단 뒤로가기 */}
-        <div className="border-t border-slate-100 mt-12 pt-8">
-          <button
-            onClick={() => router.push("/#news")}
-            className="flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors text-sm font-medium"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            お知らせ一覧に戻る
-          </button>
-        </div>
+        {/*/!* 하단 뒤로가기 *!/*/}
+        {/*<div className="border-t border-slate-100 mt-12 pt-8">*/}
+        {/*  <button*/}
+        {/*    onClick={() => router.push("/#news")}*/}
+        {/*    className="flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors text-sm font-medium"*/}
+        {/*  >*/}
+        {/*    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">*/}
+        {/*      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />*/}
+        {/*    </svg>*/}
+        {/*    お知らせ一覧に戻る*/}
+        {/*  </button>*/}
+        {/*</div>*/}
       </div>
     </div>
   );

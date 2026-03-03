@@ -25,10 +25,10 @@ const FALLBACK_NEWS: NewsItem[] = [
 
 // ── 카테고리 색상 ─────────────────────────────────────────────
 const categoryColors: Record<string, string> = {
-  "お知らせ": "bg-blue-50 text-blue-600",
+  "お知らせ": "bg-yellow-50 text-yellow-600",
   "会社":     "bg-emerald-50 text-emerald-600",
   "採用":     "bg-orange-50 text-orange-600",
-  "製品":     "bg-purple-50 text-purple-600",
+  "製品":     "bg-red-50 text-red-600",
 };
 
 const PAGE_SIZE = 5;

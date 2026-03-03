@@ -19,9 +19,8 @@ const jobTypes = [
       </svg>
     ),
     duties: [
-      "Java / JavaScript / Python / C / C# 等を使用したシステム開発",
-      "業務システム・Webアプリケーション開発",
-      "既存システムのメンテナンス・保守",
+      "ソフトウェア設計／開発／テスト（JAVA、JavaScript、Python、C、C#など）",
+      "システムメンテナンス",
     ],
   },
   {
@@ -33,33 +32,34 @@ const jobTypes = [
       </svg>
     ),
     duties: [
-      "セキュリティ・クラウド・AI製品の技術支援および保守",
-      "ネットワーク機器の運用・保守・監視",
-      "お客様へのソリューション提案・導入支援",
+      "セキュリティ、クラウド、AIの技術支援及び保守",
+      "ネットワークシステム運用・保守",
     ],
   },
 ];
 
 const shinsotsuSalary = [
   { edu: "4年制大学卒", monthly: "250,000円", overtime: "39,000円" },
-  { edu: "3年制専門学校卒", monthly: "240,000円", overtime: "37,000円" },
-  { edu: "2年制専門学校卒", monthly: "230,000円", overtime: "35,000円" },
+  { edu: "3年制大学卒", monthly: "240,000円", overtime: "37,000円" },
+  { edu: "2年制大学卒", monthly: "230,000円", overtime: "35,000円" },
 ];
 
 const benefits = [
-  "社会保険完備（健康・厚生年金・雇用・労災）",
-  "片道航空券支給（外国籍の方）",
-  "ビザ取得サポート",
+  "各種社会保険完備（雇用保険、労災保険、健康保険、厚生年金保険）",
+  "慶弔見舞金制度",
+  "片道航空券代支給（外国籍の方）",
+  "VISA取得サポート",
   "社宅サポート",
-  "通勤手当（上限 35,000円 / 月）",
-  "通信手当（5,000円 / 月）",
+  "通勤手当支給（月3万5,000円まで）",
+  "会社の飲み会費用支給",
   "資格取得費用支給",
+  "通信手当（5,000円 / 月）",
 ];
 
 const steps = [
   { step: "01", label: "書類選考", desc: "履歴書・必要書類をメールにてご提出ください" },
   { step: "02", label: "一次面接", desc: "オンラインまたは対面にて実施いたします" },
-  { step: "03", label: "最終面接", desc: "代表取締役との面談を行います" },
+  { step: "03", label: "最終面接", desc: "オンラインまたは対面にて実施いたします" },
   { step: "04", label: "内定通知", desc: "面接後、約1週間以内にご連絡いたします" },
 ];
 
@@ -87,19 +87,6 @@ export default function RecruitSection() {
         },
       });
 
-      // 탭 버튼
-      gsap.from(".recruit-tab-btn", {
-        opacity: 0,
-        y: 20,
-        duration: 0.5,
-        stagger: 0.1,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: ".recruit-tab-btn",
-          start: "top 85%",
-          once: true,
-        },
-      });
 
       // 테이블 행 stagger
       gsap.from(".recruit-table-row", {
@@ -137,8 +124,8 @@ export default function RecruitSection() {
         stagger: 0.1,
         ease: "power3.out",
         scrollTrigger: {
-          trigger: ".recruit-step",
-          start: "top 85%",
+          trigger: ".recruit-card",
+          start: "top 82%",
           once: true,
         },
       });
@@ -189,7 +176,7 @@ export default function RecruitSection() {
               <tr className="text-xs text-slate-400">
                 <th className="text-left pb-1.5 font-medium">学歴</th>
                 <th className="text-left pb-1.5 font-medium">月給</th>
-                <th className="text-left pb-1.5 font-medium">固定残業代（45h分）</th>
+                <th className="text-left pb-1.5 font-medium">固定残業代20h分）</th>
               </tr>
             </thead>
             <tbody className="text-slate-700">
@@ -203,7 +190,7 @@ export default function RecruitSection() {
             </tbody>
           </table>
           <p className="text-xs text-slate-400 mt-2">
-            ※ 固定残業代は45時間分を含みます。超過分は別途支給。
+            ※ 固定残業代は20時間分を含みます。超過分は別途支給。
           </p>
         </div>
       </div>
@@ -259,15 +246,15 @@ export default function RecruitSection() {
         </div>
 
         {/* 탭 버튼 */}
-        <div className="flex gap-2 mb-8 justify-center">
+        <div className="recruit-tabs flex gap-2 mb-8 justify-center">
           {tabs.map((tab) => (
             <button
               key={tab}
               onClick={() => switchTab(tab)}
-              className={`recruit-tab-btn flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200
+              className={`recruit-tab-btn flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 border
                 ${activeTab === tab
-                  ? "bg-orange-500 text-white shadow-md shadow-orange-200"
-                  : "bg-white text-slate-500 border border-slate-200 hover:border-orange-200 hover:text-orange-500"
+                  ? "bg-orange-500 text-white border-orange-500 shadow-md shadow-orange-200"
+                  : "bg-white text-slate-500 border-slate-200 hover:border-orange-200 hover:text-orange-500"
                 }`}
             >
               {tab}
@@ -311,11 +298,11 @@ export default function RecruitSection() {
               <div className="recruit-table bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
                 {[
                   { label: "雇用形態", value: "正社員" },
-                  { label: "就業場所", value: "東京本社\n東京都千代田区岩本町2-13-6\nリアライズ岩本町ビル 5F" },
+                  { label: "就業場所", value: "東京本社（東京都千代田区岩本町2-13-6）、各事業所" },
                   { label: "労働時間", value: "09:00 〜 18:00（休憩60分）\n一部裁量労働制・フレックスタイム制あり" },
-                  { label: "試用期間", value: "3ヶ月（本採用と同条件）" },
+                  { label: "試用期間", value: "あり（3か月）\n※会社の判断により免除・短縮・延長する場合があります。\n※試用期間中の雇用条件の変更はありません。" },
                   { label: "休日・休暇", value: "年間125日\n完全週休2日制（土・日）、祝日\n有給休暇（入社半年後から付与）" },
-                  { label: "応募資格", value: "日本語能力試験 N2以上（目安）\n国籍不問、就労ビザ保有者歓迎" },
+                  { label: "応募資格", value: "日本語の日常会話が可能な方または\n日本語能力試験（JLPT）N2資格をお持ちの方\n国籍不問（就労ビザ取得に問題がない方）" },
                 ].map((row, i) => (
                   <div
                     key={row.label}
@@ -346,12 +333,23 @@ export default function RecruitSection() {
                   </svg>
                   <div>
                     <p className="font-semibold mb-2">応募資格</p>
-                    <ul className="text-orange-100 text-sm space-y-1 leading-relaxed">
-                      <li>• 日本語能力試験 N2 以上（目安）</li>
-                      <li>• 国籍不問</li>
-                      <li>• 就労ビザ保有者歓迎</li>
-                      <li>• 未経験者歓迎（エンジニア職）</li>
-                    </ul>
+                    {activeTab === "新卒採用" ? (
+                      <ul className="text-orange-100 text-sm space-y-1 leading-relaxed">
+                        <li>• 関連学科専攻者及びプログラミング言語を独学で取得した方（Java、Python、C、C#、JavaScript 等）</li>
+                        <li>• 日本語で日常会話が可能な方</li>
+                        <li>• 非専攻者の場合、システムエンジニア及びプログラム開発に興味と情熱がある方</li>
+                      </ul>
+                    ) : (
+                      <ul className="text-orange-100 text-sm space-y-1 leading-relaxed">
+                        <li>• 開発関連プロジェクト（Java、Python、C、C#、JavaScript 等）経験者（1年以上）</li>
+                        <li>• ネットワーク関連の知識がある方（CCNA取得者尚可）</li>
+                        <li>• Linuxおよびサーバー関連の知識がある方（LPICなど取得者尚可）</li>
+                        <li>• 仮想化／クラウド関連知識がある方</li>
+                        <li>• ビジネス日本語が可能な方尚可</li>
+                        <li>• プロジェクトマネジメント経験がある方尚可</li>
+                        <li>• その他、資格をお持ちの方尚可（IT関連国際資格、ITパスポートなど）</li>
+                      </ul>
+                    )}
                   </div>
                 </div>
               </div>

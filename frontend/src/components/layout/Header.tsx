@@ -46,7 +46,7 @@ export default function Header() {
                 }`}
             >
             <span className={`${scrolled ? "text-orange-600" : "text-orange-300"}`}>株式会社</span>
-            マウンテン
+            MOUNTAIN
           </span>
           </a>
 

@@ -9,13 +9,31 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 const solutionProducts = [
   {
-    id: "wiseon",
-    badge: "Cloud",
-    badgeColor: "bg-sky-100 text-sky-600",
+    id: "ai",
+    badge: "AI",
+    badgeColor: "bg-yellow-100 text-yellow-600",
     icon: (
       <svg className="w-6 h-6 service-icon-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}>
-        <path d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+        <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
       </svg>
+    ),
+    title: "AI マモリージ",
+    subtitle: "AI統合管理プラットフォーム",
+    bullets: [
+      "AI活用で統合管理・業務効率化向上とセキュリティ強化を同時に実現",
+      "安心できるガバナンス運用で、組織の未来を支援",
+    ],
+    href: "http://mountain-info.co.jp/wp-content/uploads/2025/09/Wiseon-AI%E3%82%A8%E3%83%BC%E3%82%B8%E3%82%A7%E3%83%B3%E3%83%88-%E6%B7%BB%E4%BB%98%E8%B3%87%E6%96%99.pdf",
+    hrefLabel: "資料を見る",
+  },
+  {
+    id: "wiseon",
+    badge: "Cloud",
+    badgeColor: "bg-green-100 text-green-600",
+    icon: (
+        <svg className="w-6 h-6 service-icon-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}>
+          <path d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+        </svg>
     ),
     title: "Wise on Cloud",
     subtitle: "クラウド自動化プラットフォーム",
@@ -31,9 +49,9 @@ const solutionProducts = [
     badge: "Security",
     badgeColor: "bg-red-100 text-red-600",
     icon: (
-      <svg className="w-6 h-6 service-icon-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}>
-        <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-      </svg>
+        <svg className="w-6 h-6 service-icon-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}>
+          <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+        </svg>
     ),
     title: "Network BlackBox",
     subtitle: "サイバーセキュリティ",
@@ -43,24 +61,6 @@ const solutionProducts = [
     ],
     href: "https://www.quadminers.co.jp/",
     hrefLabel: "詳しく見る",
-  },
-  {
-    id: "ai",
-    badge: "AI",
-    badgeColor: "bg-purple-100 text-purple-600",
-    icon: (
-      <svg className="w-6 h-6 service-icon-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}>
-        <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-      </svg>
-    ),
-    title: "AI マモリージ",
-    subtitle: "AI統合管理プラットフォーム",
-    bullets: [
-      "AI活用で統合管理・業務効率化向上とセキュリティ強化を同時に実現",
-      "安心できるガバナンス運用で、組織の未来を支援",
-    ],
-    href: "http://mountain-info.co.jp/wp-content/uploads/2025/09/Wiseon-AI%E3%82%A8%E3%83%BC%E3%82%B8%E3%82%A7%E3%83%B3%E3%83%88-%E6%B7%BB%E4%BB%98%E8%B3%87%E6%96%99.pdf",
-    hrefLabel: "資料を見る",
   },
 ];
 
@@ -152,10 +152,51 @@ const tabContents: Record<TabId, { overview: string[]; items: { title: string; b
   },
 };
 
-const stats = [
-  { value: 'N', suffix: "+", label: "プロジェクト実績" },
-  { value: 100, suffix: "%", label: "顧客満足度" },
-  { value: 'N', suffix: "年", label: "業界実績" },
+const companyValues = [
+  {
+    key: "VALUE",
+    ja: "価値創造",
+    color: "bg-yellow-100",
+    icon: (
+      <svg className="w-7 h-7 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+  },
+  {
+    key: "HARMONY",
+    ja: "環境と変化との調和",
+    color: "bg-green-100",
+    icon: (
+      <svg className="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+          d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+      </svg>
+    ),
+  },
+  {
+    key: "CHALLENGE",
+    ja: "絶え間ない挑戦",
+    color: "bg-red-100",
+    icon: (
+      <svg className="w-7 h-7 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+          d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+      </svg>
+    ),
+  },
+  {
+    key: "TRUST",
+    ja: "人と社会との信頼",
+    color: "bg-orange-100",
+    icon: (
+      <svg className="w-7 h-7 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+      </svg>
+    ),
+  },
 ];
 
 // ── コンポーネント ─────────────────────────────────────────────
@@ -202,17 +243,6 @@ export default function ServicesSection() {
         scrollTrigger: { trigger: ".services-tabs", start: "top 85%", once: true },
       });
 
-      // 카운터
-      gsap.utils.toArray<HTMLElement>(".stat-number").forEach((el, i) => {
-        const t = stats[i];
-        gsap.fromTo({ val: 0 }, { val: 0 }, {
-          val: t.value, duration: 2, ease: "power2.out",
-          onUpdate: function () {
-            el.textContent = Math.round((this.targets()[0] as { val: number }).val) + t.suffix;
-          },
-          scrollTrigger: { trigger: el, start: "top 88%", once: true },
-        });
-      });
     },
     { scope: sectionRef }
   );
@@ -251,14 +281,15 @@ export default function ServicesSection() {
           </p>
         </div>
 
-        {/* 카운터 통계 */}
-        <div className="flex justify-center gap-12 md:gap-20 mb-12 py-8 border-y border-slate-100">
-          {stats.map((s) => (
-            <div key={s.label} className="text-center">
-              <p className="stat-number text-4xl md:text-5xl font-bold text-orange-500 tabular-nums">
-                0{s.suffix}
-              </p>
-              <p className="text-sm text-slate-400 mt-1">{s.label}</p>
+        {/* 회사 이념 */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12 py-8 border-y border-slate-100">
+          {companyValues.map((v) => (
+            <div key={v.key} className="flex flex-col items-center text-center gap-3">
+              <div className={`w-16 h-16 ${v.color} rounded-full flex items-center justify-center shadow-md`}>
+                {v.icon}
+              </div>
+              <p className="font-extrabold text-slate-900 tracking-widest text-sm">{v.key}</p>
+              <p className="text-slate-500 text-sm">{v.ja}</p>
             </div>
           ))}
         </div>

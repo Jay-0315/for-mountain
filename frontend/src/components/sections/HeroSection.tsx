@@ -123,7 +123,6 @@ export default function HeroSection() {
       );
       gsap.set(".hero-sub", { opacity: 0, y: 20 });
       gsap.set(".hero-typing", { opacity: 0 });
-      gsap.set(".hero-stats", { opacity: 0, y: 20 });
 
       const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
 
@@ -149,7 +148,6 @@ export default function HeroSection() {
         .to(".hero-sub", { opacity: 1, y: 0, duration: 0.7 }, "-=0.6")
         .to(".hero-cta-1", { opacity: 1, y: 0, duration: 0.6 }, "-=0.4")
         .to(".hero-cta-2", { opacity: 1, y: 0, duration: 0.6 }, "-=0.45")
-        .to(".hero-stats", { opacity: 1, y: 0, duration: 0.6 }, "-=0.3")
         .to(".hero-scroll", { opacity: 1, y: 0, duration: 0.5 }, "-=0.2");
     },
     { scope: containerRef }
@@ -209,37 +207,22 @@ export default function HeroSection() {
           イノベーションを起こし、お客様のビジネス成長を支援します。
         </p>
 
-        {/* CTA 버튼 */}
+         CTA 버튼
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <a
-            href="#contact"
+            href="#partners"
             className="hero-cta-1 px-8 py-4 bg-orange-500 text-white font-semibold rounded-xl hover:bg-orange-400 transition-all hover:shadow-xl hover:shadow-orange-500/30 hover:-translate-y-0.5"
           >
-            お問い合わせはこちら
+            株式会社MOUNTAIN Partners
           </a>
-          <a
-            href="#services"
-            className="hero-cta-2 px-8 py-4 bg-white/5 text-white font-semibold rounded-xl border border-white/10 hover:bg-white/10 hover:-translate-y-0.5 transition-all"
-          >
-            事業内容を見る
-          </a>
+          {/*<a*/}
+          {/*  href="#services"*/}
+          {/*  className="hero-cta-2 px-8 py-4 bg-white/5 text-white font-semibold rounded-xl border border-white/10 hover:bg-white/10 hover:-translate-y-0.5 transition-all"*/}
+          {/*>*/}
+          {/*  事業内容を見る*/}
+          {/*</a>*/}
         </div>
 
-        {/* 통계 */}
-        <div className="hero-stats mt-16 flex flex-col sm:flex-row justify-center gap-10 text-center">
-          {[
-            { value: "ｎ", label: "プロジェクト実績" },
-            { value: "100%", label: "顧客満足度" },
-            { value: "ｎ年", label: "業界実績" },
-          ].map((s) => (
-            <div key={s.label} className="group w-32">
-              <p className="text-3xl font-bold text-white group-hover:text-orange-400 transition-colors">
-                {s.value}
-              </p>
-              <p className="text-sm text-slate-500 mt-1">{s.label}</p>
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* 스크롤 인디케이터 */}
