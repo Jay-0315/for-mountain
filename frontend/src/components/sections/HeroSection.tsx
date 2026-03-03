@@ -207,7 +207,6 @@ export default function HeroSection() {
           イノベーションを起こし、お客様のビジネス成長を支援します。
         </p>
 
-         CTA 버튼
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <a
             href="#partners"
