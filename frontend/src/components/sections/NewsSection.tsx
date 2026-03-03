@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -46,6 +47,7 @@ function SkeletonRow({ last = false }: { last?: boolean }) {
 
 // ── メインコンポーネント ───────────────────────────────────────
 export default function NewsSection() {
+  const router = useRouter();
   const sectionRef = useRef<HTMLElement>(null);
   const listRef    = useRef<HTMLDivElement>(null);
 
@@ -187,6 +189,7 @@ export default function NewsSection() {
             {!loading && items.map((item, i) => (
               <div
                 key={item.id}
+                onClick={() => router.push(`/news/${item.id}`)}
                 className={`news-item flex flex-col sm:flex-row sm:items-center gap-3 px-7 py-5 group
                   hover:bg-slate-50 transition-colors cursor-pointer
                   ${i !== items.length - 1 ? "border-b border-slate-100" : ""}`}

@@ -51,8 +51,7 @@ jobs:
           image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/for-mountain-api:${{ github.sha }}
           region: ${{ env.REGION }}
           flags: '--allow-unauthenticated --memory=1024Mi'
-          env_vars: |
-            SPRING_PROFILES_ACTIVE=prod,JWT_SECRET=${{ secrets.JWT_SECRET }},ADMIN_CODE=${{ secrets.ADMIN_CODE }},MAIL_USERNAME=${{ secrets.MAIL_USERNAME }},MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }},MAIL_TO=${{ secrets.MAIL_TO }}
+          env_vars: "SPRING_PROFILES_ACTIVE=prod,JWT_SECRET=${{ secrets.JWT_SECRET }},ADMIN_CODE=${{ secrets.ADMIN_CODE }},MAIL_USERNAME=${{ secrets.MAIL_USERNAME }},MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }},MAIL_TO=${{ secrets.MAIL_TO }}"
 
   # ── 프론트엔드 (Next.js) ─────────────────────────────────────
   deploy-frontend:
@@ -85,5 +84,4 @@ jobs:
           image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/for-mountain-frontend:${{ github.sha }}
           region: ${{ env.REGION }}
           flags: '--allow-unauthenticated --memory=512Mi'
-          env_vars: |
-            BACKEND_URL=https://for-mountain-service-${{ secrets.GCP_PROJECT_ID }}.asia-northeast3.run.app,NEXT_PUBLIC_API_URL=https://for-mountain-service-${{ secrets.GCP_PROJECT_ID }}.asia-northeast3.run.app
+          env_vars: "BACKEND_URL=https://for-mountain-service-${{ secrets.GCP_PROJECT_ID }}.asia-northeast3.run.app"
