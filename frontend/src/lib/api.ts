@@ -1,4 +1,6 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+// Next.js rewrites(/api/backend/*) 를 통해 백엔드로 프록시됨
+// next.config.ts: source "/api/backend/:path*" → destination "${BACKEND_URL}/api/:path*"
+const API_BASE = "/api/backend";
 
 // ── Types ───────────────────────────────────────────────────
 export type BoardPost = {
