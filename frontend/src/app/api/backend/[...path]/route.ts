@@ -1,42 +1,55 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8080";
+const BACKEND_URL =
+  process.env.BACKEND_URL ||
+  "https://for-mountain-service-505197475308.asia-northeast3.run.app";
 
-async function handler(
+async function proxy(
   req: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
-  const { path } = await params;
-  const targetPath = path.join("/");
-  const search = req.nextUrl.search; // ?page=0&size=5 등 쿼리스트링
-  const url = `${BACKEND_URL}/${targetPath}${search}`;
+  try {
+    const { path } = await params;
+    const targetPath = path.join("/");
+    const searchParams = req.nextUrl.search;
+    const targetUrl = `${BACKEND_URL}/${targetPath}${searchParams}`;
 
-  // 필요한 헤더만 전달 (Authorization, Content-Type)
-  const headers: Record<string, string> = {};
-  const contentType = req.headers.get("content-type");
-  if (contentType) headers["Content-Type"] = contentType;
-  const auth = req.headers.get("authorization");
-  if (auth) headers["Authorization"] = auth;
+    const init: RequestInit = {
+      method: req.method,
+      headers: {
+        "Content-Type": req.headers.get("Content-Type") || "application/json",
+        ...(req.headers.get("Authorization") && {
+          Authorization: req.headers.get("Authorization")!,
+        }),
+      },
+    };
 
-  const body = ["GET", "HEAD"].includes(req.method) ? undefined : await req.text();
+    if (req.method !== "GET" && req.method !== "HEAD") {
+      const body = await req.text();
+      if (body) init.body = body;
+    }
 
-  const res = await fetch(url, {
-    method: req.method,
-    headers,
-    body,
-  });
+    const response = await fetch(targetUrl, init);
+    const data = await response.text();
 
-  const data = await res.text();
-  return new NextResponse(data, {
-    status: res.status,
-    headers: {
-      "Content-Type": res.headers.get("content-type") ?? "application/json",
-    },
-  });
+    return new NextResponse(data, {
+      status: response.status,
+      headers: {
+        "Content-Type":
+          response.headers.get("Content-Type") || "application/json",
+      },
+    });
+  } catch (error) {
+    console.error("Proxy Error:", error);
+    return NextResponse.json(
+      { message: "Internal Server Proxy Error" },
+      { status: 500 }
+    );
+  }
 }
 
-export const GET = handler;
-export const POST = handler;
-export const PUT = handler;
-export const DELETE = handler;
-export const PATCH = handler;
+export const GET = proxy;
+export const POST = proxy;
+export const PUT = proxy;
+export const PATCH = proxy;
+export const DELETE = proxy;
