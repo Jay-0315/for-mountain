@@ -34,20 +34,19 @@ export default function PartnersSection() {
             登録された協力会社カードがありません。
           </div>
         ) : (
-          <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {cards.map((card) => {
               const content = (
-                <div className="group relative overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-lg shadow-slate-200/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-orange-100">
+                <div className="group relative overflow-hidden rounded-[1.35rem] border border-slate-100 bg-white shadow-sm shadow-slate-200/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:shadow-orange-100">
                   <div className="absolute -inset-4 -z-10 rounded-[2.25rem] bg-slate-100/80 opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-100" />
-                  <div className="relative aspect-[4/3] overflow-hidden">
+                  <div className="relative aspect-[1.15/1] overflow-hidden bg-white p-4">
                     <Image
                       src={card.imageSrc}
                       alt="Mountain partner card"
                       fill
                       unoptimized
-                      className="object-cover transition-transform duration-700 group-hover:scale-105"
+                      className="object-contain object-center p-4 transition-transform duration-500 group-hover:scale-[1.02]"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/30 via-transparent to-transparent" />
                   </div>
                 </div>
               );

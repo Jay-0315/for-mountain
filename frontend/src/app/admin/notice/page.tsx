@@ -999,7 +999,7 @@ function PartnersTab() {
     setView("form");
   };
 
-  const openEdit = (item: PartnerCard) => {
+  const openEdit = (item: PartnerCardDto) => {
     setEditItem(item);
     setLinkUrl(item.linkUrl);
     setImageSrc(item.imageSrc);
