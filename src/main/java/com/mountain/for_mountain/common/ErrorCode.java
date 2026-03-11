@@ -30,12 +30,15 @@ public enum ErrorCode {
     // 404
     BOARD_NOT_FOUND(HttpStatus.NOT_FOUND, "Board post not found."),
     PARTNER_CARD_NOT_FOUND(HttpStatus.NOT_FOUND, "Partner card not found."),
+    SERVICE_CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "Service category not found."),
+    SERVICE_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "Service item not found."),
     DEPT_NOTICE_NOT_FOUND(HttpStatus.NOT_FOUND, "Department notice not found."),
     LEAVE_NOT_FOUND(HttpStatus.NOT_FOUND, "Leave request not found."),
     ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, "Account not found."),
 
     // 409
     ACCOUNT_ALREADY_EXISTS(HttpStatus.CONFLICT, "Account already exists."),
+    SERVICE_CATEGORY_IN_USE(HttpStatus.CONFLICT, "Service category is in use."),
 
     // 500
     MAIL_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to send contact email.");

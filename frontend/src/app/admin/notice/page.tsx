@@ -1,6 +1,12 @@
 "use client";
 
 import Image from "next/image";
+import MarkdownContent from "@/components/ui/MarkdownContent";
+import {
+  renderServiceCategoryIcon,
+  SERVICE_CATEGORY_ICON_OPTIONS,
+  type ServiceCategoryIconKey,
+} from "@/components/ui/service-category-icons";
 import { useSearchParams } from "next/navigation";
 import { useState, useEffect, useCallback, type ReactNode } from "react";
 import {
@@ -12,31 +18,51 @@ import {
   createAnnouncement,
   createDeptNotice,
   createPartnerCard,
+  createServiceCategory,
+  createServiceItem,
   updateBoardPost,
   updateAnnouncement,
   updateDeptNotice,
   updatePartnerCard,
+  updateServiceCategory,
+  updateServiceItem,
   deleteBoardPost,
   deleteAnnouncement,
   deleteDeptNotice,
   deletePartnerCard,
+  deleteServiceCategory,
+  deleteServiceItem,
   type BoardPost,
   type AnnouncementDto,
   type EmployeeDto,
   type PartnerCardDto,
+  type ServiceCategoryDto,
+  type ServiceItemDto,
   fetchPartnerCards,
+  fetchServiceCategories,
+  fetchServiceItems,
 } from "@/lib/api";
 import { DEPARTMENTS, type DeptNotice } from "../mock-data";
 import { getSessionPayload, getSessionRole } from "@/lib/session";
+import { isMockAdminSession } from "../mock-store";
 
 const WEBSITE_CATEGORIES = ["お知らせ", "会社", "採用", "製品"];
 const DEPT_OPTIONS = ["全部署", ...DEPARTMENTS] as const;
-type NoticeTab = "website" | "internal" | "department" | "partners";
 type WebsiteView = "list" | "form" | "detail";
 type LocalView = "list" | "form" | "detail";
 
 function formatDate(iso: string) {
   return iso.substring(0, 10).replaceAll("-", ".");
+}
+
+function hasAdminAccess(token: string) {
+  return getSessionRole(token) === "ADMIN" || isMockAdminSession(token);
+}
+
+function isImageAttachment(attachmentName: string | null, attachmentData: string | null) {
+  if (attachmentData?.startsWith("data:image/")) return true;
+  if (!attachmentName) return false;
+  return /\.(png|jpe?g|gif|webp|svg|bmp|ico)$/i.test(attachmentName);
 }
 
 function NoticeDetail({
@@ -90,16 +116,14 @@ function NoticeDetail({
   );
 }
 
-function TabBar({ active, onChange }: { active: NoticeTab; onChange: (t: NoticeTab) => void }) {
-  const tabs: { key: NoticeTab; label: string }[] = [
-    { key: "website", label: "ウェブサイトNews" },
+function TabBar({ active, onChange }: { active: "internal" | "department"; onChange: (t: "internal" | "department") => void }) {
+  const tabs: { key: "internal" | "department"; label: string }[] = [
     { key: "internal", label: "社内全体公知" },
     { key: "department", label: "部署別公知" },
-    { key: "partners", label: "協力会社カード" },
   ];
 
   return (
-    <div className="flex gap-1 bg-slate-100 rounded-xl p-1 w-fit">
+    <div className="flex gap-1 rounded-xl bg-slate-100 p-1 w-fit">
       {tabs.map((t) => (
         <button
           key={t.key}
@@ -238,9 +262,9 @@ function WebsitePostForm({
   );
 }
 
-function WebsiteTab() {
+export function WebsiteTab() {
   const [token] = useState(() => (typeof window === "undefined" ? "" : sessionStorage.getItem("admin_token") ?? ""));
-  const isAdmin = getSessionRole(token) === "ADMIN";
+  const isAdmin = hasAdminAccess(token);
   const [view, setView] = useState<WebsiteView>("list");
   const [editPost, setEditPost] = useState<BoardPost | null>(null);
   const [selectedPost, setSelectedPost] = useState<BoardPost | null>(null);
@@ -471,7 +495,7 @@ function WebsiteTab() {
 
 function InternalTab() {
   const [token] = useState(() => (typeof window === "undefined" ? "" : sessionStorage.getItem("admin_token") ?? ""));
-  const isAdmin = getSessionRole(token) === "ADMIN";
+  const isAdmin = hasAdminAccess(token);
   const [announcements, setAnnouncements] = useState<AnnouncementDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<LocalView>("list");
@@ -698,7 +722,7 @@ function InternalTab() {
 
 function DepartmentTab({ initialNoticeId }: { initialNoticeId: number | null }) {
   const [token] = useState(() => (typeof window === "undefined" ? "" : sessionStorage.getItem("admin_token") ?? ""));
-  const isAdmin = getSessionRole(token) === "ADMIN";
+  const isAdmin = hasAdminAccess(token);
   const [items, setItems] = useState<DeptNotice[]>([]);
   const [currentEmployee, setCurrentEmployee] = useState<EmployeeDto | null>(null);
   const [loading, setLoading] = useState(true);
@@ -962,9 +986,9 @@ function readFileAsDataUrl(file: File) {
   });
 }
 
-function PartnersTab() {
+export function PartnersTab() {
   const [token] = useState(() => (typeof window === "undefined" ? "" : sessionStorage.getItem("admin_token") ?? ""));
-  const isAdmin = getSessionRole(token) === "ADMIN";
+  const isAdmin = hasAdminAccess(token);
   const [view, setView] = useState<LocalView>("list");
   const [items, setItems] = useState<PartnerCardDto[]>([]);
   const [selectedItem, setSelectedItem] = useState<PartnerCardDto | null>(null);
@@ -1156,6 +1180,9 @@ function PartnersTab() {
           </div>
           {isAdmin && (
             <div className="flex justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4">
+              <button onClick={openNew} className="rounded-xl border border-orange-200 px-4 py-2 text-sm font-semibold text-orange-600 hover:bg-orange-50">
+                新規追加
+              </button>
               <button onClick={() => openEdit(selectedItem)} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">
                 編集
               </button>
@@ -1213,11 +1240,18 @@ function PartnersTab() {
             </thead>
             <tbody className="divide-y divide-slate-50">
               {items.map((item) => (
-                <tr key={item.id} className="hover:bg-slate-50">
+                <tr
+                  key={item.id}
+                  className="cursor-pointer hover:bg-slate-50"
+                  onClick={() => {
+                    setSelectedItem(item);
+                    setView("detail");
+                  }}
+                >
                   <td className="px-5 py-3.5">
-                    <button onClick={() => { setSelectedItem(item); setView("detail"); }} className="overflow-hidden rounded-xl border border-slate-100">
+                    <div className="overflow-hidden rounded-xl border border-slate-100">
                       <Image src={item.imageSrc} alt="Partner card thumbnail" width={112} height={64} unoptimized className="h-16 w-28 object-cover" />
-                    </button>
+                    </div>
                   </td>
                   <td className="px-5 py-3.5">
                     <p className="max-w-md truncate text-xs text-slate-600">{item.linkUrl || "リンク未設定"}</p>
@@ -1228,8 +1262,743 @@ function PartnersTab() {
                   <td className="px-5 py-3.5">
                     {isAdmin ? (
                       <div className="flex items-center justify-end gap-2">
-                        <button onClick={() => openEdit(item)} className="px-2 py-1 text-xs font-semibold text-slate-500 hover:text-orange-500">編集</button>
-                        <button onClick={() => handleDelete(item.id)} className="px-2 py-1 text-xs font-semibold text-red-400 hover:text-red-600">削除</button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEdit(item);
+                          }}
+                          className="px-2 py-1 text-xs font-semibold text-slate-500 hover:text-orange-500"
+                        >
+                          編集
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(item.id);
+                          }}
+                          className="px-2 py-1 text-xs font-semibold text-red-400 hover:text-red-600"
+                        >
+                          削除
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex justify-end">
+                        <span className="px-2 py-1 text-xs text-slate-300">-</span>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function ServiceItemsTab() {
+  const [token] = useState(() => (typeof window === "undefined" ? "" : sessionStorage.getItem("admin_token") ?? ""));
+  const isAdmin = hasAdminAccess(token);
+  const [view, setView] = useState<LocalView>("list");
+  const [categories, setCategories] = useState<ServiceCategoryDto[]>([]);
+  const [items, setItems] = useState<ServiceItemDto[]>([]);
+  const [selectedItem, setSelectedItem] = useState<ServiceItemDto | null>(null);
+  const [editItem, setEditItem] = useState<ServiceItemDto | null>(null);
+  const [category, setCategory] = useState("");
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [videoName, setVideoName] = useState<string | null>(null);
+  const [videoData, setVideoData] = useState<string | null>(null);
+  const [linkUrl, setLinkUrl] = useState("");
+  const [imageName, setImageName] = useState<string | null>(null);
+  const [imageData, setImageData] = useState<string | null>(null);
+  const [attachmentName, setAttachmentName] = useState<string | null>(null);
+  const [attachmentData, setAttachmentData] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
+  const [categoryName, setCategoryName] = useState("");
+  const [categoryIconKey, setCategoryIconKey] = useState<ServiceCategoryIconKey>("grid");
+  const [categoryEditItem, setCategoryEditItem] = useState<ServiceCategoryDto | null>(null);
+  const [categorySaving, setCategorySaving] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [fetchedCategories, fetchedItems] = await Promise.all([
+        fetchServiceCategories(),
+        fetchServiceItems(),
+      ]);
+      setCategories(fetchedCategories);
+      setItems(fetchedItems);
+      setCategory((current) => {
+        if (current && fetchedCategories.some((item) => item.slug === current)) {
+          return current;
+        }
+        return fetchedCategories[0]?.slug ?? "";
+      });
+    } catch {
+      setCategories([]);
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const openNew = () => {
+    setEditItem(null);
+    setCategory(categories[0]?.slug ?? "");
+    setTitle("");
+    setContent("");
+    setVideoName(null);
+    setVideoData(null);
+    setLinkUrl("");
+    setImageName(null);
+    setImageData(null);
+    setAttachmentName(null);
+    setAttachmentData(null);
+    setError("");
+    setView("form");
+  };
+
+  const openEdit = (item: ServiceItemDto) => {
+    setEditItem(item);
+    setCategory(item.category);
+    setTitle(item.title);
+    setContent(item.content);
+    setVideoName(item.videoName);
+    setVideoData(item.videoData);
+    setLinkUrl(item.linkUrl ?? "");
+    setImageName(item.imageName);
+    setImageData(item.imageData);
+    setAttachmentName(item.attachmentName);
+    setAttachmentData(item.attachmentData);
+    setError("");
+    setView("form");
+  };
+
+  const resetCategoryForm = () => {
+    setCategoryEditItem(null);
+    setCategoryName("");
+    setCategoryIconKey("grid");
+  };
+
+  const openCategoryEdit = (item: ServiceCategoryDto) => {
+    setCategoryEditItem(item);
+    setCategoryName(item.name);
+    setCategoryIconKey(
+      SERVICE_CATEGORY_ICON_OPTIONS.some((option) => option.key === item.iconKey)
+        ? (item.iconKey as ServiceCategoryIconKey)
+        : "folder"
+    );
+  };
+
+  const handleCategorySave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCategorySaving(true);
+    setError("");
+    try {
+      if (categoryEditItem) {
+        const updated = await updateServiceCategory(token, categoryEditItem.id, {
+          name: categoryName,
+          iconKey: categoryIconKey,
+        });
+        setCategories((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+      } else {
+        const created = await createServiceCategory(token, {
+          name: categoryName,
+          iconKey: categoryIconKey,
+        });
+        setCategories((prev) => [...prev, created]);
+        setCategory((current) => current || created.slug);
+      }
+      resetCategoryForm();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "カテゴリの保存に失敗しました。");
+    } finally {
+      setCategorySaving(false);
+    }
+  };
+
+  const handleCategoryDelete = async (id: number) => {
+    if (!confirm("このカテゴリを削除しますか？")) return;
+    try {
+      await deleteServiceCategory(token, id);
+      const remaining = categories.filter((item) => item.id !== id);
+      setCategories(remaining);
+      setCategory((current) => (remaining.some((item) => item.slug === current) ? current : remaining[0]?.slug ?? ""));
+      resetCategoryForm();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "カテゴリの削除に失敗しました。");
+    }
+  };
+
+  const handleAttachmentChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setError("");
+    try {
+      const data = await readFileAsDataUrl(file);
+      setAttachmentName(file.name);
+      setAttachmentData(data);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "添付ファイルの読み込みに失敗しました。");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setError("");
+    try {
+      const data = await readFileAsDataUrl(file);
+      setImageName(file.name);
+      setImageData(data);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "画像の読み込みに失敗しました。");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleVideoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setError("");
+    try {
+      const data = await readFileAsDataUrl(file);
+      setVideoName(file.name);
+      setVideoData(data);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "動画の読み込みに失敗しました。");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setError("");
+    try {
+      const payload = {
+        category,
+        title,
+        content,
+        videoName,
+        videoData,
+        linkUrl: linkUrl.trim() || null,
+        imageName,
+        imageData,
+        attachmentName,
+        attachmentData,
+      };
+
+      if (editItem) {
+        const updated = await updateServiceItem(token, editItem.id, payload);
+        setItems((prev) => prev.map((item) => (item.id === editItem.id ? updated : item)));
+        setSelectedItem(updated);
+      } else {
+        const created = await createServiceItem(token, payload);
+        setItems((prev) => [created, ...prev]);
+        setSelectedItem(created);
+      }
+
+      setView("detail");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "保存に失敗しました。");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm("この事業項目を削除しますか？")) return;
+    try {
+      await deleteServiceItem(token, id);
+      setItems((prev) => prev.filter((item) => item.id !== id));
+    } catch {
+      alert("削除に失敗しました。");
+    }
+  };
+
+  if (view === "form") {
+    return (
+      <div className="max-w-3xl space-y-6">
+        <div className="flex items-center gap-3">
+          <button onClick={() => setView("list")} className="p-1.5 text-slate-400 hover:text-slate-900">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <h3 className="text-base font-semibold text-slate-900">{editItem ? "事業項目を編集" : "事業項目を追加"}</h3>
+        </div>
+
+        <form onSubmit={handleSave} className="space-y-5 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">カテゴリ</label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              disabled={categories.length === 0}
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400"
+            >
+              {categories.map((option) => (
+                  <option key={option.slug} value={option.slug}>
+                  {option.name}
+                </option>
+              ))}
+            </select>
+            {categories.length === 0 && (
+              <p className="mt-2 text-xs text-red-500">先にカテゴリを作成してください。</p>
+            )}
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">事業タイトル</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+              placeholder="事業タイトルを入力"
+              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-400"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">内容</label>
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              required
+              rows={8}
+              placeholder="事業内容を入力してください。"
+              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm leading-relaxed text-slate-900 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
+            />
+            <p className="mt-2 text-xs leading-6 text-slate-400">
+              Markdown が使えます。`#` 見出し、`-` 箇条書き、`**太字**`、`[リンク](URL)` などに対応します。
+            </p>
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">リンク URL</label>
+            <input
+              type="url"
+              value={linkUrl}
+              onChange={(e) => setLinkUrl(e.target.value)}
+              placeholder="https://example.com"
+              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-400"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">画像</label>
+            <label className="flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 transition-colors hover:border-orange-300 hover:bg-orange-50/40">
+              <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+              <div>
+                <p className="text-sm font-medium text-slate-700">{imageName ?? "画像をアップロード"}</p>
+                <p className="mt-1 text-xs text-slate-400">{uploading ? "読み込み中..." : "PNG / JPG / WebP など"}</p>
+              </div>
+              <span className="text-sm font-semibold text-orange-500">選択</span>
+            </label>
+            {imageData && (
+              <div className="mt-3 overflow-hidden rounded-xl border border-slate-100 bg-white p-3">
+                <Image
+                  src={imageData}
+                  alt={imageName ?? "Image preview"}
+                  width={1200}
+                  height={800}
+                  unoptimized
+                  className="h-auto max-h-72 w-auto rounded-lg object-contain"
+                />
+              </div>
+            )}
+            {imageName && (
+              <button
+                type="button"
+                onClick={() => {
+                  setImageName(null);
+                  setImageData(null);
+                }}
+                className="mt-2 text-xs font-semibold text-red-500 hover:text-red-600"
+              >
+                画像を削除
+              </button>
+            )}
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">動画ファイル</label>
+            <label className="flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 transition-colors hover:border-orange-300 hover:bg-orange-50/40">
+              <input type="file" accept="video/*" className="hidden" onChange={handleVideoChange} />
+              <div>
+                <p className="text-sm font-medium text-slate-700">{videoName ?? "動画をアップロード"}</p>
+                <p className="mt-1 text-xs text-slate-400">{uploading ? "読み込み中..." : "MP4 / WebM / MOV など"}</p>
+              </div>
+              <span className="text-sm font-semibold text-orange-500">選択</span>
+            </label>
+            {videoData && (
+              <div className="mt-3 overflow-hidden rounded-xl border border-slate-100 bg-slate-950">
+                <video src={videoData} controls playsInline className="max-h-72 w-full bg-black" />
+              </div>
+            )}
+            {videoName && (
+              <button
+                type="button"
+                onClick={() => {
+                  setVideoName(null);
+                  setVideoData(null);
+                }}
+                className="mt-2 text-xs font-semibold text-red-500 hover:text-red-600"
+              >
+                動画を削除
+              </button>
+            )}
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">添付ファイル</label>
+            <label className="flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 transition-colors hover:border-orange-300 hover:bg-orange-50/40">
+              <input type="file" className="hidden" onChange={handleAttachmentChange} />
+              <div>
+                <p className="text-sm font-medium text-slate-700">{attachmentName ?? "ファイルをアップロード"}</p>
+                <p className="mt-1 text-xs text-slate-400">{uploading ? "読み込み中..." : "PDF, image, document など"}</p>
+              </div>
+              <span className="text-sm font-semibold text-orange-500">選択</span>
+            </label>
+            {attachmentData && isImageAttachment(attachmentName, attachmentData) && (
+              <div className="mt-3 overflow-hidden rounded-xl border border-slate-100 bg-white p-3">
+                <Image
+                  src={attachmentData}
+                  alt={attachmentName ?? "Attachment preview"}
+                  width={1200}
+                  height={800}
+                  unoptimized
+                  className="h-auto max-h-72 w-auto rounded-lg object-contain"
+                />
+              </div>
+            )}
+            {attachmentName && (
+              <button
+                type="button"
+                onClick={() => {
+                  setAttachmentName(null);
+                  setAttachmentData(null);
+                }}
+                className="mt-2 text-xs font-semibold text-red-500 hover:text-red-600"
+              >
+                添付を削除
+              </button>
+            )}
+          </div>
+
+          {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-500">{error}</p>}
+
+          <div className="flex justify-end gap-3">
+            <button type="button" onClick={() => setView("list")} className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">
+              キャンセル
+            </button>
+            <button type="submit" disabled={saving || uploading || !category} className="admin-btn-primary px-5 py-2.5">
+              {saving ? "保存中..." : editItem ? "更新する" : "追加する"}
+            </button>
+          </div>
+        </form>
+      </div>
+    );
+  }
+
+  if (view === "detail" && selectedItem) {
+    const categoryInfo = categories.find((item) => item.slug === selectedItem.category);
+    const categoryLabel = categoryInfo ? categoryInfo.name : selectedItem.category;
+    const hasImageAttachment = isImageAttachment(selectedItem.imageName, selectedItem.imageData);
+
+    return (
+      <div className="max-w-4xl space-y-6">
+        <div className="flex items-center gap-3">
+          <button onClick={() => setView("list")} className="p-1.5 text-slate-400 hover:text-slate-900">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <h3 className="text-base font-semibold text-slate-900">事業項目詳細</h3>
+        </div>
+
+        <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+          <div className="space-y-3 border-b border-slate-100 bg-slate-50 px-6 py-5">
+            <span className="inline-flex rounded-full bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-600">
+              {categoryInfo && <span className="mr-1 inline-flex align-middle text-orange-500">{renderServiceCategoryIcon(categoryInfo.iconKey)}</span>}
+              {categoryLabel}
+            </span>
+            <h4 className="text-xl font-bold text-slate-900">{selectedItem.title}</h4>
+            <p className="font-mono text-xs text-slate-400">{formatDate(selectedItem.createdAt)}</p>
+          </div>
+          <div className="space-y-5 px-6 py-6">
+            <MarkdownContent content={selectedItem.content} className="space-y-4" />
+            {hasImageAttachment && selectedItem.imageData && (
+              <div className="overflow-hidden rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                <Image
+                  src={selectedItem.imageData}
+                  alt={selectedItem.imageName ?? "Service image"}
+                  width={1200}
+                  height={800}
+                  unoptimized
+                  className="h-auto w-full rounded-xl object-contain"
+                />
+              </div>
+            )}
+            <div>
+              <p className="text-xs font-medium text-slate-400">動画</p>
+              {selectedItem.videoData ? (
+                <div className="mt-2 overflow-hidden rounded-xl border border-slate-100 bg-slate-950">
+                  <video src={selectedItem.videoData} controls playsInline className="w-full bg-black" />
+                </div>
+              ) : (
+                <p className="mt-1 text-sm text-slate-500">未設定</p>
+              )}
+            </div>
+            <div>
+              <p className="text-xs font-medium text-slate-400">詳細サイト</p>
+              {selectedItem.linkUrl ? (
+                <a href={selectedItem.linkUrl} target="_blank" rel="noreferrer" className="mt-1 inline-flex break-all text-sm font-medium text-orange-600 hover:underline">
+                  {selectedItem.linkUrl}
+                </a>
+              ) : (
+                <p className="mt-1 text-sm text-slate-500">未設定</p>
+              )}
+            </div>
+            <div>
+              <p className="text-xs font-medium text-slate-400">詳細資料</p>
+              {selectedItem.attachmentData ? (
+                <a
+                  href={selectedItem.attachmentData}
+                  download={selectedItem.attachmentName ?? "attachment"}
+                  className="mt-1 inline-flex text-sm font-semibold text-orange-600 hover:underline"
+                >
+                  {selectedItem.attachmentName ?? "添付ファイルをダウンロード"}
+                </a>
+              ) : (
+                <p className="mt-1 text-sm text-slate-500">添付なし</p>
+              )}
+            </div>
+          </div>
+          {isAdmin && (
+            <div className="flex justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4">
+              <button onClick={() => openEdit(selectedItem)} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">
+                編集
+              </button>
+              <button
+                onClick={async () => {
+                  await handleDelete(selectedItem.id);
+                  setSelectedItem(null);
+                  setView("list");
+                }}
+                className="rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-500 hover:bg-red-50"
+              >
+                削除
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+          <div className="border-b border-slate-100 bg-slate-50 px-5 py-4">
+            <h3 className="text-sm font-semibold text-slate-900">カテゴリ管理</h3>
+            <p className="mt-1 text-xs text-slate-400">イメージと名前を設定して、事業分野のタブとして使います。</p>
+          </div>
+          <div className="px-5 py-4">
+            {categories.length === 0 ? (
+              <p className="text-sm text-slate-400">登録されたカテゴリがありません。</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {categories.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => openCategoryEdit(item)}
+                    className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm transition-colors ${
+                      categoryEditItem?.id === item.id
+                        ? "border-orange-300 bg-orange-50 text-orange-600"
+                        : "border-slate-200 bg-white text-slate-600 hover:border-orange-200 hover:text-orange-500"
+                    }`}
+                  >
+                    <span className="text-slate-500">{renderServiceCategoryIcon(item.iconKey)}</span>
+                    <span>{item.name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {isAdmin && (
+          <form onSubmit={handleCategorySave} className="space-y-4 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-sm font-semibold text-slate-900">
+                {categoryEditItem ? "カテゴリ編集" : "カテゴリ追加"}
+              </h3>
+              {categoryEditItem && (
+                <button type="button" onClick={resetCategoryForm} className="text-xs font-semibold text-slate-400 hover:text-slate-600">
+                  新規に戻す
+                </button>
+              )}
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">アイコン</label>
+              <select
+                value={categoryIconKey}
+                onChange={(e) => setCategoryIconKey(e.target.value as ServiceCategoryIconKey)}
+                required
+                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400"
+              >
+                {SERVICE_CATEGORY_ICON_OPTIONS.map((option) => (
+                  <option key={option.key} value={option.key}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">カテゴリ名</label>
+              <input
+                type="text"
+                value={categoryName}
+                onChange={(e) => setCategoryName(e.target.value)}
+                required
+                placeholder="カテゴリ名を入力"
+                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400"
+              />
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 text-orange-500">
+                {renderServiceCategoryIcon(categoryIconKey, "h-6 w-6")}
+              </div>
+              <div className="flex gap-2">
+                {categoryEditItem && (
+                  <button
+                    type="button"
+                    onClick={() => handleCategoryDelete(categoryEditItem.id)}
+                    className="rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-500 hover:bg-red-50"
+                  >
+                    削除
+                  </button>
+                )}
+                <button type="submit" disabled={categorySaving} className="admin-btn-primary px-4 py-2">
+                  {categorySaving ? "保存中..." : categoryEditItem ? "更新" : "追加"}
+                </button>
+              </div>
+            </div>
+          </form>
+        )}
+      </div>
+
+      <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+        {loading ? (
+          <div className="p-8 text-center">
+            <div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-orange-400 border-t-transparent" />
+          </div>
+        ) : items.length === 0 ? (
+          <div className="p-12 text-center text-slate-400">
+            <p className="text-sm">登録された事業項目がありません。</p>
+            {isAdmin && (
+              <button onClick={openNew} className="mt-3 text-sm font-semibold text-orange-500 hover:underline">
+                最初の項目を追加する →
+              </button>
+            )}
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-100 bg-slate-50">
+                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500">カテゴリ</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500">タイトル</th>
+                <th className="hidden px-5 py-3 text-left text-xs font-semibold text-slate-500 md:table-cell">이미지/첨부</th>
+                <th className="hidden px-5 py-3 text-left text-xs font-semibold text-slate-500 md:table-cell">日付</th>
+                <th className="px-5 py-3 text-right">
+                  {isAdmin && (
+                    <button onClick={openNew} className="admin-btn-primary inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs">
+                      <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      新規作成
+                    </button>
+                  )}
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {items.map((item) => (
+                <tr
+                  key={item.id}
+                  className="cursor-pointer hover:bg-slate-50"
+                  onClick={() => {
+                    setSelectedItem(item);
+                    setView("detail");
+                  }}
+                >
+                  <td className="px-5 py-3.5">
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
+                      {(() => {
+                        const categoryItem = categories.find((option) => option.slug === item.category);
+                        return categoryItem ? categoryItem.name : item.category;
+                      })()}
+                    </span>
+                  </td>
+                  <td className="px-5 py-3.5">
+                    <p className="max-w-xs truncate font-medium text-slate-900">{item.title}</p>
+                  </td>
+                  <td className="hidden px-5 py-3.5 md:table-cell">
+                    <span className="text-xs text-slate-500">
+                      {item.imageName ? "画像" : item.attachmentName ? item.attachmentName : "なし"}
+                    </span>
+                  </td>
+                  <td className="hidden px-5 py-3.5 md:table-cell">
+                    <span className="font-mono text-xs text-slate-400">{formatDate(item.createdAt)}</span>
+                  </td>
+                  <td className="px-5 py-3.5">
+                    {isAdmin ? (
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEdit(item);
+                          }}
+                          className="px-2 py-1 text-xs font-semibold text-slate-500 hover:text-orange-500"
+                        >
+                          編集
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(item.id);
+                          }}
+                          className="px-2 py-1 text-xs font-semibold text-red-400 hover:text-red-600"
+                        >
+                          削除
+                        </button>
                       </div>
                     ) : (
                       <div className="flex justify-end">
@@ -1249,12 +2018,10 @@ function PartnersTab() {
 
 export default function NoticePage() {
   const searchParams = useSearchParams();
-  const initialTab = searchParams.get("tab");
   const initialNoticeId = Number(searchParams.get("noticeId"));
-  const [activeTab, setActiveTab] = useState<NoticeTab>(
-    initialTab === "internal" || initialTab === "department" || initialTab === "website" || initialTab === "partners"
-      ? initialTab
-      : "website"
+  const initialTab = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState<"internal" | "department">(
+    initialTab === "department" ? "department" : "internal"
   );
 
   return (
@@ -1262,10 +2029,8 @@ export default function NoticePage() {
       <h2 className="text-lg font-bold text-slate-900">公示管理</h2>
       <TabBar active={activeTab} onChange={setActiveTab} />
       <div>
-        {activeTab === "website" && <WebsiteTab />}
         {activeTab === "internal" && <InternalTab />}
         {activeTab === "department" && <DepartmentTab initialNoticeId={Number.isNaN(initialNoticeId) ? null : initialNoticeId} />}
-        {activeTab === "partners" && <PartnersTab />}
       </div>
     </div>
   );

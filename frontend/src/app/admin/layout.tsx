@@ -29,6 +29,18 @@ const NAV_ITEMS = [
     ),
   },
   {
+    href: "/admin/website",
+    label: "ウェブサイト管理",
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+          d="M4 7a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V7z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+          d="M4 10h16M8 7h.01M12 7h.01M16 7h.01" />
+      </svg>
+    ),
+  },
+  {
     href: "/admin/leave",
     label: "休暇管理",
     icon: (

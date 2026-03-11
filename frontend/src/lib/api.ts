@@ -408,6 +408,32 @@ export type PartnerCardDto = {
   updatedAt: string;
 };
 
+export type ServiceCategoryDto = {
+  id: number;
+  slug: string;
+  name: string;
+  iconKey: string;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ServiceItemDto = {
+  id: number;
+  category: string;
+  title: string;
+  content: string;
+  videoName: string | null;
+  videoData: string | null;
+  linkUrl: string | null;
+  imageName: string | null;
+  imageData: string | null;
+  attachmentName: string | null;
+  attachmentData: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export async function fetchDeptNotices(department?: string): Promise<DeptNoticeDto[]> {
   const q = new URLSearchParams();
   if (department) q.set("department", department);
@@ -490,4 +516,116 @@ export async function deletePartnerCard(token: string, id: number): Promise<void
     headers: authHeaders(token),
   });
   if (!res.ok) throw new Error("Failed to delete partner card");
+}
+
+export async function fetchServiceItems(category?: string): Promise<ServiceItemDto[]> {
+  const q = new URLSearchParams();
+  if (category) q.set("category", category);
+  const res = await fetch(`${API_BASE}/api/v1/service-items?${q}`);
+  if (!res.ok) throw new Error("Failed to fetch service items");
+  return res.json();
+}
+
+export async function fetchServiceCategories(): Promise<ServiceCategoryDto[]> {
+  const res = await fetch(`${API_BASE}/api/v1/service-categories`);
+  if (!res.ok) throw new Error("Failed to fetch service categories");
+  return res.json();
+}
+
+export async function createServiceCategory(
+  token: string,
+  data: { name: string; iconKey: string }
+): Promise<ServiceCategoryDto> {
+  const res = await fetch(`${API_BASE}/api/v1/service-categories`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to create service category");
+  return res.json();
+}
+
+export async function updateServiceCategory(
+  token: string,
+  id: number,
+  data: { name: string; iconKey: string }
+): Promise<ServiceCategoryDto> {
+  const res = await fetch(`${API_BASE}/api/v1/service-categories/${id}`, {
+    method: "PUT",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to update service category");
+  return res.json();
+}
+
+export async function deleteServiceCategory(token: string, id: number): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/v1/service-categories/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(token),
+  });
+  if (!res.ok) throw new Error("Failed to delete service category");
+}
+
+export async function fetchServiceItemDetail(id: number): Promise<ServiceItemDto> {
+  const res = await fetch(`${API_BASE}/api/v1/service-items/${id}`);
+  if (!res.ok) throw new Error("Failed to fetch service item");
+  return res.json();
+}
+
+export async function createServiceItem(
+  token: string,
+  data: {
+    category: string;
+    title: string;
+    content: string;
+    videoName: string | null;
+    videoData: string | null;
+    linkUrl: string | null;
+    imageName: string | null;
+    imageData: string | null;
+    attachmentName: string | null;
+    attachmentData: string | null;
+  }
+): Promise<ServiceItemDto> {
+  const res = await fetch(`${API_BASE}/api/v1/service-items`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to create service item");
+  return res.json();
+}
+
+export async function updateServiceItem(
+  token: string,
+  id: number,
+  data: {
+    category: string;
+    title: string;
+    content: string;
+    videoName: string | null;
+    videoData: string | null;
+    linkUrl: string | null;
+    imageName: string | null;
+    imageData: string | null;
+    attachmentName: string | null;
+    attachmentData: string | null;
+  }
+): Promise<ServiceItemDto> {
+  const res = await fetch(`${API_BASE}/api/v1/service-items/${id}`, {
+    method: "PUT",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to update service item");
+  return res.json();
+}
+
+export async function deleteServiceItem(token: string, id: number): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/v1/service-items/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(token),
+  });
+  if (!res.ok) throw new Error("Failed to delete service item");
 }
