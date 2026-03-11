@@ -1,5 +1,6 @@
 package com.mountain.for_mountain.domain.serviceitem.controller;
 
+import com.mountain.for_mountain.domain.serviceitem.dto.ServiceItemOrderRequest;
 import com.mountain.for_mountain.domain.serviceitem.dto.ServiceItemRequest;
 import com.mountain.for_mountain.domain.serviceitem.dto.ServiceItemResponse;
 import com.mountain.for_mountain.domain.serviceitem.service.ServiceItemService;
@@ -48,6 +49,12 @@ public class ServiceItemController {
     @PutMapping("/{id}")
     public ResponseEntity<ServiceItemResponse> update(@PathVariable Long id, @Valid @RequestBody ServiceItemRequest request) {
         return ResponseEntity.ok(serviceItemService.update(id, request));
+    }
+
+    @Operation(summary = "Reorder service items", security = @SecurityRequirement(name = "bearerAuth"))
+    @PatchMapping("/order")
+    public ResponseEntity<List<ServiceItemResponse>> reorder(@Valid @RequestBody ServiceItemOrderRequest request) {
+        return ResponseEntity.ok(serviceItemService.reorder(request));
     }
 
     @Operation(summary = "Delete service item", security = @SecurityRequirement(name = "bearerAuth"))

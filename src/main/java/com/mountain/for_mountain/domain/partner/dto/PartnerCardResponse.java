@@ -10,6 +10,7 @@ public class PartnerCardResponse {
     private Long id;
     private String imageSrc;
     private String linkUrl;
+    private Integer sortOrder;
     private String createdAt;
     private String updatedAt;
 
@@ -18,6 +19,7 @@ public class PartnerCardResponse {
                 card.getId(),
                 card.getImageSrc(),
                 card.getLinkUrl(),
+                card.getSortOrder(),
                 card.getCreatedAt().toString(),
                 card.getUpdatedAt().toString()
         );

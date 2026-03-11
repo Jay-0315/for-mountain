@@ -25,15 +25,19 @@ public class PartnerCard {
     private String linkUrl;
 
     @Column(nullable = false)
+    private Integer sortOrder;
+
+    @Column(nullable = false)
     private LocalDateTime createdAt;
 
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    public static PartnerCard create(String imageSrc, String linkUrl) {
+    public static PartnerCard create(String imageSrc, String linkUrl, Integer sortOrder) {
         PartnerCard card = new PartnerCard();
         card.imageSrc = imageSrc;
         card.linkUrl = linkUrl;
+        card.sortOrder = sortOrder;
         card.createdAt = LocalDateTime.now();
         card.updatedAt = LocalDateTime.now();
         return card;
@@ -42,6 +46,11 @@ public class PartnerCard {
     public void update(String imageSrc, String linkUrl) {
         this.imageSrc = imageSrc;
         this.linkUrl = linkUrl;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void updateSortOrder(Integer sortOrder) {
+        this.sortOrder = sortOrder;
         this.updatedAt = LocalDateTime.now();
     }
 }

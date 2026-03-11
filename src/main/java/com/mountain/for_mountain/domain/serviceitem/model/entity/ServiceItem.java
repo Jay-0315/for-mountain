@@ -51,6 +51,9 @@ public class ServiceItem {
     private String attachmentData;
 
     @Column(nullable = false)
+    private Integer sortOrder;
+
+    @Column(nullable = false)
     private LocalDateTime createdAt;
 
     @Column(nullable = false)
@@ -66,7 +69,8 @@ public class ServiceItem {
             String imageName,
             String imageData,
             String attachmentName,
-            String attachmentData
+            String attachmentData,
+            Integer sortOrder
     ) {
         ServiceItem item = new ServiceItem();
         item.category = category;
@@ -79,6 +83,7 @@ public class ServiceItem {
         item.imageData = imageData;
         item.attachmentName = attachmentName;
         item.attachmentData = attachmentData;
+        item.sortOrder = sortOrder;
         item.createdAt = LocalDateTime.now();
         item.updatedAt = LocalDateTime.now();
         return item;
@@ -106,6 +111,11 @@ public class ServiceItem {
         this.imageData = imageData;
         this.attachmentName = attachmentName;
         this.attachmentData = attachmentData;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void updateSortOrder(Integer sortOrder) {
+        this.sortOrder = sortOrder;
         this.updatedAt = LocalDateTime.now();
     }
 }

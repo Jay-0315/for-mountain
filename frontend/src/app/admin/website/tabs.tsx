@@ -7,48 +7,35 @@ import {
   SERVICE_CATEGORY_ICON_OPTIONS,
   type ServiceCategoryIconKey,
 } from "@/components/ui/service-category-icons";
-import { useSearchParams } from "next/navigation";
-import { Suspense, useState, useEffect, useCallback, type ReactNode } from "react";
+import { useState, useEffect, useCallback, type ReactNode } from "react";
 import {
   fetchBoardList,
-  fetchDeptNotices,
-  fetchAnnouncements,
-  fetchEmployees,
   createBoardPost,
-  createAnnouncement,
-  createDeptNotice,
+  updateBoardPost,
+  deleteBoardPost,
+  type BoardPost,
   createPartnerCard,
+  updatePartnerCard,
+  deletePartnerCard,
+  reorderPartnerCards,
+  type PartnerCardDto,
   createServiceCategory,
   createServiceItem,
-  updateBoardPost,
-  updateAnnouncement,
-  updateDeptNotice,
-  updatePartnerCard,
   updateServiceCategory,
   updateServiceItem,
-  deleteBoardPost,
-  deleteAnnouncement,
-  deleteDeptNotice,
-  deletePartnerCard,
   deleteServiceCategory,
   deleteServiceItem,
-  type BoardPost,
-  type AnnouncementDto,
-  type DeptNoticeDto,
-  type EmployeeDto,
-  type PartnerCardDto,
+  reorderServiceItems,
   type ServiceCategoryDto,
   type ServiceItemDto,
   fetchPartnerCards,
   fetchServiceCategories,
   fetchServiceItems,
 } from "@/lib/api";
-import { DEPARTMENTS } from "../mock-data";
-import { getSessionPayload, getSessionRole } from "@/lib/session";
+import { getSessionRole } from "@/lib/session";
 import { isMockAdminSession } from "../mock-store";
 
 const WEBSITE_CATEGORIES = ["お知らせ", "会社", "採用", "製品"];
-const DEPT_OPTIONS = ["全部署", ...DEPARTMENTS] as const;
 type WebsiteView = "list" | "form" | "detail";
 type LocalView = "list" | "form" | "detail";
 
@@ -113,29 +100,6 @@ function NoticeDetail({
         </div>
         {actions && <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-100 bg-white">{actions}</div>}
       </div>
-    </div>
-  );
-}
-
-function TabBar({ active, onChange }: { active: "internal" | "department"; onChange: (t: "internal" | "department") => void }) {
-  const tabs: { key: "internal" | "department"; label: string }[] = [
-    { key: "internal", label: "社内全体お知らせ" },
-    { key: "department", label: "部署別お知らせ" },
-  ];
-
-  return (
-    <div className="flex gap-1 rounded-xl bg-slate-100 p-1 w-fit">
-      {tabs.map((t) => (
-        <button
-          key={t.key}
-          onClick={() => onChange(t.key)}
-          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap ${
-            active === t.key ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          {t.label}
-        </button>
-      ))}
     </div>
   );
 }
@@ -263,7 +227,35 @@ function WebsitePostForm({
   );
 }
 
-function WebsiteTab() {
+function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+      } else {
+        reject(new Error("ファイルの読み込みに失敗しました。"));
+      }
+    };
+    reader.onerror = () => reject(new Error("ファイルの読み込みに失敗しました。"));
+    reader.readAsDataURL(file);
+  });
+}
+
+function moveItem<T extends { id: number }>(items: T[], activeId: number, targetId: number) {
+  const currentIndex = items.findIndex((item) => item.id === activeId);
+  const targetIndex = items.findIndex((item) => item.id === targetId);
+  if (currentIndex === -1 || targetIndex === -1 || currentIndex === targetIndex) {
+    return items;
+  }
+
+  const nextItems = [...items];
+  const [moved] = nextItems.splice(currentIndex, 1);
+  nextItems.splice(targetIndex, 0, moved);
+  return nextItems;
+}
+
+export function WebsiteTab() {
   const [token] = useState(() => (typeof window === "undefined" ? "" : sessionStorage.getItem("admin_token") ?? ""));
   const isAdmin = hasAdminAccess(token);
   const [view, setView] = useState<WebsiteView>("list");
@@ -494,500 +486,7 @@ function WebsiteTab() {
   );
 }
 
-function InternalTab() {
-  const [token] = useState(() => (typeof window === "undefined" ? "" : sessionStorage.getItem("admin_token") ?? ""));
-  const isAdmin = hasAdminAccess(token);
-  const [announcements, setAnnouncements] = useState<AnnouncementDto[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<LocalView>("list");
-  const [editItem, setEditItem] = useState<AnnouncementDto | null>(null);
-  const [selectedItem, setSelectedItem] = useState<AnnouncementDto | null>(null);
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [author, setAuthor] = useState("");
-  const [pinned, setPinned] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      setAnnouncements(await fetchAnnouncements());
-    } catch {
-      setAnnouncements([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
-
-  const openNew = () => {
-    setEditItem(null);
-    setTitle("");
-    setContent("");
-    setAuthor("");
-    setPinned(false);
-    setError("");
-    setView("form");
-  };
-
-  const openEdit = (item: AnnouncementDto) => {
-    setEditItem(item);
-    setTitle(item.title);
-    setContent(item.content);
-    setAuthor(item.author);
-    setPinned(item.pinned);
-    setError("");
-    setView("form");
-  };
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setSaving(true);
-    try {
-      if (editItem) {
-        const updated = await updateAnnouncement(token, editItem.id, { title, content, author, pinned });
-        setAnnouncements((prev) => prev.map((a) => (a.id === editItem.id ? updated : a)));
-        setSelectedItem(updated);
-      } else {
-        const created = await createAnnouncement(token, { title, content, author, pinned });
-        setAnnouncements((prev) => [created, ...prev]);
-        setSelectedItem(created);
-      }
-      setView("detail");
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "保存に失敗しました。");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDelete = async (id: number) => {
-    if (!confirm("このお知らせを削除しますか？")) return;
-    try {
-      await deleteAnnouncement(token, id);
-      setAnnouncements((prev) => prev.filter((a) => a.id !== id));
-    } catch {
-      alert("削除に失敗しました。");
-    }
-  };
-
-  if (view === "form") {
-    return (
-      <div className="max-w-3xl space-y-6">
-        <div className="flex items-center gap-3">
-          <button onClick={() => setView("list")} className="p-1.5 text-slate-400 hover:text-slate-900">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <h3 className="text-base font-semibold text-slate-900">{editItem ? "お知らせを編集" : "新規お知らせを作成"}</h3>
-        </div>
-        <form onSubmit={handleSave} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">タイトル</label>
-            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} required placeholder="お知らせのタイトルを入力" className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder:text-slate-300 text-sm" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">作成者</label>
-            <input type="text" value={author} onChange={(e) => setAuthor(e.target.value)} required placeholder="管理部" className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder:text-slate-300 text-sm" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">本文</label>
-            <textarea value={content} onChange={(e) => setContent(e.target.value)} required rows={10} placeholder="お知らせの内容を入力してください。" className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder:text-slate-300 text-sm resize-none leading-relaxed" />
-          </div>
-          <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input type="checkbox" checked={pinned} onChange={(e) => setPinned(e.target.checked)} className="w-4 h-4 accent-orange-500" />
-            <span className="text-sm text-slate-700">トップに固定する</span>
-          </label>
-          {error && <p className="text-red-500 text-xs bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
-          <div className="flex gap-3 justify-end">
-            <button type="button" onClick={() => setView("list")} className="px-5 py-2.5 text-sm font-semibold text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50">キャンセル</button>
-            <button type="submit" disabled={saving} className="admin-btn-primary px-5 py-2.5">{saving ? "保存中..." : editItem ? "更新する" : "投稿する"}</button>
-          </div>
-        </form>
-      </div>
-    );
-  }
-
-  if (view === "detail" && selectedItem) {
-    return (
-      <NoticeDetail
-        badge={selectedItem.pinned ? "固定お知らせ" : "社内お知らせ"}
-        title={selectedItem.title}
-        content={selectedItem.content}
-        author={selectedItem.author}
-        createdAt={selectedItem.createdAt}
-        onBack={() => setView("list")}
-        actions={isAdmin ? (
-          <>
-            <button onClick={() => openEdit(selectedItem)} className="px-4 py-2 text-sm font-semibold text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50">
-              編集
-            </button>
-            <button
-              onClick={async () => {
-                await handleDelete(selectedItem.id);
-                setSelectedItem(null);
-                setView("list");
-              }}
-              className="px-4 py-2 text-sm font-semibold text-red-500 border border-red-200 rounded-xl hover:bg-red-50"
-            >
-              削除
-            </button>
-          </>
-        ) : undefined}
-      />
-    );
-  }
-
-  const sorted = [...announcements].sort((a, b) => {
-    if (a.pinned && !b.pinned) return -1;
-    if (!a.pinned && b.pinned) return 1;
-    return b.createdAt.localeCompare(a.createdAt);
-  });
-
-  return (
-    <div className="space-y-4">
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-        {loading ? (
-          <div className="p-8 text-center">
-            <div className="w-6 h-6 border-2 border-orange-400 border-t-transparent rounded-full animate-spin mx-auto" />
-          </div>
-        ) : sorted.length === 0 ? (
-          <p className="p-12 text-center text-sm text-slate-400">お知らせがありません。</p>
-        ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-100 bg-slate-50">
-                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500">タイトル</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 hidden sm:table-cell">作成者</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 hidden md:table-cell">日付</th>
-                <th className="px-5 py-3 text-right">
-                  {isAdmin && (
-                    <button onClick={openNew} className="admin-btn-primary inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs">
-                      <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                      </svg>
-                      新規作成
-                    </button>
-                  )}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {sorted.map((item) => (
-                <tr key={item.id} className="hover:bg-slate-50">
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-2">
-                      {item.pinned && <span className="text-xs px-1.5 py-0.5 bg-orange-100 text-orange-600 rounded font-semibold shrink-0">固定</span>}
-                      <button
-                        onClick={() => {
-                          setSelectedItem(item);
-                          setView("detail");
-                        }}
-                        className="text-left text-slate-900 font-medium truncate max-w-xs hover:text-orange-500"
-                      >
-                        {item.title}
-                      </button>
-                    </div>
-                  </td>
-                  <td className="px-5 py-3.5 hidden sm:table-cell">
-                    <span className="text-slate-500 text-xs">{item.author}</span>
-                  </td>
-                  <td className="px-5 py-3.5 hidden md:table-cell">
-                    <span className="text-slate-400 text-xs font-mono">{formatDate(item.createdAt)}</span>
-                  </td>
-                  <td className="px-5 py-3.5">
-                    {isAdmin ? (
-                      <div className="flex items-center gap-2 justify-end">
-                        <button onClick={() => openEdit(item)} className="text-xs font-semibold text-slate-500 hover:text-orange-500 px-2 py-1">編集</button>
-                        <button onClick={() => handleDelete(item.id)} className="text-xs font-semibold text-red-400 hover:text-red-600 px-2 py-1">削除</button>
-                      </div>
-                    ) : (
-                      <div className="flex justify-end">
-                        <span className="px-2 py-1 text-xs text-slate-300">-</span>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function DepartmentTab({ initialNoticeId }: { initialNoticeId: number | null }) {
-  const [token] = useState(() => (typeof window === "undefined" ? "" : sessionStorage.getItem("admin_token") ?? ""));
-  const isAdmin = hasAdminAccess(token);
-  const [items, setItems] = useState<DeptNoticeDto[]>([]);
-  const [currentEmployee, setCurrentEmployee] = useState<EmployeeDto | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<LocalView>("list");
-  const [editItem, setEditItem] = useState<DeptNoticeDto | null>(null);
-  const [selectedItem, setSelectedItem] = useState<DeptNoticeDto | null>(null);
-  const [department, setDepartment] = useState<string>("全部署");
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [author, setAuthor] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [notices, employees] = await Promise.all([
-        fetchDeptNotices(),
-        fetchEmployees().catch(() => [] as EmployeeDto[]),
-      ]);
-      const subject = getSessionPayload(token).sub;
-      const employee = employees.find((item) => item.employeeNumber === subject) ?? null;
-      setCurrentEmployee(employee);
-      setItems(notices);
-    } catch {
-      setItems([]);
-      setCurrentEmployee(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [token]);
-
-  useEffect(() => { load(); }, [load]);
-
-  useEffect(() => {
-    if (!initialNoticeId || items.length === 0) return;
-    const matched = items.find((item) => item.id === initialNoticeId);
-    if (!matched) return;
-    setSelectedItem(matched);
-    setView("detail");
-  }, [initialNoticeId, items]);
-
-  const openNew = () => {
-    setEditItem(null);
-    setDepartment("全部署");
-    setTitle("");
-    setContent("");
-    setAuthor("");
-    setError("");
-    setView("form");
-  };
-
-  const openEdit = (item: DeptNoticeDto) => {
-    setEditItem(item);
-    setDepartment(item.department);
-    setTitle(item.title);
-    setContent(item.content);
-    setAuthor(item.author);
-    setError("");
-    setView("form");
-  };
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setSaving(true);
-    try {
-      const payload = { department, title, content, author };
-      if (editItem) {
-        const updated = await updateDeptNotice(token, editItem.id, payload);
-        setItems((prev) => prev.map((item) => (item.id === editItem.id ? updated : item)));
-        setSelectedItem(updated);
-      } else {
-        const created = await createDeptNotice(token, payload);
-        setItems((prev) => [created, ...prev]);
-        setSelectedItem(created);
-      }
-      setView("detail");
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "保存に失敗しました。");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDelete = async (id: number) => {
-    if (!confirm("この部署別お知らせを削除しますか？")) return;
-    try {
-      await deleteDeptNotice(token, id);
-      setItems((prev) => prev.filter((item) => item.id !== id));
-    } catch {
-      alert("削除に失敗しました。");
-    }
-  };
-
-  const filtered = isAdmin
-    ? items
-    : items.filter((item) => item.department === currentEmployee?.department);
-  const sorted = [...filtered].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-
-  if (view === "form") {
-    return (
-      <div className="max-w-3xl space-y-6">
-        <div className="flex items-center gap-3">
-          <button onClick={() => setView("list")} className="p-1.5 text-slate-400 hover:text-slate-900">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <h3 className="text-base font-semibold text-slate-900">{editItem ? "部署別お知らせを編集" : "部署別お知らせを作成"}</h3>
-        </div>
-        <form onSubmit={handleSave} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">公開部署</label>
-            <select value={department} onChange={(e) => setDepartment(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm">
-              {(isAdmin ? DEPT_OPTIONS : ([currentEmployee?.department ?? ""] as const)).map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">タイトル</label>
-            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} required placeholder="部署別お知らせのタイトルを入力" className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder:text-slate-300 text-sm" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">作成者</label>
-            <input type="text" value={author} onChange={(e) => setAuthor(e.target.value)} required placeholder="グループ長または管理者" className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder:text-slate-300 text-sm" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">本文</label>
-            <textarea value={content} onChange={(e) => setContent(e.target.value)} required rows={10} placeholder="部署ごとに共有する内容を入力してください。" className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder:text-slate-300 text-sm resize-none leading-relaxed" />
-          </div>
-          {error && <p className="text-red-500 text-xs bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
-          <div className="flex gap-3 justify-end">
-            <button type="button" onClick={() => setView("list")} className="px-5 py-2.5 text-sm font-semibold text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50">キャンセル</button>
-            <button type="submit" disabled={saving} className="admin-btn-primary px-5 py-2.5">{saving ? "保存中..." : editItem ? "更新する" : "投稿する"}</button>
-          </div>
-        </form>
-      </div>
-    );
-  }
-
-  if (view === "detail" && selectedItem) {
-    return (
-      <NoticeDetail
-        badge={selectedItem.department}
-        title={selectedItem.title}
-        content={selectedItem.content}
-        author={selectedItem.author}
-        createdAt={selectedItem.createdAt}
-        onBack={() => setView("list")}
-        actions={isAdmin ? (
-          <>
-            <button onClick={() => openEdit(selectedItem)} className="px-4 py-2 text-sm font-semibold text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50">
-              編集
-            </button>
-            <button
-              onClick={async () => {
-                await handleDelete(selectedItem.id);
-                setSelectedItem(null);
-                setView("list");
-              }}
-              className="px-4 py-2 text-sm font-semibold text-red-500 border border-red-200 rounded-xl hover:bg-red-50"
-            >
-              削除
-            </button>
-          </>
-        ) : undefined}
-      />
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-        {loading ? (
-          <div className="p-8 text-center">
-            <div className="w-6 h-6 border-2 border-orange-400 border-t-transparent rounded-full animate-spin mx-auto" />
-          </div>
-        ) : sorted.length === 0 ? (
-          <p className="p-12 text-center text-sm text-slate-400">部署別お知らせがありません。</p>
-        ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-100 bg-slate-50">
-                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 w-28">部署</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500">タイトル</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 hidden sm:table-cell">作成者</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 hidden md:table-cell">日付</th>
-                <th className="px-5 py-3 text-right">
-                  {isAdmin && (
-                    <button onClick={openNew} className="admin-btn-primary inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs">
-                      <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                      </svg>
-                      新規作成
-                    </button>
-                  )}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {sorted.map((item) => (
-                <tr key={item.id} className="hover:bg-slate-50">
-                  <td className="px-5 py-3.5">
-                    <span className="text-xs px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full font-medium">{item.department}</span>
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <button
-                      onClick={() => {
-                        setSelectedItem(item);
-                        setView("detail");
-                      }}
-                      className="text-left text-slate-900 font-medium truncate max-w-xs hover:text-orange-500"
-                    >
-                      {item.title}
-                    </button>
-                  </td>
-                  <td className="px-5 py-3.5 hidden sm:table-cell">
-                    <span className="text-slate-500 text-xs">{item.author}</span>
-                  </td>
-                  <td className="px-5 py-3.5 hidden md:table-cell">
-                    <span className="text-slate-400 text-xs font-mono">{formatDate(item.createdAt)}</span>
-                  </td>
-                  <td className="px-5 py-3.5">
-                    {isAdmin ? (
-                      <div className="flex items-center gap-2 justify-end">
-                        <button onClick={() => openEdit(item)} className="text-xs font-semibold text-slate-500 hover:text-orange-500 px-2 py-1">編集</button>
-                        <button onClick={() => handleDelete(item.id)} className="text-xs font-semibold text-red-400 hover:text-red-600 px-2 py-1">削除</button>
-                      </div>
-                    ) : (
-                      <div className="flex justify-end">
-                        <span className="px-2 py-1 text-xs text-slate-300">-</span>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function readFileAsDataUrl(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        resolve(reader.result);
-      } else {
-        reject(new Error("画像の読み込みに失敗しました。"));
-      }
-    };
-    reader.onerror = () => reject(new Error("画像の読み込みに失敗しました。"));
-    reader.readAsDataURL(file);
-  });
-}
-
-function PartnersTab() {
+export function PartnersTab() {
   const [token] = useState(() => (typeof window === "undefined" ? "" : sessionStorage.getItem("admin_token") ?? ""));
   const isAdmin = hasAdminAccess(token);
   const [view, setView] = useState<LocalView>("list");
@@ -1000,6 +499,8 @@ function PartnersTab() {
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [draggingId, setDraggingId] = useState<number | null>(null);
+  const [reordering, setReordering] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -1089,6 +590,23 @@ function PartnersTab() {
       setItems((prev) => prev.filter((item) => item.id !== id));
     } catch {
       alert("削除に失敗しました。");
+    }
+  };
+
+  const handleReorder = async (activeId: number, targetId: number) => {
+    if (!isAdmin || activeId === targetId) return;
+    const nextItems = moveItem(items, activeId, targetId);
+    setItems(nextItems);
+    setReordering(true);
+    try {
+      const ordered = await reorderPartnerCards(token, nextItems.map((item) => item.id));
+      setItems(ordered);
+    } catch {
+      setItems(items);
+      alert("順番の保存に失敗しました。");
+    } finally {
+      setReordering(false);
+      setDraggingId(null);
     }
   };
 
@@ -1206,6 +724,9 @@ function PartnersTab() {
 
   return (
     <div className="space-y-4">
+      {isAdmin && (
+        <p className="text-xs text-slate-400">ドラッグして表示順を変更できます。</p>
+      )}
       <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
         {loading ? (
           <div className="p-8 text-center">
@@ -1224,6 +745,7 @@ function PartnersTab() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50">
+                <th className="w-12 px-3 py-3 text-left text-xs font-semibold text-slate-500">順番</th>
                 <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500">画像</th>
                 <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500">リンク</th>
                 <th className="hidden px-5 py-3 text-left text-xs font-semibold text-slate-500 md:table-cell">登録日</th>
@@ -1243,12 +765,31 @@ function PartnersTab() {
               {items.map((item) => (
                 <tr
                   key={item.id}
-                  className="cursor-pointer hover:bg-slate-50"
+                  draggable={isAdmin}
+                  onDragStart={() => setDraggingId(item.id)}
+                  onDragOver={(e) => {
+                    if (!isAdmin) return;
+                    e.preventDefault();
+                  }}
+                  onDrop={() => {
+                    if (draggingId !== null) {
+                      void handleReorder(draggingId, item.id);
+                    }
+                  }}
+                  onDragEnd={() => setDraggingId(null)}
+                  className={`cursor-pointer hover:bg-slate-50 ${draggingId === item.id ? "opacity-50" : ""} ${reordering ? "pointer-events-none" : ""}`}
                   onClick={() => {
                     setSelectedItem(item);
                     setView("detail");
                   }}
                 >
+                  <td className="px-3 py-3.5">
+                    <div className="flex items-center justify-center text-slate-300">
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01" />
+                      </svg>
+                    </div>
+                  </td>
                   <td className="px-5 py-3.5">
                     <div className="overflow-hidden rounded-xl border border-slate-100">
                       <Image src={item.imageSrc} alt="Partner card thumbnail" width={112} height={64} unoptimized className="h-16 w-28 object-cover" />
@@ -1298,7 +839,7 @@ function PartnersTab() {
   );
 }
 
-function ServiceItemsTab() {
+export function ServiceItemsTab() {
   const [token] = useState(() => (typeof window === "undefined" ? "" : sessionStorage.getItem("admin_token") ?? ""));
   const isAdmin = hasAdminAccess(token);
   const [view, setView] = useState<LocalView>("list");
@@ -1324,6 +865,8 @@ function ServiceItemsTab() {
   const [categoryIconKey, setCategoryIconKey] = useState<ServiceCategoryIconKey>("grid");
   const [categoryEditItem, setCategoryEditItem] = useState<ServiceCategoryDto | null>(null);
   const [categorySaving, setCategorySaving] = useState(false);
+  const [draggingId, setDraggingId] = useState<number | null>(null);
+  const [reordering, setReordering] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -1537,6 +1080,23 @@ function ServiceItemsTab() {
       setItems((prev) => prev.filter((item) => item.id !== id));
     } catch {
       alert("削除に失敗しました。");
+    }
+  };
+
+  const handleReorder = async (activeId: number, targetId: number) => {
+    if (!isAdmin || activeId === targetId) return;
+    const nextItems = moveItem(items, activeId, targetId);
+    setItems(nextItems);
+    setReordering(true);
+    try {
+      const ordered = await reorderServiceItems(token, nextItems.map((item) => item.id));
+      setItems(ordered);
+    } catch {
+      setItems(items);
+      alert("順番の保存に失敗しました。");
+    } finally {
+      setReordering(false);
+      setDraggingId(null);
     }
   };
 
@@ -1824,6 +1384,9 @@ function ServiceItemsTab() {
 
   return (
     <div className="space-y-4">
+      {isAdmin && (
+        <p className="text-xs text-slate-400">ドラッグして表示順を変更できます。</p>
+      )}
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
           <div className="border-b border-slate-100 bg-slate-50 px-5 py-4">
@@ -1934,6 +1497,7 @@ function ServiceItemsTab() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50">
+                <th className="w-12 px-3 py-3 text-left text-xs font-semibold text-slate-500">順番</th>
                 <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500">カテゴリ</th>
                 <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500">タイトル</th>
                 <th className="hidden px-5 py-3 text-left text-xs font-semibold text-slate-500 md:table-cell">이미지/첨부</th>
@@ -1954,12 +1518,31 @@ function ServiceItemsTab() {
               {items.map((item) => (
                 <tr
                   key={item.id}
-                  className="cursor-pointer hover:bg-slate-50"
+                  draggable={isAdmin}
+                  onDragStart={() => setDraggingId(item.id)}
+                  onDragOver={(e) => {
+                    if (!isAdmin) return;
+                    e.preventDefault();
+                  }}
+                  onDrop={() => {
+                    if (draggingId !== null) {
+                      void handleReorder(draggingId, item.id);
+                    }
+                  }}
+                  onDragEnd={() => setDraggingId(null)}
+                  className={`cursor-pointer hover:bg-slate-50 ${draggingId === item.id ? "opacity-50" : ""} ${reordering ? "pointer-events-none" : ""}`}
                   onClick={() => {
                     setSelectedItem(item);
                     setView("detail");
                   }}
                 >
+                  <td className="px-3 py-3.5">
+                    <div className="flex items-center justify-center text-slate-300">
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01" />
+                      </svg>
+                    </div>
+                  </td>
                   <td className="px-5 py-3.5">
                     <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
                       {(() => {
@@ -2014,33 +1597,5 @@ function ServiceItemsTab() {
         )}
       </div>
     </div>
-  );
-}
-
-function NoticePageContent() {
-  const searchParams = useSearchParams();
-  const initialNoticeId = Number(searchParams.get("noticeId"));
-  const initialTab = searchParams.get("tab");
-  const [activeTab, setActiveTab] = useState<"internal" | "department">(
-    initialTab === "department" ? "department" : "internal"
-  );
-
-  return (
-    <div className="max-w-5xl space-y-5">
-      <h2 className="text-lg font-bold text-slate-900">お知らせ管理</h2>
-      <TabBar active={activeTab} onChange={setActiveTab} />
-      <div>
-        {activeTab === "internal" && <InternalTab />}
-        {activeTab === "department" && <DepartmentTab initialNoticeId={Number.isNaN(initialNoticeId) ? null : initialNoticeId} />}
-      </div>
-    </div>
-  );
-}
-
-export default function NoticePage() {
-  return (
-    <Suspense fallback={<div className="max-w-5xl space-y-5"><h2 className="text-lg font-bold text-slate-900">お知らせ管理</h2></div>}>
-      <NoticePageContent />
-    </Suspense>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect, useCallback } from "react";
+import { Suspense, useState, useEffect, useCallback } from "react";
 import {
   cancelLeave,
   createLeave,
@@ -19,8 +19,32 @@ const STATUS_COLOR: Record<string, string> = {
   否認:   "bg-red-100 text-red-600",
 };
 
-const LEAVE_TYPES = ["有給休暇", "慶弔休暇", "病気休暇", "無給休暇"] as const;
-type LeaveType = typeof LEAVE_TYPES[number];
+const LEAVE_TYPES = [
+  "月次勤務実績申請",
+  "日次勤務実績申請",
+  "シフト申請",
+  "有給（事前申請）",
+  "有給（事後申請）",
+  "半日有給 午前（事前申請）",
+  "半日有給 午後（事前申請）",
+  "公休（事前申請）",
+  "公休（事後申請）",
+  "半日 公休 午前（事前申請）",
+  "半日 公休 午後（事前申請）",
+  "遅刻（事前申請）",
+  "遅刻（事後申請）",
+  "代休（事前申請）",
+  "代休（事後申請）",
+  "通常残業（事前申請）",
+  "通常残業（事後申請）",
+  "深夜残業（事前申請）",
+  "深夜残業（事後申請）",
+  "休日出勤（事前申請）",
+  "休日出勤（事後申請）",
+  "出張（事前申請）",
+  "出張（事後申請）",
+] as const;
+type LeaveType = "" | (typeof LEAVE_TYPES)[number];
 type FilterStatus = "すべて" | "待機中" | "承認" | "否認";
 type PageView = "list" | "apply";
 const CANCELLABLE_STATUSES = new Set<LeaveDto["status"]>(["待機中", "否認"]);
@@ -51,7 +75,7 @@ function ApplyForm({
   initialEndDate?: string;
 }) {
   const [token]                     = useState(() => (typeof window === "undefined" ? "" : sessionStorage.getItem("admin_token") ?? ""));
-  const [leaveType, setLeaveType]   = useState<LeaveType>("有給休暇");
+  const [leaveType, setLeaveType]   = useState<LeaveType>("");
   const [startDate, setStartDate]   = useState(initialStartDate ?? "");
   const [endDate, setEndDate]       = useState(initialEndDate ?? initialStartDate ?? "");
   const [reason, setReason]         = useState("");
@@ -65,6 +89,7 @@ function ApplyForm({
     e.preventDefault();
     setError("");
     if (!employee) { setError("現在のログイン情報に紐づく社員情報がありません。"); return; }
+    if (!leaveType) { setError("休暇種類を選択してください。"); return; }
     if (startDate < today) { setError("開始日は本日以降を選択してください。"); return; }
     if (endDate < startDate) { setError("終了日は開始日以降にしてください。"); return; }
 
@@ -106,16 +131,20 @@ function ApplyForm({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">休暇種類</label>
-          <div className="flex flex-wrap gap-2">
-            {LEAVE_TYPES.map((t) => (
-              <button key={t} type="button" onClick={() => setLeaveType(t)}
-                className={`px-4 py-1.5 rounded-full text-sm font-semibold border transition-colors
-                  ${leaveType === t ? "bg-green-500 text-white border-green-500" : "text-slate-500 border-slate-200 hover:border-green-300 hover:text-green-600"}`}>
-                {t}
-              </button>
+          <label className="block text-sm font-medium text-slate-700 mb-1.5">休暇種類</label>
+          <select
+            value={leaveType}
+            onChange={(e) => setLeaveType(e.target.value as LeaveType)}
+            required
+            className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400"
+          >
+            <option value="">選択ください</option>
+            {LEAVE_TYPES.map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
             ))}
-          </div>
+          </select>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -167,7 +196,7 @@ function ApplyForm({
   );
 }
 
-export default function LeavePage() {
+function LeavePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [records, setRecords]           = useState<LeaveDto[]>([]);
@@ -422,5 +451,13 @@ export default function LeavePage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function LeavePage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-[360px] items-center justify-center"><div className="h-7 w-7 rounded-full border-2 border-orange-400 border-t-transparent animate-spin" /></div>}>
+      <LeavePageContent />
+    </Suspense>
   );
 }

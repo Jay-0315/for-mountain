@@ -18,6 +18,7 @@ public class ServiceItemResponse {
     private String imageData;
     private String attachmentName;
     private String attachmentData;
+    private Integer sortOrder;
     private String createdAt;
     private String updatedAt;
 
@@ -34,6 +35,7 @@ public class ServiceItemResponse {
                 item.getImageData(),
                 item.getAttachmentName(),
                 item.getAttachmentData(),
+                item.getSortOrder(),
                 item.getCreatedAt().toString(),
                 item.getUpdatedAt().toString()
         );

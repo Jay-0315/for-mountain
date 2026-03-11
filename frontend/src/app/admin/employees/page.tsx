@@ -184,7 +184,7 @@ export default function EmployeesPage() {
   const [statusFilter, setStatusFilter] = useState<FilterStatus>("すべて");
   const [deptFilter, setDeptFilter] = useState<FilterDept>("すべて");
   const [search, setSearch]         = useState("");
-  const [modalEmployee, setModalEmployee] = useState<Employee | null | undefined>(undefined);
+  const [modalEmployee, setModalEmployee] = useState<EmployeeDto | null | undefined>(undefined);
   const isAdmin = getSessionRole(token) === "ADMIN";
 
   const load = useCallback(async () => {

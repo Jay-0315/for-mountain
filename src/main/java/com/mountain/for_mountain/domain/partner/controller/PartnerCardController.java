@@ -1,5 +1,6 @@
 package com.mountain.for_mountain.domain.partner.controller;
 
+import com.mountain.for_mountain.domain.partner.dto.PartnerCardOrderRequest;
 import com.mountain.for_mountain.domain.partner.dto.PartnerCardRequest;
 import com.mountain.for_mountain.domain.partner.dto.PartnerCardResponse;
 import com.mountain.for_mountain.domain.partner.service.PartnerCardService;
@@ -38,6 +39,12 @@ public class PartnerCardController {
     @PutMapping("/{id}")
     public ResponseEntity<PartnerCardResponse> update(@PathVariable Long id, @Valid @RequestBody PartnerCardRequest request) {
         return ResponseEntity.ok(partnerCardService.update(id, request));
+    }
+
+    @Operation(summary = "Reorder partner cards", security = @SecurityRequirement(name = "bearerAuth"))
+    @PatchMapping("/order")
+    public ResponseEntity<List<PartnerCardResponse>> reorder(@Valid @RequestBody PartnerCardOrderRequest request) {
+        return ResponseEntity.ok(partnerCardService.reorder(request));
     }
 
     @Operation(summary = "Delete partner card", security = @SecurityRequirement(name = "bearerAuth"))

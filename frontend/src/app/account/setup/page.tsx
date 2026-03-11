@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { setupInitialPassword } from "@/lib/api";
 
-export default function AccountSetupPage() {
+function AccountSetupPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -124,5 +124,13 @@ export default function AccountSetupPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function AccountSetupPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-50" />}>
+      <AccountSetupPageContent />
+    </Suspense>
   );
 }

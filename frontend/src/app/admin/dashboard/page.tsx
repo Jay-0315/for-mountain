@@ -22,7 +22,7 @@ const NOTICE_PARENT_MAP: Partial<Record<Department, Department>> = {
   "開発 Part2": "技術グループ2",
 };
 const WEEK_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
-const LEAVE_BADGE: Record<LeaveRequest["status"], string> = {
+const LEAVE_BADGE: Record<LeaveDto["status"], string> = {
   "待機中": "bg-yellow-100 text-yellow-700 ring-yellow-200",
   "承認": "bg-green-100 text-green-700 ring-green-200",
   "否認": "bg-red-100 text-red-600 ring-red-200",
@@ -165,16 +165,16 @@ function parseJwtPayload(token: string) {
 
 function resolveViewer(employees: EmployeeDto[]) {
   if (typeof window === "undefined") {
-    return { employee: null as Employee | null, canViewAll: true, tokenRole: "ADMIN", subject: null as string | null };
+    return { employee: null as EmployeeDto | null, canViewAll: true, tokenRole: "ADMIN", subject: null as string | null };
   }
 
   const token = window.sessionStorage.getItem("admin_token");
   if (!token) {
-    return { employee: null as Employee | null, canViewAll: false, tokenRole: null as string | null, subject: null as string | null };
+    return { employee: null as EmployeeDto | null, canViewAll: false, tokenRole: null as string | null, subject: null as string | null };
   }
 
   if (isMockAdminSession(token)) {
-    return { employee: null as Employee | null, canViewAll: true, tokenRole: "ADMIN", subject: "demo" };
+    return { employee: null as EmployeeDto | null, canViewAll: true, tokenRole: "ADMIN", subject: "demo" };
   }
 
   const payload = parseJwtPayload(token);
@@ -208,7 +208,7 @@ function buildCalendarDays(baseMonth: Date) {
   return days;
 }
 
-function leaveIncludesDate(leave: LeaveRequest, dateKey: string) {
+function leaveIncludesDate(leave: LeaveDto, dateKey: string) {
   return leave.startDate <= dateKey && leave.endDate >= dateKey;
 }
 
@@ -230,12 +230,14 @@ function CalendarDetailModal({
   leaves,
   onClose,
   onApplyLeave,
+  onOpenLeaveDetail,
 }: {
   day: Date;
   birthdays: EmployeeDto[];
   leaves: LeaveDto[];
   onClose: () => void;
   onApplyLeave: () => void;
+  onOpenLeaveDetail: (leaveId: number) => void;
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
@@ -280,15 +282,17 @@ function CalendarDetailModal({
             ) : (
               <div className="mt-3 space-y-2">
                 {leaves.map((leave) => (
-                  <div
+                  <button
                     key={`${leave.id}-${leave.startDate}`}
-                    className={`rounded-xl px-4 py-3 text-sm ring-1 ${LEAVE_BADGE[leave.status] ?? "bg-slate-100 text-slate-600 ring-slate-200"}`}
+                    type="button"
+                    onClick={() => onOpenLeaveDetail(leave.id)}
+                    className={`w-full rounded-xl px-4 py-3 text-left text-sm ring-1 ${LEAVE_BADGE[leave.status] ?? "bg-slate-100 text-slate-600 ring-slate-200"}`}
                   >
                     <p className="font-semibold">{leave.employeeName}</p>
                     <p className="mt-1 text-xs">
                       {leave.department} · {leave.leaveType} · {leave.status}
                     </p>
-                  </div>
+                  </button>
                 ))}
               </div>
             )}
@@ -414,7 +418,7 @@ export default function DashboardPage() {
     const allowedDepartments = viewer.canViewAll
       ? effectiveDepartment === "全部門"
         ? null
-        : new Set<Department | "全部署">([effectiveDepartment, "全部署"])
+        : new Set<Department | "全部署">([effectiveDepartment as Department, "全部署"])
       : new Set<Department>(getVisibleNoticeDepartments(viewer.employee?.department as Department | undefined));
 
     const filtered = deptNotices.filter((notice) => (allowedDepartments ? allowedDepartments.has(notice.department) : true));
@@ -443,6 +447,10 @@ export default function DashboardPage() {
             const dayKey = formatDay(selectedDay);
             setSelectedDay(null);
             router.push(`/admin/leave?view=apply&startDate=${dayKey}&endDate=${dayKey}`);
+          }}
+          onOpenLeaveDetail={(leaveId) => {
+            setSelectedDay(null);
+            router.push(`/admin/leave/${leaveId}`);
           }}
         />
       )}
@@ -961,14 +969,14 @@ export default function DashboardPage() {
 
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-slate-900">部署別公知</h3>
+            <h3 className="text-sm font-semibold text-slate-900">部署別お知らせ</h3>
           <a href="/admin/notice" className="text-xs text-orange-500 hover:underline font-medium">
-            公知管理へ →
+            お知らせ管理へ →
           </a>
         </div>
         <div className="divide-y divide-slate-50">
           {visibleDeptNotices.length === 0 ? (
-            <p className="px-5 py-10 text-center text-sm text-slate-400">表示できる部署別公知がありません。</p>
+            <p className="px-5 py-10 text-center text-sm text-slate-400">表示できる部署別お知らせがありません。</p>
           ) : (
             visibleDeptNotices.map((notice: DeptNotice) => (
               <a

@@ -404,6 +404,7 @@ export type PartnerCardDto = {
   id: number;
   imageSrc: string;
   linkUrl: string;
+  sortOrder: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -430,6 +431,7 @@ export type ServiceItemDto = {
   imageData: string | null;
   attachmentName: string | null;
   attachmentData: string | null;
+  sortOrder: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -516,6 +518,16 @@ export async function deletePartnerCard(token: string, id: number): Promise<void
     headers: authHeaders(token),
   });
   if (!res.ok) throw new Error("Failed to delete partner card");
+}
+
+export async function reorderPartnerCards(token: string, orderedIds: number[]): Promise<PartnerCardDto[]> {
+  const res = await fetch(`${API_BASE}/api/v1/partner-cards/order`, {
+    method: "PATCH",
+    headers: authHeaders(token),
+    body: JSON.stringify({ orderedIds }),
+  });
+  if (!res.ok) throw new Error("Failed to reorder partner cards");
+  return res.json();
 }
 
 export async function fetchServiceItems(category?: string): Promise<ServiceItemDto[]> {
@@ -628,4 +640,14 @@ export async function deleteServiceItem(token: string, id: number): Promise<void
     headers: authHeaders(token),
   });
   if (!res.ok) throw new Error("Failed to delete service item");
+}
+
+export async function reorderServiceItems(token: string, orderedIds: number[]): Promise<ServiceItemDto[]> {
+  const res = await fetch(`${API_BASE}/api/v1/service-items/order`, {
+    method: "PATCH",
+    headers: authHeaders(token),
+    body: JSON.stringify({ orderedIds }),
+  });
+  if (!res.ok) throw new Error("Failed to reorder service items");
+  return res.json();
 }

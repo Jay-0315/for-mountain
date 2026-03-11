@@ -1,13 +1,28 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 
 export default function CustomCursor() {
   const dotRef = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
+  const [enabled, setEnabled] = useState(false);
 
   useEffect(() => {
+    const mediaQuery = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const updateEnabled = () => setEnabled(mediaQuery.matches);
+
+    updateEnabled();
+    mediaQuery.addEventListener("change", updateEnabled);
+
+    return () => {
+      mediaQuery.removeEventListener("change", updateEnabled);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!enabled) return;
+
     const dot = dotRef.current;
     const ring = ringRef.current;
     if (!dot || !ring) return;
@@ -65,7 +80,11 @@ export default function CustomCursor() {
         el.removeEventListener("mouseleave", handleLeaveLink);
       });
     };
-  }, []);
+  }, [enabled]);
+
+  if (!enabled) {
+    return null;
+  }
 
   return (
     <>

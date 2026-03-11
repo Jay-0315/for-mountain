@@ -20,7 +20,7 @@ const NAV_ITEMS = [
   },
   {
     href: "/admin/notice",
-    label: "公示管理",
+    label: "お知らせ管理",
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}

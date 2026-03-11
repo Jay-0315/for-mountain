@@ -1,8 +1,8 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
-import { PartnersTab, ServiceItemsTab, WebsiteTab } from "../notice/page";
+import { Suspense, useState } from "react";
+import { PartnersTab, ServiceItemsTab, WebsiteTab } from "./tabs";
 
 type WebsiteManageTab = "website" | "partners" | "services";
 
@@ -14,7 +14,7 @@ function WebsiteManageTabBar({
   onChange: (tab: WebsiteManageTab) => void;
 }) {
   const tabs: { key: WebsiteManageTab; label: string }[] = [
-    { key: "website", label: "ウェブサイトNews" },
+    { key: "website", label: "ウェブサイトお知らせ" },
     { key: "partners", label: "協力会社カード" },
     { key: "services", label: "事業分野管理" },
   ];
@@ -36,7 +36,7 @@ function WebsiteManageTabBar({
   );
 }
 
-export default function WebsiteManagementPage() {
+function WebsiteManagementPageContent() {
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab");
   const [activeTab, setActiveTab] = useState<WebsiteManageTab>(
@@ -53,5 +53,13 @@ export default function WebsiteManagementPage() {
         {activeTab === "services" && <ServiceItemsTab />}
       </div>
     </div>
+  );
+}
+
+export default function WebsiteManagementPage() {
+  return (
+    <Suspense fallback={<div className="max-w-5xl space-y-5"><h2 className="text-lg font-bold text-slate-900">ウェブサイト管理</h2></div>}>
+      <WebsiteManagementPageContent />
+    </Suspense>
   );
 }

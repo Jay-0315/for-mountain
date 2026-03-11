@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface ServiceItemRepository extends JpaRepository<ServiceItem, Long> {
-    List<ServiceItem> findAllByOrderByCreatedAtDesc();
-    List<ServiceItem> findByCategoryOrderByCreatedAtDesc(String category);
+    List<ServiceItem> findAllByOrderBySortOrderAscCreatedAtAsc();
+    List<ServiceItem> findByCategoryOrderBySortOrderAscCreatedAtAsc(String category);
     boolean existsByCategory(String category);
 }

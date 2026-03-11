@@ -495,7 +495,7 @@ function TreeNode({
   allGroups: GroupDto[];
   expanded: Record<string, boolean>;
   canManage: boolean;
-  onToggle: (name: Department) => void;
+  onToggle: (name: string) => void;
   onEdit: (group: GroupDto) => void;
   onDelete: (groupId: number) => void;
   depth?: number;
@@ -618,7 +618,7 @@ export default function GroupsPage() {
     return resolveTreeParent(group) === null;
   });
 
-  const toggleGroup = (name: Department) => {
+  const toggleGroup = (name: string) => {
     setExpanded((prev) => ({ ...prev, [name]: !prev[name] }));
   };
 
