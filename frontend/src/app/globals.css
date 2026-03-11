@@ -23,6 +23,36 @@ body {
   cursor: none;
 }
 
+@layer components {
+  .admin-btn-primary {
+    @apply rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-orange-200 transition-all hover:-translate-y-0.5 hover:bg-orange-400 hover:shadow-lg hover:shadow-orange-200/80 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0;
+  }
+
+  .admin-btn-secondary {
+    @apply rounded-xl border border-orange-200 bg-orange-50 px-4 py-2 text-sm font-semibold text-orange-600 transition-all hover:-translate-y-0.5 hover:border-orange-300 hover:bg-orange-100 hover:shadow-sm hover:shadow-orange-100;
+  }
+
+  .admin-btn-success {
+    @apply rounded-xl bg-emerald-400 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-emerald-100 transition-all hover:-translate-y-0.5 hover:bg-emerald-300 hover:shadow-md hover:shadow-emerald-100/80 disabled:opacity-50 disabled:hover:translate-y-0;
+  }
+
+  .admin-btn-danger {
+    @apply rounded-xl bg-rose-400 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-rose-100 transition-all hover:-translate-y-0.5 hover:bg-rose-300 hover:shadow-md hover:shadow-rose-100/80 disabled:opacity-50 disabled:hover:translate-y-0;
+  }
+
+  .admin-btn-ghost {
+    @apply rounded-xl border border-orange-200 bg-white/95 px-4 py-2 text-sm font-semibold text-orange-600 transition-all hover:-translate-y-0.5 hover:border-orange-300 hover:bg-orange-50 hover:shadow-sm hover:shadow-orange-100;
+  }
+
+  .admin-pill-active {
+    @apply border-orange-500 bg-orange-500 text-white shadow-sm shadow-orange-200;
+  }
+
+  .admin-pill {
+    @apply border-slate-200 bg-white text-slate-500 transition-all hover:-translate-y-0.5 hover:border-orange-200 hover:text-orange-500 hover:shadow-sm hover:shadow-orange-100;
+  }
+}
+
 /* 터치 디바이스에서는 커스텀 커서 비활성화 */
 @media (hover: none) {
   body {

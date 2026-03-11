@@ -49,7 +49,8 @@ services:
       MAIL_PASSWORD: ${MAIL_PASSWORD:-your-app-password}
       MAIL_TO: ${MAIL_TO:-info@for-mountain.co.jp}
       JWT_SECRET: ${JWT_SECRET:-dev-secret-key-must-be-at-least-32-chars-long}
-      ADMIN_CODE: ${ADMIN_CODE:-mountain-admin-2024}
+      ADMIN_INIT_USERNAME: ${ADMIN_INIT_USERNAME:-admin}
+      ADMIN_INIT_PASSWORD: ${ADMIN_INIT_PASSWORD:-1234}
     networks:
       - mountain-network
 

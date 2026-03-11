@@ -21,6 +21,12 @@ export type BoardListResponse = {
   last: boolean;
 };
 
+export type CreateEmployeeAccountResponse = {
+  username: string;
+  setupToken: string;
+  setupTokenExpiresAt: string;
+};
+
 // ── Public (no auth) ─────────────────────────────────────────
 export async function fetchBoardList(
   page = 0,
@@ -41,11 +47,14 @@ export async function fetchBoardDetail(id: number): Promise<BoardPost> {
 }
 
 // ── Admin (requires JWT) ─────────────────────────────────────
-export async function adminLogin(code: string): Promise<{ token: string; tokenType: string }> {
+export async function adminLogin(
+  username: string,
+  password: string
+): Promise<{ token: string; tokenType: string }> {
   const res = await fetch(`${API_BASE}/api/v1/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ code }),
+    body: JSON.stringify({ username, password }),
   });
   if (!res.ok) {
     const json = await res.json().catch(() => ({}));
@@ -94,4 +103,391 @@ export async function deleteBoardPost(token: string, id: number): Promise<void> 
     headers: authHeaders(token),
   });
   if (!res.ok) throw new Error("Failed to delete post");
+}
+
+export async function createEmployeeAccount(
+  token: string,
+  employeeNumber: string
+): Promise<CreateEmployeeAccountResponse> {
+  const res = await fetch(`${API_BASE}/api/v1/admin/accounts`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ employeeNumber }),
+  });
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    throw new Error((json as { message?: string }).message ?? "Failed to create account");
+  }
+  return res.json();
+}
+
+export async function setupInitialPassword(params: {
+  username: string;
+  setupToken: string;
+  newPassword: string;
+}): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/v1/auth/password/setup`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    throw new Error((json as { message?: string }).message ?? "Failed to set password");
+  }
+}
+
+// ── Employee ─────────────────────────────────────────────────
+export type EmployeeDto = {
+  id: number;
+  employeeNumber: string;
+  name: string;
+  nameKana: string;
+  nationality: string;
+  birthDate: string;
+  department: string;
+  position: string;
+  jobTitle: string;
+  joinDate: string;
+  email: string;
+  status: string;
+};
+
+function collapseWhitespace(value: string) {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function stripWhitespace(value: string) {
+  return value.replace(/\s+/g, "").trim();
+}
+
+function normalizeEmployee(employee: EmployeeDto): EmployeeDto {
+  return {
+    ...employee,
+    employeeNumber: collapseWhitespace(employee.employeeNumber),
+    name: collapseWhitespace(employee.name),
+    nameKana: collapseWhitespace(employee.nameKana),
+    nationality: collapseWhitespace(employee.nationality),
+    department: collapseWhitespace(employee.department),
+    position: collapseWhitespace(employee.position),
+    jobTitle: collapseWhitespace(employee.jobTitle),
+    email: collapseWhitespace(employee.email),
+    status: stripWhitespace(employee.status),
+  };
+}
+
+export async function fetchEmployees(params?: {
+  status?: string;
+  department?: string;
+  keyword?: string;
+}): Promise<EmployeeDto[]> {
+  const q = new URLSearchParams();
+  if (params?.status)     q.set("status", params.status);
+  if (params?.department) q.set("department", params.department);
+  if (params?.keyword)    q.set("keyword", params.keyword);
+  const res = await fetch(`${API_BASE}/api/v1/employees?${q}`);
+  if (!res.ok) throw new Error("Failed to fetch employees");
+  const employees = (await res.json()) as EmployeeDto[];
+  return employees.map(normalizeEmployee);
+}
+
+export async function createEmployee(
+  token: string,
+  data: Omit<EmployeeDto, "id">
+): Promise<EmployeeDto> {
+  const res = await fetch(`${API_BASE}/api/v1/employees`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to create employee");
+  return res.json();
+}
+
+export async function updateEmployee(
+  token: string,
+  id: number,
+  data: Partial<Omit<EmployeeDto, "id">>
+): Promise<EmployeeDto> {
+  const res = await fetch(`${API_BASE}/api/v1/employees/${id}`, {
+    method: "PUT",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to update employee");
+  return res.json();
+}
+
+export async function deleteEmployee(token: string, id: number): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/v1/employees/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(token),
+  });
+  if (!res.ok) throw new Error("Failed to delete employee");
+}
+
+// ── Group ────────────────────────────────────────────────────
+export type GroupDto = {
+  id: number;
+  name: string;
+  description: string;
+  leaderId: number | null;
+  leaderName: string;
+  memberIds: number[];
+};
+
+export async function fetchGroups(): Promise<GroupDto[]> {
+  const res = await fetch(`${API_BASE}/api/v1/groups`);
+  if (!res.ok) throw new Error("Failed to fetch groups");
+  return res.json();
+}
+
+export async function createGroup(
+  token: string,
+  data: { name: string; description: string; leaderId: number | null; memberIds: number[] }
+): Promise<GroupDto> {
+  const res = await fetch(`${API_BASE}/api/v1/groups`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to create group");
+  return res.json();
+}
+
+export async function updateGroup(
+  token: string,
+  id: number,
+  data: { name: string; description: string; leaderId: number | null; memberIds: number[] }
+): Promise<GroupDto> {
+  const res = await fetch(`${API_BASE}/api/v1/groups/${id}`, {
+    method: "PUT",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to update group");
+  return res.json();
+}
+
+export async function deleteGroup(token: string, id: number): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/v1/groups/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(token),
+  });
+  if (!res.ok) throw new Error("Failed to delete group");
+}
+
+// ── Leave ────────────────────────────────────────────────────
+export type LeaveDto = {
+  id: number;
+  employeeId: number;
+  employeeName: string;
+  department: string;
+  leaveType: string;
+  startDate: string;
+  endDate: string;
+  days: number;
+  reason: string;
+  status: string;
+  appliedAt: string;
+};
+
+export async function fetchLeaves(params?: {
+  status?: string;
+  department?: string;
+}): Promise<LeaveDto[]> {
+  const q = new URLSearchParams();
+  if (params?.status)     q.set("status", params.status);
+  if (params?.department) q.set("department", params.department);
+  const res = await fetch(`${API_BASE}/api/v1/leaves?${q}`);
+  if (!res.ok) throw new Error("Failed to fetch leaves");
+  return res.json();
+}
+
+export async function createLeave(
+  token: string,
+  data: { employeeId: number; leaveType: string; startDate: string; endDate: string; days: number; reason: string }
+): Promise<LeaveDto> {
+  const res = await fetch(`${API_BASE}/api/v1/leaves`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to create leave");
+  return res.json();
+}
+
+export async function updateLeaveStatus(
+  token: string,
+  id: number,
+  status: string
+): Promise<LeaveDto> {
+  const res = await fetch(`${API_BASE}/api/v1/leaves/${id}/status`, {
+    method: "PATCH",
+    headers: authHeaders(token),
+    body: JSON.stringify({ status }),
+  });
+  if (!res.ok) throw new Error("Failed to update leave status");
+  return res.json();
+}
+
+export async function cancelLeave(token: string, id: number): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/v1/leaves/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(token),
+  });
+  if (!res.ok) throw new Error("Failed to cancel leave");
+}
+
+// ── InternalAnnouncement ─────────────────────────────────────
+export type AnnouncementDto = {
+  id: number;
+  title: string;
+  content: string;
+  author: string;
+  pinned: boolean;
+  createdAt: string;
+};
+
+export async function fetchAnnouncements(): Promise<AnnouncementDto[]> {
+  const res = await fetch(`${API_BASE}/api/v1/announcements`);
+  if (!res.ok) throw new Error("Failed to fetch announcements");
+  return res.json();
+}
+
+export async function createAnnouncement(
+  token: string,
+  data: { title: string; content: string; author: string; pinned: boolean }
+): Promise<AnnouncementDto> {
+  const res = await fetch(`${API_BASE}/api/v1/announcements`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to create announcement");
+  return res.json();
+}
+
+export async function updateAnnouncement(
+  token: string,
+  id: number,
+  data: { title: string; content: string; author: string; pinned: boolean }
+): Promise<AnnouncementDto> {
+  const res = await fetch(`${API_BASE}/api/v1/announcements/${id}`, {
+    method: "PUT",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to update announcement");
+  return res.json();
+}
+
+export async function deleteAnnouncement(token: string, id: number): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/v1/announcements/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(token),
+  });
+  if (!res.ok) throw new Error("Failed to delete announcement");
+}
+
+// ── DeptNotice ───────────────────────────────────────────────
+export type DeptNoticeDto = {
+  id: number;
+  department: string;
+  title: string;
+  content: string;
+  author: string;
+  createdAt: string;
+};
+
+export type PartnerCardDto = {
+  id: number;
+  imageSrc: string;
+  linkUrl: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export async function fetchDeptNotices(department?: string): Promise<DeptNoticeDto[]> {
+  const q = new URLSearchParams();
+  if (department) q.set("department", department);
+  const res = await fetch(`${API_BASE}/api/v1/dept-notices?${q}`);
+  if (!res.ok) throw new Error("Failed to fetch dept notices");
+  return res.json();
+}
+
+export async function createDeptNotice(
+  token: string,
+  data: { department: string; title: string; content: string; author: string }
+): Promise<DeptNoticeDto> {
+  const res = await fetch(`${API_BASE}/api/v1/dept-notices`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to create dept notice");
+  return res.json();
+}
+
+export async function updateDeptNotice(
+  token: string,
+  id: number,
+  data: { department: string; title: string; content: string; author: string }
+): Promise<DeptNoticeDto> {
+  const res = await fetch(`${API_BASE}/api/v1/dept-notices/${id}`, {
+    method: "PUT",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to update dept notice");
+  return res.json();
+}
+
+export async function deleteDeptNotice(token: string, id: number): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/v1/dept-notices/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(token),
+  });
+  if (!res.ok) throw new Error("Failed to delete dept notice");
+}
+
+export async function fetchPartnerCards(): Promise<PartnerCardDto[]> {
+  const res = await fetch(`${API_BASE}/api/v1/partner-cards`);
+  if (!res.ok) throw new Error("Failed to fetch partner cards");
+  return res.json();
+}
+
+export async function createPartnerCard(
+  token: string,
+  data: { imageSrc: string; linkUrl: string }
+): Promise<PartnerCardDto> {
+  const res = await fetch(`${API_BASE}/api/v1/partner-cards`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to create partner card");
+  return res.json();
+}
+
+export async function updatePartnerCard(
+  token: string,
+  id: number,
+  data: { imageSrc: string; linkUrl: string }
+): Promise<PartnerCardDto> {
+  const res = await fetch(`${API_BASE}/api/v1/partner-cards/${id}`, {
+    method: "PUT",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to update partner card");
+  return res.json();
+}
+
+export async function deletePartnerCard(token: string, id: number): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/v1/partner-cards/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(token),
+  });
+  if (!res.ok) throw new Error("Failed to delete partner card");
 }

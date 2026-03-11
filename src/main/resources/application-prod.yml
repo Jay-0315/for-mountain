@@ -48,6 +48,7 @@ app:
     secret: ${JWT_SECRET}
     expiration-ms: 86400000
   admin:
-    code: ${ADMIN_CODE}
+    init-username: ${ADMIN_INIT_USERNAME:admin}
+    init-password: ${ADMIN_INIT_PASSWORD:1234}
   mail:
     to: ${MAIL_TO}

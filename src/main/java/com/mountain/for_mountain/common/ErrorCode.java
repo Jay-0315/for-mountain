@@ -13,9 +13,14 @@ public enum ErrorCode {
     DIVISION_BY_ZERO(HttpStatus.BAD_REQUEST, "Cannot divide by zero."),
     INVALID_CURRENCY(HttpStatus.BAD_REQUEST, "Unknown currency."),
     EXCHANGE_RATE_FETCH_FAILED(HttpStatus.BAD_GATEWAY, "Cannot fetch exchange rates."),
+    WEAK_PASSWORD(HttpStatus.BAD_REQUEST, "Password must be at least 4 characters."),
+    INVALID_SETUP_TOKEN(HttpStatus.BAD_REQUEST, "Invalid setup token."),
+    SETUP_TOKEN_EXPIRED(HttpStatus.BAD_REQUEST, "Setup token has expired."),
 
     // 401 - Auth
     INVALID_ADMIN_CODE(HttpStatus.UNAUTHORIZED, "Invalid admin code."),
+    INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "Invalid username or password."),
+    PASSWORD_NOT_SET(HttpStatus.UNAUTHORIZED, "Password is not set. Complete password setup first."),
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "JWT token is invalid or expired."),
     MISSING_TOKEN(HttpStatus.UNAUTHORIZED, "Authorization token is missing."),
 
@@ -24,6 +29,13 @@ public enum ErrorCode {
 
     // 404
     BOARD_NOT_FOUND(HttpStatus.NOT_FOUND, "Board post not found."),
+    PARTNER_CARD_NOT_FOUND(HttpStatus.NOT_FOUND, "Partner card not found."),
+    DEPT_NOTICE_NOT_FOUND(HttpStatus.NOT_FOUND, "Department notice not found."),
+    LEAVE_NOT_FOUND(HttpStatus.NOT_FOUND, "Leave request not found."),
+    ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, "Account not found."),
+
+    // 409
+    ACCOUNT_ALREADY_EXISTS(HttpStatus.CONFLICT, "Account already exists."),
 
     // 500
     MAIL_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to send contact email.");

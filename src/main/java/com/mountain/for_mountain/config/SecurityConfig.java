@@ -10,7 +10,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -28,6 +31,14 @@ public class SecurityConfig {
     private final ObjectMapper objectMapper;
 
     @Bean
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        return web -> web.ignoring().requestMatchers(
+            "/api/v1/groups",
+            "/api/v1/groups/**"
+        );
+    }
+
+    @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
@@ -39,18 +50,66 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/swagger-ui/**",
                     "/v3/api-docs/**",
-                    "/swagger-ui.html"
+                    "/swagger-ui.html",
+                    "/error"
                 ).permitAll()
                 // Auth endpoint (public)
                 .requestMatchers("/api/v1/auth/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/auth/password/setup").permitAll()
+                // All read APIs are public
+                .requestMatchers(HttpMethod.GET, "/api/v1/**").permitAll()
+                // Admin account management (admin only)
+                .requestMatchers(HttpMethod.POST, "/api/v1/admin/accounts").hasRole("ADMIN")
                 // Contact (public)
                 .requestMatchers(HttpMethod.POST, "/api/v1/contact").permitAll()
-                // Board reads (public)
-                .requestMatchers(HttpMethod.GET, "/api/v1/board/**").permitAll()
                 // Board writes (admin only)
                 .requestMatchers(HttpMethod.POST,   "/api/v1/board/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT,    "/api/v1/board/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/v1/board/**").hasRole("ADMIN")
+                // Department notice writes (admin only)
+                .requestMatchers(HttpMethod.POST,   "/api/v1/dept-notices").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT,    "/api/v1/dept-notices").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/dept-notices").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST,   "/api/v1/dept-notices/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT,    "/api/v1/dept-notices/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/dept-notices/**").hasRole("ADMIN")
+                // Employee APIs
+                .requestMatchers(HttpMethod.POST, "/api/v1/employees").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/v1/employees").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/employees").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/v1/employees/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/v1/employees/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/employees/**").hasRole("ADMIN")
+                // Group APIs
+                .requestMatchers(HttpMethod.POST, "/api/v1/groups").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/v1/groups").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/groups").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/v1/groups/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/v1/groups/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/groups/**").hasRole("ADMIN")
+                // Leave APIs
+                .requestMatchers(HttpMethod.POST, "/api/v1/leaves").hasAnyRole("ADMIN", "USER")
+                .requestMatchers(HttpMethod.PUT, "/api/v1/leaves").hasAnyRole("ADMIN", "USER")
+                .requestMatchers(HttpMethod.PATCH, "/api/v1/leaves").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/leaves").hasAnyRole("ADMIN", "USER")
+                .requestMatchers(HttpMethod.POST, "/api/v1/leaves/**").hasAnyRole("ADMIN", "USER")
+                .requestMatchers(HttpMethod.PUT, "/api/v1/leaves/**").hasAnyRole("ADMIN", "USER")
+                .requestMatchers(HttpMethod.PATCH, "/api/v1/leaves/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/leaves/**").hasAnyRole("ADMIN", "USER")
+                // Internal announcement APIs
+                .requestMatchers(HttpMethod.POST, "/api/v1/announcements").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/v1/announcements").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/announcements").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/v1/announcements/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/v1/announcements/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/announcements/**").hasRole("ADMIN")
+                // Partner card APIs
+                .requestMatchers(HttpMethod.POST, "/api/v1/partner-cards").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/v1/partner-cards").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/partner-cards").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/v1/partner-cards/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/v1/partner-cards/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/partner-cards/**").hasRole("ADMIN")
                 // Existing APIs (public)
                 .requestMatchers("/api/v1/calculator/**").permitAll()
                 .requestMatchers("/api/v1/exchange/**").permitAll()
@@ -62,7 +121,7 @@ public class SecurityConfig {
                     response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                     response.setCharacterEncoding("UTF-8");
                     String body = objectMapper.writeValueAsString(
-                        new ErrorResponse("JWT token is invalid or expired.", 401));
+                        new ErrorResponse("JWT token is invalid or expired. [security-config-v2]", 401));
                     response.getWriter().write(body);
                 })
                 .accessDeniedHandler((request, response, accessDeniedException) -> {
@@ -93,5 +152,10 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/api/**", config);
         return source;
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }

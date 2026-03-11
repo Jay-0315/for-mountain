@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -117,7 +117,6 @@ function FloatingTextarea({
 // ── 메인 컴포넌트 ─────────────────────────────────────────────
 export default function ContactSection() {
   const sectionRef = useRef<HTMLElement>(null);
-  const btnRef = useRef<HTMLButtonElement>(null);
 
   const [formData, setFormData] = useState<FormData>({
     name: "",
@@ -163,29 +162,6 @@ export default function ContactSection() {
     },
     { scope: sectionRef }
   );
-
-  // ── Magnetic 버튼 (送信)
-  useEffect(() => {
-    const btn = btnRef.current;
-    if (!btn) return;
-
-    const handleMove = (e: MouseEvent) => {
-      const rect = btn.getBoundingClientRect();
-      const x = e.clientX - rect.left - rect.width / 2;
-      const y = e.clientY - rect.top - rect.height / 2;
-      gsap.to(btn, { x: x * 0.3, y: y * 0.3, duration: 0.3, ease: "power2.out" });
-    };
-    const handleLeave = () => {
-      gsap.to(btn, { x: 0, y: 0, duration: 0.6, ease: "elastic.out(1, 0.5)" });
-    };
-
-    btn.addEventListener("mousemove", handleMove);
-    btn.addEventListener("mouseleave", handleLeave);
-    return () => {
-      btn.removeEventListener("mousemove", handleMove);
-      btn.removeEventListener("mouseleave", handleLeave);
-    };
-  }, [submitted]);
 
   const validate = (): boolean => {
     const e: FormErrors = {};
@@ -341,16 +317,14 @@ export default function ContactSection() {
                   onChange={handleChange}
                 />
 
-                {/* Magnetic 送信ボタン */}
                 <div className="flex justify-center pt-2">
                   <button
-                    ref={btnRef}
                     type="submit"
                     disabled={isLoading}
                     className="w-full py-4 bg-orange-500 text-white font-semibold rounded-xl
-                               hover:bg-orange-400 transition-colors
+                               transition-all hover:-translate-y-0.5 hover:bg-orange-400
                                hover:shadow-xl hover:shadow-orange-300/40
-                               active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed
+                               disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0
                                flex items-center justify-center gap-2"
                   >
                     {isLoading ? (

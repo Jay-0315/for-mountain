@@ -15,3 +15,17 @@ spring:
       hibernate:
         format_sql: true
         show_sql: true
+  mail:
+    host: localhost
+    port: 2525
+
+app:
+  jwt:
+    secret: test-secret-key-at-least-32-characters-long
+    expiration-ms: 86400000
+    refresh-expiration-ms: 604800000
+  admin:
+    init-username: test-admin
+    init-password: test-password
+  mail:
+    to: test@for-mountain.local

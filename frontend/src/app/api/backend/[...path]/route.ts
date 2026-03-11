@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND_URL =
-  process.env.BACKEND_URL ||
-  "https://for-mountain-service-505197475308.asia-northeast3.run.app";
+  process.env.NODE_ENV === "development"
+    ? "http://localhost:8080"
+    : process.env.BACKEND_URL ||
+      "https://for-mountain-service-505197475308.asia-northeast3.run.app";
 
 async function proxy(
   req: NextRequest,
@@ -30,6 +32,12 @@ async function proxy(
     }
 
     const response = await fetch(targetUrl, init);
+    if (response.status === 204 || response.status === 205 || response.status === 304) {
+      return new NextResponse(null, {
+        status: response.status,
+      });
+    }
+
     const data = await response.text();
 
     return new NextResponse(data, {
@@ -42,7 +50,10 @@ async function proxy(
   } catch (error) {
     console.error("Proxy Error:", error);
     return NextResponse.json(
-      { message: "Internal Server Proxy Error" },
+      {
+        message:
+          "Backend proxy failed. Check backend server at http://localhost:8080",
+      },
       { status: 500 }
     );
   }

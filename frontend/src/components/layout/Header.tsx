@@ -10,6 +10,7 @@ const navItems = [
   { label: "お知らせ", href: "#news" },
   { label: "採用情報", href: "#recruit" },
   { label: "お問い合わせ", href: "#contact" },
+  { label: "社員専用", href: "/admin" },
 ];
 
 export default function Header() {

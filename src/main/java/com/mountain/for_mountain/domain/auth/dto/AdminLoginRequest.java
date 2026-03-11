@@ -7,10 +7,14 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-@Schema(description = "Admin login request with secret code")
+@Schema(description = "Admin login request with username and password")
 public class AdminLoginRequest {
 
-    @NotBlank(message = "Admin code must not be blank")
-    @Schema(description = "Admin secret code", example = "mountain-admin-2024")
-    private String code;
+    @NotBlank(message = "Username must not be blank")
+    @Schema(description = "Admin username", example = "admin")
+    private String username;
+
+    @NotBlank(message = "Password must not be blank")
+    @Schema(description = "Admin password", example = "change-me")
+    private String password;
 }
