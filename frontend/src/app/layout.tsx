@@ -1,19 +1,8 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ScrollProgressBar from "@/components/layout/ScrollProgressBar";
 import PageIntro from "@/components/ui/PageIntro";
 import CustomCursor from "@/components/ui/CustomCursor";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "株式会社マウンテン | ITエンジニアリング・ネットワーク通信機器",
@@ -28,10 +17,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja" suppressHydrationWarning data-scroll-behavior="smooth">
-      <body
-        suppressHydrationWarning
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body suppressHydrationWarning className="antialiased">
         <PageIntro />
         <ScrollProgressBar />
         <CustomCursor />
