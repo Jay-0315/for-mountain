@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -37,7 +38,7 @@ public class GroupService {
                 request.getDescription(),
                 request.getLeaderId()
         ));
-        saveMembers(group.getId(), request.getMemberIds());
+        saveMembers(group.getId(), request.getLeaderId(), request.getMemberIds());
         return toResponse(group);
     }
 
@@ -47,7 +48,7 @@ public class GroupService {
                 .orElseThrow(() -> new CustomException(ErrorCode.ACCESS_DENIED));
         group.update(request.getName(), request.getDescription(), request.getLeaderId());
         groupMemberRepository.deleteByGroupId(id);
-        saveMembers(id, request.getMemberIds());
+        saveMembers(id, request.getLeaderId(), request.getMemberIds());
         return toResponse(group);
     }
 
@@ -59,8 +60,13 @@ public class GroupService {
         groupRepository.delete(group);
     }
 
-    private void saveMembers(Long groupId, List<Long> memberIds) {
-        List<GroupMember> members = memberIds.stream()
+    private void saveMembers(Long groupId, Long leaderId, List<Long> memberIds) {
+        List<Long> normalizedMemberIds = new ArrayList<>(memberIds);
+        if (leaderId != null) {
+            normalizedMemberIds.add(leaderId);
+        }
+
+        List<GroupMember> members = normalizedMemberIds.stream()
                 .distinct()
                 .map(employeeId -> GroupMember.of(groupId, employeeId))
                 .toList();

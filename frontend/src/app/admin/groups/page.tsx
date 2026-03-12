@@ -403,6 +403,7 @@ function GroupCard({
   compact?: boolean;
 }) {
   const members = employees.filter((employee) => group.memberIds.includes(employee.id));
+  const leader = employees.find((employee) => employee.id === group.leaderId);
   const parentName = resolveGroupParent(group);
   const displayDescription = getDisplayDescription(group);
 
@@ -457,7 +458,7 @@ function GroupCard({
           <p className="text-xs font-medium text-slate-500">グループ長</p>
           <p className="mt-2 text-sm font-semibold text-slate-900">{group.leaderName}</p>
           <p className="mt-1 text-xs text-slate-400">
-            {members.find((employee) => employee.id === group.leaderId)?.position ?? "未設定"}
+            {leader?.position ?? "未設定"}
           </p>
         </div>
 

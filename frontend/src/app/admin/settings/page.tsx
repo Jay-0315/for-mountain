@@ -53,10 +53,40 @@ export default function SettingsPage() {
     return `${window.location.origin}/account/setup?${q.toString()}`;
   }, [issued]);
 
+  const legacyCopyText = (text: string) => {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    textarea.style.pointerEvents = "none";
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    const copied = document.execCommand("copy");
+    document.body.removeChild(textarea);
+    if (!copied) {
+      throw new Error("copy-failed");
+    }
+  };
+
   const copyText = async (text: string) => {
     if (!text) return;
-    await navigator.clipboard.writeText(text);
-    setAccountMsg({ type: "ok", text: "クリップボードにコピーしました。" });
+    try {
+      if (window.isSecureContext && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        legacyCopyText(text);
+      }
+      setAccountMsg({ type: "ok", text: "クリップボードにコピーしました。" });
+    } catch {
+      try {
+        legacyCopyText(text);
+        setAccountMsg({ type: "ok", text: "クリップボードにコピーしました。" });
+      } catch {
+        setAccountMsg({ type: "err", text: "コピーに失敗しました。表示された値を手動でコピーしてください。" });
+      }
+    }
   };
 
   const handleIssueAccount = async (e: React.FormEvent) => {
@@ -141,7 +171,12 @@ export default function SettingsPage() {
             <div className="text-xs">
               <p className="text-slate-500">初期設定トークン</p>
               <div className="flex items-start gap-2">
-                <p className="font-mono text-slate-900 break-all flex-1">{issued.setupToken}</p>
+                <textarea
+                  readOnly
+                  value={issued.setupToken}
+                  rows={3}
+                  className="font-mono text-slate-900 break-all flex-1 resize-none rounded border border-slate-200 bg-white px-3 py-2"
+                />
                 <button
                   type="button"
                   onClick={() => void copyText(issued.setupToken)}
@@ -154,7 +189,12 @@ export default function SettingsPage() {
             <div className="text-xs">
               <p className="text-slate-500">初回パスワード設定URL</p>
               <div className="flex items-start gap-2">
-                <p className="font-mono text-slate-900 break-all flex-1">{setupUrl}</p>
+                <textarea
+                  readOnly
+                  value={setupUrl}
+                  rows={4}
+                  className="font-mono text-slate-900 break-all flex-1 resize-none rounded border border-slate-200 bg-white px-3 py-2"
+                />
                 <button
                   type="button"
                   onClick={() => void copyText(setupUrl)}

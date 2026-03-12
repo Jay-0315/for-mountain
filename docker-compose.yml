@@ -71,7 +71,7 @@ services:
     container_name: mountain-frontend
     restart: unless-stopped
     ports:
-      - "${FRONTEND_PORT:-3000}:3000"
+      - "${FRONTEND_BIND_HOST:-127.0.0.1}:${FRONTEND_PORT:-3000}:3000"
     environment:
       NODE_ENV: production
       BACKEND_URL: http://mountain-backend:8080
@@ -80,9 +80,32 @@ services:
     networks:
       - mountain-network
 
+  caddy:
+    image: caddy:2-alpine
+    container_name: mountain-caddy
+    restart: unless-stopped
+    command: ["/bin/sh", "/etc/caddy/start.sh"]
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      - ./docker/caddy/Caddyfile.template:/etc/caddy/Caddyfile.template:ro
+      - ./docker/caddy/start.sh:/etc/caddy/start.sh:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+    networks:
+      - mountain-network
+
 volumes:
   mysql_data:
   redis_data:
+  caddy_data:
+  caddy_config:
 
 networks:
   mountain-network:

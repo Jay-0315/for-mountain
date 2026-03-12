@@ -28,6 +28,9 @@ Fill in at least:
 docker compose up -d --build
 ```
 
+Open port `80` on the server firewall and router.
+If you already have a domain, also set `SITE_DOMAIN`, `ACME_EMAIL`, point the DNS A record to the server public IP, and open port `443`.
+
 ## 4. Check status
 
 ```bash
@@ -38,8 +41,9 @@ docker compose logs -f frontend
 
 ## 5. Open the site
 
-- Website: `http://SERVER_IP:3000`
-- Admin: `http://SERVER_IP:3000/admin`
+- Without domain: `http://SERVER_PUBLIC_IP`
+- With domain later: `https://YOUR_DOMAIN`
+- Admin: `/admin`
 
 ## 6. Update after code changes
 
@@ -61,4 +65,6 @@ At minimum, back up the MySQL volume regularly.
 
 - Production now uses MySQL, not H2
 - `service-categories` default data is seeded on backend startup
-- If port `3000` is already in use, change `FRONTEND_PORT` in `.env`
+- Frontend container is bound to `127.0.0.1:${FRONTEND_PORT}` and exposed publicly through Caddy only
+- If `SITE_DOMAIN` is empty, Caddy serves plain HTTP on port `80` for IP-based access
+- If `SITE_DOMAIN` is set, Caddy automatically provisions and renews HTTPS certificates for that domain

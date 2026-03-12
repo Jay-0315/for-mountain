@@ -405,6 +405,7 @@ export default function DashboardPage() {
     const targetMonth = currentMonth.getMonth() + 1;
     return employees
       .filter((employee) => {
+        if (employee.status === "退職") return false;
         const birthDate = new Date(employee.birthDate);
         return !Number.isNaN(birthDate.getTime()) && birthDate.getMonth() + 1 === targetMonth;
       })
