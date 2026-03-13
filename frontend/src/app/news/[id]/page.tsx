@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { fetchBoardDetail, type BoardPost } from "@/lib/api";
+import { fetchBoardDetail, fetchBoardList, type BoardPost } from "@/lib/api";
 
 const categoryColors: Record<string, string> = {
   "お知らせ": "bg-blue-50 text-blue-600 ring-blue-100",
@@ -36,6 +36,7 @@ export default function NewsDetailPage() {
   const router = useRouter();
 
   const [post, setPost] = useState<BoardPost | null>(null);
+  const [relatedPosts, setRelatedPosts] = useState<BoardPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -46,6 +47,17 @@ export default function NewsDetailPage() {
       try {
         const data = await fetchBoardDetail(Number(id));
         setPost(data);
+        const list = await fetchBoardList(0, 8);
+        setRelatedPosts(
+          list.posts
+            .filter((item) => item.id !== Number(id))
+            .sort((a, b) => {
+              const aScore = a.category === data.category ? 1 : 0;
+              const bScore = b.category === data.category ? 1 : 0;
+              return bScore - aScore;
+            })
+            .slice(0, 4)
+        );
       } catch {
         setError(true);
       } finally {
@@ -174,6 +186,46 @@ export default function NewsDetailPage() {
                   お知らせ一覧に戻る
                 </button>
               </div>
+
+              {relatedPosts.length > 0 && (
+                <div className="border-t border-slate-100 px-6 py-8 sm:px-8">
+                  <div className="mb-5 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-orange-500">More News</p>
+                      <h2 className="mt-2 text-xl font-bold text-slate-900">その他のお知らせ</h2>
+                    </div>
+                    <Link href="/#news" className="text-sm font-semibold text-slate-500 hover:text-orange-500">
+                      一覧を見る
+                    </Link>
+                  </div>
+                  <div className="grid gap-3">
+                    {relatedPosts.map((item) => (
+                      <button
+                        key={item.id}
+                        onClick={() => router.push(`/news/${item.id}`)}
+                        className="flex items-start justify-between gap-4 rounded-2xl border border-slate-100 bg-slate-50/70 px-4 py-4 text-left transition-colors hover:border-orange-200 hover:bg-orange-50/60"
+                      >
+                        <div className="min-w-0">
+                          <div className="mb-2 flex flex-wrap items-center gap-2">
+                            <span
+                              className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${
+                                categoryColors[item.category] ?? "bg-slate-100 text-slate-600 ring-slate-200"
+                              }`}
+                            >
+                              {item.category}
+                            </span>
+                            <time className="font-mono text-xs text-slate-400">{formatDate(item.createdAt)}</time>
+                          </div>
+                          <p className="line-clamp-2 text-sm font-semibold leading-6 text-slate-800">{item.title}</p>
+                        </div>
+                        <svg className="mt-1 h-4 w-4 shrink-0 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </article>
 
             <aside className="space-y-4">

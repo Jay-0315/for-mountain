@@ -862,7 +862,14 @@ function InternalTab() {
             <div className="w-6 h-6 border-2 border-orange-400 border-t-transparent rounded-full animate-spin mx-auto" />
           </div>
         ) : sorted.length === 0 ? (
-          <p className="p-12 text-center text-sm text-slate-400">お知らせがありません。</p>
+          <div className="p-12 text-center text-slate-400">
+            <p className="text-sm">お知らせがありません。</p>
+            {isAdmin && (
+              <button onClick={openNew} className="mt-3 text-sm font-semibold text-orange-500 hover:underline">
+                最初のお知らせを作成する →
+              </button>
+            )}
+          </div>
         ) : (
           <table className="w-full text-sm">
             <thead>
@@ -1112,7 +1119,14 @@ function DepartmentTab({ initialNoticeId }: { initialNoticeId: number | null }) 
             <div className="w-6 h-6 border-2 border-orange-400 border-t-transparent rounded-full animate-spin mx-auto" />
           </div>
         ) : sorted.length === 0 ? (
-          <p className="p-12 text-center text-sm text-slate-400">部署別お知らせがありません。</p>
+          <div className="p-12 text-center text-slate-400">
+            <p className="text-sm">部署別お知らせがありません。</p>
+            {isAdmin && (
+              <button onClick={openNew} className="mt-3 text-sm font-semibold text-orange-500 hover:underline">
+                最初の部署別お知らせを作成する →
+              </button>
+            )}
+          </div>
         ) : (
           <table className="w-full text-sm">
             <thead>
