@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -117,6 +117,7 @@ const companyValues = [
 // ── コンポーネント ─────────────────────────────────────────────
 export default function AboutSection() {
   const sectionRef = useRef<HTMLElement>(null);
+  const tabPanelRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState("philosophy");
 
   useGSAP(
@@ -181,6 +182,15 @@ export default function AboutSection() {
     { scope: sectionRef }
   );
 
+  useEffect(() => {
+    if (!tabPanelRef.current) return;
+    gsap.fromTo(
+      tabPanelRef.current,
+      { opacity: 0, y: 16, filter: "blur(6px)" },
+      { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.45, ease: "power2.out" }
+    );
+  }, [activeTab]);
+
   const activeTabData = tabs.find((t) => t.id === activeTab)!;
 
   return (
@@ -221,7 +231,7 @@ export default function AboutSection() {
           </div>
 
           {/* 탭 콘텐츠 */}
-          <div className="bg-white rounded-2xl border border-slate-100 p-8 shadow-sm min-h-[140px]">
+          <div ref={tabPanelRef} className="bg-white rounded-2xl border border-slate-100 p-8 shadow-sm min-h-[140px]">
             <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
               <span className="w-1 h-5 bg-orange-500 rounded-full inline-block" />
               {activeTabData.label}
@@ -230,7 +240,7 @@ export default function AboutSection() {
             {activeTab === "philosophy" && (
               <div className="grid grid-cols-2 gap-6 border-t border-slate-100 pt-8 mt-8 md:grid-cols-4">
                 {companyValues.map((value) => (
-                  <div key={value.key} className="flex flex-col items-center text-center gap-3">
+                  <div key={value.key} className="public-soft-float flex flex-col items-center text-center gap-3">
                     <div className={`flex h-16 w-16 items-center justify-center rounded-full shadow-md ${value.color}`}>
                       {value.icon}
                     </div>

@@ -159,6 +159,28 @@ export default function ContactSection() {
           once: true,
         },
       });
+
+      gsap.to(".contact-left", {
+        y: -18,
+        ease: "none",
+        scrollTrigger: {
+          trigger: sectionRef.current,
+          start: "top bottom",
+          end: "bottom top",
+          scrub: true,
+        },
+      });
+
+      gsap.to(".contact-form", {
+        y: -26,
+        ease: "none",
+        scrollTrigger: {
+          trigger: sectionRef.current,
+          start: "top bottom",
+          end: "bottom top",
+          scrub: true,
+        },
+      });
     },
     { scope: sectionRef }
   );
@@ -254,7 +276,7 @@ export default function ContactSection() {
           </div>
 
           {/* 오른쪽 폼 */}
-          <div>
+          <div className="contact-form">
             {submitted ? (
               <div className="flex flex-col items-center justify-center h-full text-center py-16">
                 <div className="w-16 h-16 bg-green-50 text-green-500 rounded-full flex items-center justify-center mb-4">

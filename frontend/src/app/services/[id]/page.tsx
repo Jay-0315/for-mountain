@@ -10,6 +10,7 @@ import {
   type ServiceCategoryDto,
   type ServiceItemDto,
 } from "@/lib/api";
+import GridRunnerBackdrop from "@/components/ui/GridRunnerBackdrop";
 import MarkdownContent from "@/components/ui/MarkdownContent";
 import { renderServiceCategoryIcon } from "@/components/ui/service-category-icons";
 
@@ -42,6 +43,7 @@ export default function ServiceDetailPage() {
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff7ed_0%,#ffffff_28%,#f8fafc_100%)]">
       <section className="relative overflow-hidden border-b border-orange-100/70 bg-slate-950 text-white">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(251,146,60,0.28),transparent_34%),radial-gradient(circle_at_80%_20%,rgba(148,163,184,0.22),transparent_30%)]" />
+        <GridRunnerBackdrop />
         <div className="relative mx-auto max-w-5xl px-6 pb-16 pt-10 sm:pb-20 sm:pt-14">
           <div className="flex items-center justify-between gap-4">
             <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-slate-300 transition-colors hover:text-white">

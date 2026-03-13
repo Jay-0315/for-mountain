@@ -55,10 +55,10 @@ export default function CustomCursor() {
 
     // 링크·버튼 위에서 링 확대
     const handleEnterLink = () => {
-      gsap.to(ring, { scale: 1.8, borderColor: "rgba(251,146,60,0.8)", duration: 0.3 });
+      gsap.to(ring, { scale: 1.8, borderColor: "rgba(253,186,116,0.62)", duration: 0.3 });
     };
     const handleLeaveLink = () => {
-      gsap.to(ring, { scale: 1, borderColor: "rgba(251,146,60,0.4)", duration: 0.3 });
+      gsap.to(ring, { scale: 1, borderColor: "rgba(253,186,116,0.28)", duration: 0.3 });
     };
 
     const links = document.querySelectorAll("a, button");
@@ -92,13 +92,13 @@ export default function CustomCursor() {
       <div
         ref={dotRef}
         className="fixed top-0 left-0 w-2 h-2 -translate-x-1/2 -translate-y-1/2
-                   bg-orange-400 rounded-full pointer-events-none z-[999]"
+                   bg-orange-300/90 rounded-full pointer-events-none z-[999]"
       />
       {/* 외부 링 */}
       <div
         ref={ringRef}
         className="fixed top-0 left-0 w-9 h-9 -translate-x-1/2 -translate-y-1/2
-                   border border-orange-400/40 rounded-full pointer-events-none z-[999]"
+                   border border-orange-300/30 rounded-full pointer-events-none z-[999]"
       />
     </>
   );

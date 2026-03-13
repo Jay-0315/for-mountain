@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import GridRunnerBackdrop from "@/components/ui/GridRunnerBackdrop";
 
 // ── 데이터 ────────────────────────────────────────────────────
 const tabs = ["新卒採用", "中途採用"] as const;
@@ -140,6 +141,28 @@ export default function RecruitSection() {
           trigger: ".recruit-cta",
           start: "top 88%",
           once: true,
+        },
+      });
+
+      gsap.to(".recruit-card", {
+        y: -22,
+        ease: "none",
+        scrollTrigger: {
+          trigger: sectionRef.current,
+          start: "top bottom",
+          end: "bottom top",
+          scrub: true,
+        },
+      });
+
+      gsap.to(".recruit-table", {
+        y: -14,
+        ease: "none",
+        scrollTrigger: {
+          trigger: sectionRef.current,
+          start: "top bottom",
+          end: "bottom top",
+          scrub: true,
         },
       });
     },
@@ -406,26 +429,29 @@ export default function RecruitSection() {
         </div>
 
         {/* 지원 CTA 배너 */}
-        <div className="recruit-cta mt-14 bg-slate-900 rounded-2xl p-8 md:p-10 text-center text-white">
-          <h3 className="text-2xl font-bold mb-3">一緒に働きませんか？</h3>
-          <p className="text-slate-400 text-sm mb-6 max-w-xl mx-auto leading-relaxed">
-            ITで社会に価値を届けたい方、成長したい方を歓迎します。<br />
-            必要書類をメールにてお送りください。担当者よりご連絡いたします。
-          </p>
-          <a
-            href="mailto:recruit@mountain-info.co.jp"
-            className="inline-flex items-center gap-2 px-8 py-3.5 bg-orange-500 text-white font-semibold rounded-xl
-                       hover:bg-orange-400 transition-all hover:shadow-xl hover:shadow-orange-500/30 hover:-translate-y-0.5"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
-            recruit@mountain-info.co.jp へ応募する
-          </a>
-          <p className="text-slate-500 text-xs mt-4">
-            {activeTab === "新卒採用" ? "必要書類：履歴書、資格証" : "必要書類：履歴書、職務経歴書、資格証"}
-          </p>
+        <div className="recruit-cta relative mt-14 overflow-hidden rounded-2xl bg-slate-900 p-8 text-center text-white md:p-10">
+          <GridRunnerBackdrop />
+          <div className="relative z-10">
+            <h3 className="text-2xl font-bold mb-3">一緒に働きませんか？</h3>
+            <p className="text-slate-400 text-sm mb-6 max-w-xl mx-auto leading-relaxed">
+              ITで社会に価値を届けたい方、成長したい方を歓迎します。<br />
+              必要書類をメールにてお送りください。担当者よりご連絡いたします。
+            </p>
+            <a
+              href="mailto:recruit@mountain-info.co.jp?subject=%E6%8E%A1%E7%94%A8%E5%BF%9C%E5%8B%9F&body=%E3%81%8A%E4%B8%96%E8%A9%B1%E3%81%AB%E3%81%AA%E3%82%8A%E3%81%BE%E3%81%99%E3%80%82%0A%E6%B0%8F%E5%90%8D%EF%BC%9A%0A%E5%BF%9C%E5%8B%9F%E5%8C%BA%E5%88%86%EF%BC%9A%0A%E6%B7%BB%E4%BB%98%E6%9B%B8%E9%A1%9E%EF%BC%9A"
+              className="inline-flex items-center gap-2 px-8 py-3.5 bg-orange-500 text-white font-semibold rounded-xl
+                         hover:bg-orange-400 transition-all hover:shadow-xl hover:shadow-orange-500/30 hover:-translate-y-0.5"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              recruit@mountain-info.co.jp へ応募する
+            </a>
+            <p className="text-slate-500 text-xs mt-4">
+              {activeTab === "新卒採用" ? "必要書類：履歴書、資格証" : "必要書類：履歴書、職務経歴書、資格証"}
+            </p>
+          </div>
         </div>
 
       </div>

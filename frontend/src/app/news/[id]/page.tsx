@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { fetchBoardDetail, fetchBoardList, type BoardPost } from "@/lib/api";
+import GridRunnerBackdrop from "@/components/ui/GridRunnerBackdrop";
 
 const categoryColors: Record<string, string> = {
   "お知らせ": "bg-blue-50 text-blue-600 ring-blue-100",
@@ -70,6 +71,7 @@ export default function NewsDetailPage() {
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff7ed_0%,#ffffff_28%,#f8fafc_100%)]">
       <section className="relative overflow-hidden border-b border-orange-100/70 bg-slate-950 text-white">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(251,146,60,0.28),transparent_34%),radial-gradient(circle_at_80%_20%,rgba(148,163,184,0.22),transparent_30%)]" />
+        <GridRunnerBackdrop />
         <div className="relative mx-auto max-w-5xl px-6 pb-18 pt-10 sm:pb-24 sm:pt-14">
           <div className="flex items-center justify-between gap-4">
             <Link

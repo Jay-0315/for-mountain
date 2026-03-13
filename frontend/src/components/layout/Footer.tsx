@@ -1,7 +1,13 @@
+"use client";
+
+import GridRunnerBackdrop from "@/components/ui/GridRunnerBackdrop";
+
 export default function Footer() {
   return (
-    <footer className="bg-slate-900 text-slate-400 py-12">
-      <div className="max-w-6xl mx-auto px-6">
+    <footer className="relative overflow-hidden bg-slate-900 py-12 text-slate-400">
+      <GridRunnerBackdrop />
+
+      <div className="relative z-10 max-w-6xl mx-auto px-6">
         <div className="flex flex-col md:flex-row justify-between gap-8">
           <div>
             <p className="text-white text-lg font-bold mb-2">

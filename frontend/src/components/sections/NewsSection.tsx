@@ -173,6 +173,24 @@ export default function NewsSection() {
       { scope: sectionRef, dependencies: [loading] } // 로딩이 끝날 때 버튼을 찾아서 애니메이션 적용
   );
 
+  useGSAP(
+    () => {
+      gsap.registerPlugin(ScrollTrigger);
+
+      gsap.to(".news-list", {
+        y: -18,
+        ease: "none",
+        scrollTrigger: {
+          trigger: sectionRef.current,
+          start: "top bottom",
+          end: "bottom top",
+          scrub: true,
+        },
+      });
+    },
+    { scope: sectionRef, dependencies: [loading, items.length] }
+  );
+
   // 날짜 포맷 YYYY-MM-DD → YYYY.MM.DD
   const formatDate = (iso: string) => iso.replaceAll("-", ".");
 
@@ -188,6 +206,9 @@ export default function NewsSection() {
           <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
             お知らせ
           </h2>
+          <div className="mx-auto mb-4 h-1.5 w-28 overflow-hidden rounded-full bg-orange-100">
+            <div className="public-accent-bar h-full w-full rounded-full" />
+          </div>
           <p className="text-slate-500 text-lg max-w-xl mx-auto">
             株式会社マウンテン &gt; お知らせ
           </p>
@@ -229,7 +250,7 @@ export default function NewsSection() {
                 {/* 카테고리 배지 */}
                 <span
                   className={`px-2.5 py-1 text-xs font-semibold rounded-full shrink-0 w-20 text-center
-                    ${categoryColors[item.category] ?? "bg-slate-50 text-slate-500"}`}
+                    ${categoryColors[item.category] ?? "bg-slate-50 text-slate-500"} transition-transform duration-300 group-hover:-translate-y-0.5`}
                 >
                   {item.category}
                 </span>
@@ -241,7 +262,7 @@ export default function NewsSection() {
 
                 {/* 화살표 */}
                 <svg
-                  className="w-4 h-4 text-slate-300 group-hover:text-orange-400 shrink-0 transition-colors hidden sm:block"
+                  className="w-4 h-4 text-slate-300 group-hover:text-orange-400 group-hover:translate-x-1 shrink-0 transition-all hidden sm:block"
                   fill="none" stroke="currentColor" viewBox="0 0 24 24"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
