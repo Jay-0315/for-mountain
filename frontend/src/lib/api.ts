@@ -9,6 +9,12 @@ export type BoardPost = {
   content: string;
   author: string;
   category: string;
+  imageName: string | null;
+  imageData: string | null;
+  videoName: string | null;
+  videoData: string | null;
+  attachmentName: string | null;
+  attachmentData: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -72,7 +78,18 @@ function authHeaders(token: string) {
 
 export async function createBoardPost(
   token: string,
-  data: { title: string; content: string; author: string; category: string }
+  data: {
+    title: string;
+    content: string;
+    author: string;
+    category: string;
+    imageName: string | null;
+    imageData: string | null;
+    videoName: string | null;
+    videoData: string | null;
+    attachmentName: string | null;
+    attachmentData: string | null;
+  }
 ): Promise<BoardPost> {
   const res = await fetch(`${API_BASE}/api/v1/board`, {
     method: "POST",
@@ -86,7 +103,17 @@ export async function createBoardPost(
 export async function updateBoardPost(
   token: string,
   id: number,
-  data: { title: string; content: string; category: string }
+  data: {
+    title: string;
+    content: string;
+    category: string;
+    imageName: string | null;
+    imageData: string | null;
+    videoName: string | null;
+    videoData: string | null;
+    attachmentName: string | null;
+    attachmentData: string | null;
+  }
 ): Promise<BoardPost> {
   const res = await fetch(`${API_BASE}/api/v1/board/${id}`, {
     method: "PUT",

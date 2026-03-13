@@ -29,25 +29,76 @@ public class Board {
     @Column(nullable = false, length = 50)
     private String category;
 
+    @Column(length = 255)
+    private String imageName;
+
+    @Column(columnDefinition = "LONGTEXT")
+    private String imageData;
+
+    @Column(length = 255)
+    private String videoName;
+
+    @Column(columnDefinition = "LONGTEXT")
+    private String videoData;
+
+    @Column(length = 255)
+    private String attachmentName;
+
+    @Column(columnDefinition = "LONGTEXT")
+    private String attachmentData;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    public Board(String title, String content, String author, String category) {
+    public Board(
+            String title,
+            String content,
+            String author,
+            String category,
+            String imageName,
+            String imageData,
+            String videoName,
+            String videoData,
+            String attachmentName,
+            String attachmentData
+    ) {
         this.title = title;
         this.content = content;
         this.author = author;
         this.category = category;
+        this.imageName = imageName;
+        this.imageData = imageData;
+        this.videoName = videoName;
+        this.videoData = videoData;
+        this.attachmentName = attachmentName;
+        this.attachmentData = attachmentData;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
 
-    public void update(String title, String content, String category) {
+    public void update(
+            String title,
+            String content,
+            String category,
+            String imageName,
+            String imageData,
+            String videoName,
+            String videoData,
+            String attachmentName,
+            String attachmentData
+    ) {
         this.title = title;
         this.content = content;
         this.category = category;
+        this.imageName = imageName;
+        this.imageData = imageData;
+        this.videoName = videoName;
+        this.videoData = videoData;
+        this.attachmentName = attachmentName;
+        this.attachmentData = attachmentData;
         this.updatedAt = LocalDateTime.now();
     }
 }

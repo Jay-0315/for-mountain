@@ -29,4 +29,25 @@ public class BoardCreateRequest {
     @Size(max = 50)
     @Schema(description = "Category", example = "採用", allowableValues = {"お知らせ", "会社", "採用", "製品"})
     private String category;
+
+    @Size(max = 255)
+    @Schema(description = "Attached image file name", example = "recruit-banner.png", nullable = true)
+    private String imageName;
+
+    @Schema(description = "Attached image data URL", nullable = true)
+    private String imageData;
+
+    @Size(max = 255)
+    @Schema(description = "Attached video file name", example = "company-intro.mp4", nullable = true)
+    private String videoName;
+
+    @Schema(description = "Attached video data URL", nullable = true)
+    private String videoData;
+
+    @Size(max = 255)
+    @Schema(description = "Attached file name", example = "company-profile.pdf", nullable = true)
+    private String attachmentName;
+
+    @Schema(description = "Attached file data URL", nullable = true)
+    private String attachmentData;
 }

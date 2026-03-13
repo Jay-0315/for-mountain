@@ -1,0 +1,81 @@
+services:
+  mountain-redis:
+    image: redis:7-alpine
+    container_name: mountain-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - mountain-network
+
+  backend:
+    image: ${BACKEND_IMAGE}
+    container_name: mountain-backend
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      PORT: 8080
+      APP_TZ: ${APP_TZ}
+      SPRING_DATASOURCE_URL: "jdbc:mysql://${RDS_ENDPOINT}:3306/${MYSQL_DATABASE}?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&serverTimezone=${APP_TZ}"
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+      SPRING_DATA_REDIS_HOST: mountain-redis
+      SPRING_DATA_REDIS_PORT: 6379
+      MAIL_HOST: ${MAIL_HOST}
+      MAIL_PORT: ${MAIL_PORT}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_TO: ${MAIL_TO}
+      JWT_SECRET: ${JWT_SECRET}
+      ADMIN_INIT_USERNAME: ${ADMIN_INIT_USERNAME}
+      ADMIN_INIT_PASSWORD: ${ADMIN_INIT_PASSWORD}
+    depends_on:
+      mountain-redis:
+        condition: service_started
+    networks:
+      - mountain-network
+
+  frontend:
+    image: ${FRONTEND_IMAGE}
+    container_name: mountain-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_BIND_HOST}:${FRONTEND_PORT}:3000"
+    environment:
+      NODE_ENV: production
+      BACKEND_URL: "http://mountain-backend:8080"
+    depends_on:
+      - backend
+    networks:
+      - mountain-network
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: mountain-caddy
+    restart: unless-stopped
+    command: ["/bin/sh", "/etc/caddy/start.sh"]
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      - ./docker/caddy/Caddyfile.template:/etc/caddy/Caddyfile.template:ro
+      - ./docker/caddy/start.sh:/etc/caddy/start.sh:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+    networks:
+      - mountain-network
+
+volumes:
+  redis_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  mountain-network:
+    driver: bridge

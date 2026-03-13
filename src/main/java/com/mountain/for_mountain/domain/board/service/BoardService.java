@@ -56,7 +56,13 @@ public class BoardService {
                 request.getTitle(),
                 request.getContent(),
                 request.getAuthor(),
-                request.getCategory()
+                request.getCategory(),
+                request.getImageName(),
+                request.getImageData(),
+                request.getVideoName(),
+                request.getVideoData(),
+                request.getAttachmentName(),
+                request.getAttachmentData()
         );
         return new BoardResponse(boardRepository.save(board));
     }
@@ -65,7 +71,17 @@ public class BoardService {
     public BoardResponse update(Long id, BoardUpdateRequest request) {
         Board board = boardRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.BOARD_NOT_FOUND));
-        board.update(request.getTitle(), request.getContent(), request.getCategory());
+        board.update(
+                request.getTitle(),
+                request.getContent(),
+                request.getCategory(),
+                request.getImageName(),
+                request.getImageData(),
+                request.getVideoName(),
+                request.getVideoData(),
+                request.getAttachmentName(),
+                request.getAttachmentData()
+        );
         return new BoardResponse(board);
     }
 

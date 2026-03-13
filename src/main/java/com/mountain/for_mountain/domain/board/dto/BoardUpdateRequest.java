@@ -24,4 +24,25 @@ public class BoardUpdateRequest {
     @Size(max = 50)
     @Schema(description = "Updated category", example = "お知らせ")
     private String category;
+
+    @Size(max = 255)
+    @Schema(description = "Attached image file name", nullable = true)
+    private String imageName;
+
+    @Schema(description = "Attached image data URL", nullable = true)
+    private String imageData;
+
+    @Size(max = 255)
+    @Schema(description = "Attached video file name", nullable = true)
+    private String videoName;
+
+    @Schema(description = "Attached video data URL", nullable = true)
+    private String videoData;
+
+    @Size(max = 255)
+    @Schema(description = "Attached file name", nullable = true)
+    private String attachmentName;
+
+    @Schema(description = "Attached file data URL", nullable = true)
+    private String attachmentData;
 }
