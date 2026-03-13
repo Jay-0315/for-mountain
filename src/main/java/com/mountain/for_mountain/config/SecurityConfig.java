@@ -66,6 +66,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST,   "/api/v1/board/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT,    "/api/v1/board/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/v1/board/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST,   "/api/v1/uploads/presign").hasRole("ADMIN")
                 // Department notice writes (admin only)
                 .requestMatchers(HttpMethod.POST,   "/api/v1/dept-notices").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT,    "/api/v1/dept-notices").hasRole("ADMIN")

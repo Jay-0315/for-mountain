@@ -13,6 +13,7 @@ public enum ErrorCode {
     DIVISION_BY_ZERO(HttpStatus.BAD_REQUEST, "Cannot divide by zero."),
     INVALID_CURRENCY(HttpStatus.BAD_REQUEST, "Unknown currency."),
     EXCHANGE_RATE_FETCH_FAILED(HttpStatus.BAD_GATEWAY, "Cannot fetch exchange rates."),
+    INVALID_UPLOAD_REQUEST(HttpStatus.BAD_REQUEST, "Invalid upload request."),
     WEAK_PASSWORD(HttpStatus.BAD_REQUEST, "Password must be at least 4 characters."),
     INVALID_SETUP_TOKEN(HttpStatus.BAD_REQUEST, "Invalid setup token."),
     SETUP_TOKEN_EXPIRED(HttpStatus.BAD_REQUEST, "Setup token has expired."),
@@ -41,6 +42,8 @@ public enum ErrorCode {
     SERVICE_CATEGORY_IN_USE(HttpStatus.CONFLICT, "Service category is in use."),
 
     // 500
+    S3_NOT_CONFIGURED(HttpStatus.INTERNAL_SERVER_ERROR, "S3 upload is not configured."),
+    FILE_UPLOAD_PREPARE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to prepare file upload."),
     MAIL_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to send contact email.");
 
     private final HttpStatus httpStatus;

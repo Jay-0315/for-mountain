@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -126,6 +127,40 @@ export default function NewsDetailPage() {
             <article className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
               <div className="px-6 py-8 sm:px-8 sm:py-10">
                 <ArticleBody content={post.content} />
+                {(post.imageData || post.videoData || post.attachmentData) && (
+                  <div className="mt-8 space-y-5 border-t border-slate-100 pt-8">
+                    {post.imageData && (
+                      <div className="overflow-hidden rounded-[1.5rem] border border-slate-100 bg-slate-50 p-3">
+                        <Image
+                          src={post.imageData}
+                          alt={post.imageName ?? post.title}
+                          width={1200}
+                          height={800}
+                          unoptimized
+                          className="h-auto w-full rounded-xl object-contain"
+                        />
+                      </div>
+                    )}
+                    {post.videoData && (
+                      <div className="overflow-hidden rounded-[1.5rem] border border-slate-100 bg-slate-950">
+                        <video src={post.videoData} controls playsInline className="w-full bg-black" />
+                      </div>
+                    )}
+                    {post.attachmentData && (
+                      <div>
+                        <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">Attachment</p>
+                        <a
+                          href={post.attachmentData}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-2 inline-flex text-sm font-semibold text-orange-600 hover:underline"
+                        >
+                          {post.attachmentName ?? "添付ファイルを開く"}
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="border-t border-slate-100 bg-slate-50/70 px-6 py-5 sm:px-8">

@@ -15,12 +15,14 @@ import {
   fetchAnnouncements,
   fetchEmployees,
   createBoardPost,
+  createPresignedUpload,
   createAnnouncement,
   createDeptNotice,
   createPartnerCard,
   createServiceCategory,
   createServiceItem,
   updateBoardPost,
+  uploadFileToPresignedUrl,
   updateAnnouncement,
   updateDeptNotice,
   updatePartnerCard,
@@ -72,6 +74,12 @@ function NoticeDetail({
   content,
   author,
   createdAt,
+  imageName,
+  imageUrl,
+  videoName,
+  videoUrl,
+  attachmentName,
+  attachmentUrl,
   onBack,
   actions,
 }: {
@@ -80,6 +88,12 @@ function NoticeDetail({
   content: string;
   author: string;
   createdAt: string;
+  imageName?: string | null;
+  imageUrl?: string | null;
+  videoName?: string | null;
+  videoUrl?: string | null;
+  attachmentName?: string | null;
+  attachmentUrl?: string | null;
   onBack: () => void;
   actions?: ReactNode;
 }) {
@@ -110,6 +124,37 @@ function NoticeDetail({
         </div>
         <div className="px-6 py-6">
           <div className="whitespace-pre-wrap break-words text-sm leading-7 text-slate-700">{content}</div>
+          {(imageUrl || videoUrl || attachmentUrl) && (
+            <div className="mt-6 space-y-4 border-t border-slate-100 pt-6">
+              {imageUrl && (
+                <div className="overflow-hidden rounded-2xl border border-slate-100 bg-slate-50 p-3">
+                  <Image
+                    src={imageUrl}
+                    alt={imageName ?? "Notice image"}
+                    width={1200}
+                    height={800}
+                    unoptimized
+                    className="h-auto w-full rounded-xl object-contain"
+                  />
+                </div>
+              )}
+              {videoUrl && (
+                <div className="overflow-hidden rounded-2xl border border-slate-100 bg-slate-950">
+                  <video src={videoUrl} controls playsInline className="w-full bg-black" />
+                </div>
+              )}
+              {attachmentUrl && (
+                <a
+                  href={attachmentUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex text-sm font-semibold text-orange-600 hover:underline"
+                >
+                  {attachmentName ?? "添付ファイルを開く"}
+                </a>
+              )}
+            </div>
+          )}
         </div>
         {actions && <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-100 bg-white">{actions}</div>}
       </div>
@@ -156,8 +201,79 @@ function WebsitePostForm({
   const [content, setContent] = useState(editPost?.content ?? "");
   const [author, setAuthor] = useState(editPost?.author ?? "");
   const [category, setCategory] = useState(editPost?.category ?? WEBSITE_CATEGORIES[0]);
+  const [imageName, setImageName] = useState<string | null>(editPost?.imageName ?? null);
+  const [imageData, setImageData] = useState<string | null>(editPost?.imageData ?? null);
+  const [videoName, setVideoName] = useState<string | null>(editPost?.videoName ?? null);
+  const [videoData, setVideoData] = useState<string | null>(editPost?.videoData ?? null);
+  const [attachmentName, setAttachmentName] = useState<string | null>(editPost?.attachmentName ?? null);
+  const [attachmentData, setAttachmentData] = useState<string | null>(editPost?.attachmentData ?? null);
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+
+  const uploadFile = async (file: File, directory: string) => {
+    const contentType = file.type || "application/octet-stream";
+    const presigned = await createPresignedUpload(token, {
+      fileName: file.name,
+      contentType,
+      directory,
+    });
+    return uploadFileToPresignedUrl(presigned, file);
+  };
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setError("");
+    try {
+      const url = await uploadFile(file, "board/images");
+      setImageName(file.name);
+      setImageData(url);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "画像のアップロードに失敗しました。");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleVideoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setError("");
+    try {
+      const url = await uploadFile(file, "board/videos");
+      setVideoName(file.name);
+      setVideoData(url);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "動画のアップロードに失敗しました。");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleAttachmentChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setError("");
+    try {
+      const url = await uploadFile(file, "board/attachments");
+      setAttachmentName(file.name);
+      setAttachmentData(url);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "添付ファイルのアップロードに失敗しました。");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -169,12 +285,12 @@ function WebsitePostForm({
           title,
           content,
           category,
-          imageName: editPost.imageName ?? null,
-          imageData: editPost.imageData ?? null,
-          videoName: editPost.videoName ?? null,
-          videoData: editPost.videoData ?? null,
-          attachmentName: editPost.attachmentName ?? null,
-          attachmentData: editPost.attachmentData ?? null,
+          imageName,
+          imageData,
+          videoName,
+          videoData,
+          attachmentName,
+          attachmentData,
         });
       } else {
         await createBoardPost(token, {
@@ -182,12 +298,12 @@ function WebsitePostForm({
           content,
           author,
           category,
-          imageName: null,
-          imageData: null,
-          videoName: null,
-          videoData: null,
-          attachmentName: null,
-          attachmentData: null,
+          imageName,
+          imageData,
+          videoName,
+          videoData,
+          attachmentName,
+          attachmentData,
         });
       }
       onDone();
@@ -218,7 +334,7 @@ function WebsitePostForm({
                 type="button"
                 onClick={() => setCategory(cat)}
                 className={`px-4 py-1.5 rounded-full text-sm font-semibold border transition-colors ${
-                  category === cat ? "bg-green-500 text-white border-green-500" : "text-slate-500 border-slate-200 hover:border-green-300 hover:text-green-600"
+                  category === cat ? "bg-orange-500 text-white border-orange-500" : "text-slate-500 border-slate-200 hover:border-orange-300 hover:text-orange-600"
                 }`}
               >
                 {cat}
@@ -262,6 +378,69 @@ function WebsitePostForm({
             className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder:text-slate-300 text-sm resize-none leading-relaxed"
           />
         </div>
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-slate-700">画像</label>
+          <label className="flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 transition-colors hover:border-orange-300 hover:bg-orange-50/40">
+            <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+            <div>
+              <p className="text-sm font-medium text-slate-700">{imageName ?? "画像をアップロード"}</p>
+              <p className="mt-1 text-xs text-slate-400">{uploading ? "アップロード中..." : "PNG / JPG / WebP など"}</p>
+            </div>
+            <span className="text-sm font-semibold text-orange-500">選択</span>
+          </label>
+          {imageData && (
+            <div className="mt-3 overflow-hidden rounded-xl border border-slate-100 bg-white p-3">
+              <Image src={imageData} alt={imageName ?? "Image preview"} width={1200} height={800} unoptimized className="h-auto max-h-72 w-auto rounded-lg object-contain" />
+            </div>
+          )}
+          {imageName && (
+            <button type="button" onClick={() => { setImageName(null); setImageData(null); }} className="mt-2 text-xs font-semibold text-red-500 hover:text-red-600">
+              画像を削除
+            </button>
+          )}
+        </div>
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-slate-700">動画</label>
+          <label className="flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 transition-colors hover:border-orange-300 hover:bg-orange-50/40">
+            <input type="file" accept="video/*" className="hidden" onChange={handleVideoChange} />
+            <div>
+              <p className="text-sm font-medium text-slate-700">{videoName ?? "動画をアップロード"}</p>
+              <p className="mt-1 text-xs text-slate-400">{uploading ? "アップロード中..." : "MP4 / WebM / MOV など"}</p>
+            </div>
+            <span className="text-sm font-semibold text-orange-500">選択</span>
+          </label>
+          {videoData && (
+            <div className="mt-3 overflow-hidden rounded-xl border border-slate-100 bg-slate-950">
+              <video src={videoData} controls playsInline className="max-h-72 w-full bg-black" />
+            </div>
+          )}
+          {videoName && (
+            <button type="button" onClick={() => { setVideoName(null); setVideoData(null); }} className="mt-2 text-xs font-semibold text-red-500 hover:text-red-600">
+              動画を削除
+            </button>
+          )}
+        </div>
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-slate-700">添付ファイル</label>
+          <label className="flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 transition-colors hover:border-orange-300 hover:bg-orange-50/40">
+            <input type="file" className="hidden" onChange={handleAttachmentChange} />
+            <div>
+              <p className="text-sm font-medium text-slate-700">{attachmentName ?? "ファイルをアップロード"}</p>
+              <p className="mt-1 text-xs text-slate-400">{uploading ? "アップロード中..." : "PDF / image / office file など"}</p>
+            </div>
+            <span className="text-sm font-semibold text-orange-500">選択</span>
+          </label>
+          {attachmentData && isImageAttachment(attachmentName, attachmentData) && (
+            <div className="mt-3 overflow-hidden rounded-xl border border-slate-100 bg-white p-3">
+              <Image src={attachmentData} alt={attachmentName ?? "Attachment preview"} width={1200} height={800} unoptimized className="h-auto max-h-72 w-auto rounded-lg object-contain" />
+            </div>
+          )}
+          {attachmentName && (
+            <button type="button" onClick={() => { setAttachmentName(null); setAttachmentData(null); }} className="mt-2 text-xs font-semibold text-red-500 hover:text-red-600">
+              添付を削除
+            </button>
+          )}
+        </div>
         {error && <p className="text-red-500 text-xs bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
         <div className="flex gap-3 justify-end">
           <button
@@ -273,7 +452,7 @@ function WebsitePostForm({
           </button>
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || uploading}
             className="admin-btn-primary px-5 py-2.5"
           >
             {loading ? "保存中..." : isEdit ? "更新する" : "投稿する"}
@@ -358,6 +537,12 @@ function WebsiteTab() {
         content={selectedPost.content}
         author={selectedPost.author || "株式会社マウンテン"}
         createdAt={selectedPost.createdAt}
+        imageName={selectedPost.imageName}
+        imageUrl={selectedPost.imageData}
+        videoName={selectedPost.videoName}
+        videoUrl={selectedPost.videoData}
+        attachmentName={selectedPost.attachmentName}
+        attachmentUrl={selectedPost.attachmentData}
         onBack={() => setView("list")}
         actions={isAdmin ? (
           <>
@@ -1008,6 +1193,16 @@ function readFileAsDataUrl(file: File) {
   });
 }
 
+async function uploadFileWithPresign(token: string, file: File, directory: string) {
+  const contentType = file.type || "application/octet-stream";
+  const presigned = await createPresignedUpload(token, {
+    fileName: file.name,
+    contentType,
+    directory,
+  });
+  return uploadFileToPresignedUrl(presigned, file);
+}
+
 function PartnersTab() {
   const [token] = useState(() => (typeof window === "undefined" ? "" : sessionStorage.getItem("admin_token") ?? ""));
   const isAdmin = hasAdminAccess(token);
@@ -1060,10 +1255,10 @@ function PartnersTab() {
     setUploading(true);
     setError("");
     try {
-      const nextImageSrc = await readFileAsDataUrl(file);
+      const nextImageSrc = await uploadFileWithPresign(token, file, "partners/images");
       setImageSrc(nextImageSrc);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "画像の読み込みに失敗しました。");
+      setError(err instanceof Error ? err.message : "画像のアップロードに失敗しました。");
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -1468,11 +1663,11 @@ function ServiceItemsTab() {
     setUploading(true);
     setError("");
     try {
-      const data = await readFileAsDataUrl(file);
+      const data = await uploadFileWithPresign(token, file, "services/attachments");
       setAttachmentName(file.name);
       setAttachmentData(data);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "添付ファイルの読み込みに失敗しました。");
+      setError(err instanceof Error ? err.message : "添付ファイルのアップロードに失敗しました。");
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -1486,11 +1681,11 @@ function ServiceItemsTab() {
     setUploading(true);
     setError("");
     try {
-      const data = await readFileAsDataUrl(file);
+      const data = await uploadFileWithPresign(token, file, "services/images");
       setImageName(file.name);
       setImageData(data);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "画像の読み込みに失敗しました。");
+      setError(err instanceof Error ? err.message : "画像のアップロードに失敗しました。");
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -1504,11 +1699,11 @@ function ServiceItemsTab() {
     setUploading(true);
     setError("");
     try {
-      const data = await readFileAsDataUrl(file);
+      const data = await uploadFileWithPresign(token, file, "services/videos");
       setVideoName(file.name);
       setVideoData(data);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "動画の読み込みに失敗しました。");
+      setError(err instanceof Error ? err.message : "動画のアップロードに失敗しました。");
     } finally {
       setUploading(false);
       e.target.value = "";

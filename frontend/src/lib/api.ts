@@ -27,6 +27,13 @@ export type BoardListResponse = {
   last: boolean;
 };
 
+export type PresignedUploadResponse = {
+  uploadUrl: string;
+  fileUrl: string;
+  objectKey: string;
+  headers: Record<string, string>;
+};
+
 export type CreateEmployeeAccountResponse = {
   username: string;
   setupToken: string;
@@ -130,6 +137,35 @@ export async function deleteBoardPost(token: string, id: number): Promise<void> 
     headers: authHeaders(token),
   });
   if (!res.ok) throw new Error("Failed to delete post");
+}
+
+export async function createPresignedUpload(
+  token: string,
+  data: { fileName: string; contentType: string; directory: string }
+): Promise<PresignedUploadResponse> {
+  const res = await fetch(`${API_BASE}/api/v1/uploads/presign`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    throw new Error((json as { message?: string }).message ?? "Failed to prepare upload");
+  }
+  return res.json();
+}
+
+export async function uploadFileToPresignedUrl(
+  presigned: PresignedUploadResponse,
+  file: File
+): Promise<string> {
+  const res = await fetch(presigned.uploadUrl, {
+    method: "PUT",
+    headers: presigned.headers,
+    body: file,
+  });
+  if (!res.ok) throw new Error("Failed to upload file to storage");
+  return presigned.fileUrl;
 }
 
 export async function createEmployeeAccount(
