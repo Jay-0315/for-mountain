@@ -95,7 +95,7 @@ export default function GridRunnerBackdrop() {
     if (!ctx) return;
 
     let trails = buildRunnerTrails(window.innerWidth, 260);
-    const progress = RUNNERS.map((runner) => runner.offset);
+    const progress: number[] = RUNNERS.map((runner) => runner.offset);
     const particles: Particle[] = Array.from({ length: 22 }, () => ({
       x: Math.random() * window.innerWidth,
       y: Math.random() * 260,
