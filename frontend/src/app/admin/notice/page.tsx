@@ -165,9 +165,30 @@ function WebsitePostForm({
     setLoading(true);
     try {
       if (isEdit && editPost) {
-        await updateBoardPost(token, editPost.id, { title, content, category });
+        await updateBoardPost(token, editPost.id, {
+          title,
+          content,
+          category,
+          imageName: editPost.imageName ?? null,
+          imageData: editPost.imageData ?? null,
+          videoName: editPost.videoName ?? null,
+          videoData: editPost.videoData ?? null,
+          attachmentName: editPost.attachmentName ?? null,
+          attachmentData: editPost.attachmentData ?? null,
+        });
       } else {
-        await createBoardPost(token, { title, content, author, category });
+        await createBoardPost(token, {
+          title,
+          content,
+          author,
+          category,
+          imageName: null,
+          imageData: null,
+          videoName: null,
+          videoData: null,
+          attachmentName: null,
+          attachmentData: null,
+        });
       }
       onDone();
     } catch (err: unknown) {
