@@ -482,6 +482,11 @@ export type ServiceCategoryDto = {
   updatedAt: string;
 };
 
+export type MediaAsset = {
+  name: string | null;
+  url: string;
+};
+
 export type ServiceItemDto = {
   id: number;
   category: string;
@@ -489,11 +494,14 @@ export type ServiceItemDto = {
   content: string;
   videoName: string | null;
   videoData: string | null;
+  videoAssets: MediaAsset[];
   linkUrl: string | null;
   imageName: string | null;
   imageData: string | null;
+  imageAssets: MediaAsset[];
   attachmentName: string | null;
   attachmentData: string | null;
+  attachmentAssets: MediaAsset[];
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
@@ -656,11 +664,14 @@ export async function createServiceItem(
     content: string;
     videoName: string | null;
     videoData: string | null;
+    videoAssets: MediaAsset[];
     linkUrl: string | null;
     imageName: string | null;
     imageData: string | null;
+    imageAssets: MediaAsset[];
     attachmentName: string | null;
     attachmentData: string | null;
+    attachmentAssets: MediaAsset[];
   }
 ): Promise<ServiceItemDto> {
   const res = await fetch(`${API_BASE}/api/v1/service-items`, {
@@ -681,11 +692,14 @@ export async function updateServiceItem(
     content: string;
     videoName: string | null;
     videoData: string | null;
+    videoAssets: MediaAsset[];
     linkUrl: string | null;
     imageName: string | null;
     imageData: string | null;
+    imageAssets: MediaAsset[];
     attachmentName: string | null;
     attachmentData: string | null;
+    attachmentAssets: MediaAsset[];
   }
 ): Promise<ServiceItemDto> {
   const res = await fetch(`${API_BASE}/api/v1/service-items/${id}`, {

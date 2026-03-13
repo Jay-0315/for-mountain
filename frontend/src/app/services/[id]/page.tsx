@@ -34,6 +34,9 @@ export default function ServiceDetailPage() {
 
   const categoryInfo = item ? categories.find((category) => category.slug === item.category) : null;
   const categoryLabel = categoryInfo ? categoryInfo.name : item?.category ?? "";
+  const imageAssets = item?.imageAssets?.length ? item.imageAssets : item?.imageData ? [{ name: item.imageName, url: item.imageData }] : [];
+  const videoAssets = item?.videoAssets?.length ? item.videoAssets : item?.videoData ? [{ name: item.videoName, url: item.videoData }] : [];
+  const attachmentAssets = item?.attachmentAssets?.length ? item.attachmentAssets : item?.attachmentData ? [{ name: item.attachmentName, url: item.attachmentData }] : [];
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff7ed_0%,#ffffff_28%,#f8fafc_100%)]">
@@ -87,22 +90,30 @@ export default function ServiceDetailPage() {
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px] lg:items-start">
             <article className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
               <div className="space-y-8 px-6 py-8 sm:px-8 sm:py-10">
-                {item.imageData && (
-                  <div className="overflow-hidden rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                    <Image
-                      src={item.imageData}
-                      alt={item.imageName ?? item.title}
-                      width={1400}
-                      height={900}
-                      unoptimized
-                      className="h-auto w-full rounded-xl object-contain"
-                    />
+                {imageAssets.length > 0 && (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {imageAssets.map((asset, index) => (
+                      <div key={`${asset.url}-${index}`} className="overflow-hidden rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                        <Image
+                          src={asset.url}
+                          alt={asset.name ?? item.title}
+                          width={1400}
+                          height={900}
+                          unoptimized
+                          className="h-auto w-full rounded-xl object-contain"
+                        />
+                      </div>
+                    ))}
                   </div>
                 )}
 
-                {item.videoData && (
-                  <div className="overflow-hidden rounded-2xl border border-slate-100 bg-slate-950">
-                    <video src={item.videoData} controls playsInline className="w-full bg-black" />
+                {videoAssets.length > 0 && (
+                  <div className="grid gap-4">
+                    {videoAssets.map((asset, index) => (
+                      <div key={`${asset.url}-${index}`} className="overflow-hidden rounded-2xl border border-slate-100 bg-slate-950">
+                        <video src={asset.url} controls playsInline className="w-full bg-black" />
+                      </div>
+                    ))}
                   </div>
                 )}
 
@@ -139,14 +150,19 @@ export default function ServiceDetailPage() {
                 </a>
               )}
 
-              {item.attachmentData && (
-                <a
-                  href={item.attachmentData}
-                  download={item.attachmentName ?? "attachment"}
-                  className="inline-flex w-full items-center justify-center rounded-2xl border border-orange-200 bg-orange-50 px-5 py-4 text-sm font-semibold text-orange-600 transition-all hover:-translate-y-0.5 hover:border-orange-500 hover:bg-orange-500 hover:text-white"
-                >
-                  詳細資料
-                </a>
+              {attachmentAssets.length > 0 && (
+                <div className="space-y-3">
+                  {attachmentAssets.map((asset, index) => (
+                    <a
+                      key={`${asset.url}-${index}`}
+                      href={asset.url}
+                      download={asset.name ?? "attachment"}
+                      className="inline-flex w-full items-center justify-center rounded-2xl border border-orange-200 bg-orange-50 px-5 py-4 text-sm font-semibold text-orange-600 transition-all hover:-translate-y-0.5 hover:border-orange-500 hover:bg-orange-500 hover:text-white"
+                    >
+                      {asset.name ?? "詳細資料"}
+                    </a>
+                  ))}
+                </div>
               )}
             </aside>
           </div>

@@ -1,8 +1,12 @@
 package com.mountain.for_mountain.domain.serviceitem.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mountain.for_mountain.common.CustomException;
 import com.mountain.for_mountain.common.ErrorCode;
 import com.mountain.for_mountain.domain.servicecategory.service.ServiceCategoryService;
+import com.mountain.for_mountain.domain.serviceitem.dto.MediaAssetDto;
 import com.mountain.for_mountain.domain.serviceitem.dto.ServiceItemOrderRequest;
 import com.mountain.for_mountain.domain.serviceitem.dto.ServiceItemRequest;
 import com.mountain.for_mountain.domain.serviceitem.dto.ServiceItemResponse;
@@ -23,6 +27,7 @@ public class ServiceItemService {
 
     private final ServiceItemRepository serviceItemRepository;
     private final ServiceCategoryService serviceCategoryService;
+    private final ObjectMapper objectMapper;
 
     public List<ServiceItemResponse> getList(String category) {
         List<ServiceItem> items = (category == null || category.isBlank())
@@ -30,14 +35,14 @@ public class ServiceItemService {
                 : serviceItemRepository.findByCategoryOrderBySortOrderAscCreatedAtAsc(category.trim());
 
         return items.stream()
-                .map(ServiceItemResponse::new)
+                .map(this::toResponse)
                 .toList();
     }
 
     public ServiceItemResponse getDetail(Long id) {
         ServiceItem item = serviceItemRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.SERVICE_ITEM_NOT_FOUND));
-        return new ServiceItemResponse(item);
+        return toResponse(item);
     }
 
     @Transactional
@@ -45,20 +50,27 @@ public class ServiceItemService {
         String category = request.getCategory().trim();
         serviceCategoryService.getBySlugOrThrow(category);
 
+        List<MediaAssetDto> videoAssets = normalizeAssets(request.getVideoAssets(), request.getVideoName(), request.getVideoData());
+        List<MediaAssetDto> imageAssets = normalizeAssets(request.getImageAssets(), request.getImageName(), request.getImageData());
+        List<MediaAssetDto> attachmentAssets = normalizeAssets(request.getAttachmentAssets(), request.getAttachmentName(), request.getAttachmentData());
+
         ServiceItem item = ServiceItem.create(
                 category,
                 request.getTitle().trim(),
                 request.getContent().trim(),
-                normalizeNullable(request.getVideoName()),
-                normalizeNullable(request.getVideoData()),
+                firstAssetName(videoAssets),
+                firstAssetUrl(videoAssets),
+                writeAssets(videoAssets),
                 normalizeNullable(request.getLinkUrl()),
-                normalizeNullable(request.getImageName()),
-                normalizeNullable(request.getImageData()),
-                normalizeNullable(request.getAttachmentName()),
-                normalizeNullable(request.getAttachmentData()),
+                firstAssetName(imageAssets),
+                firstAssetUrl(imageAssets),
+                writeAssets(imageAssets),
+                firstAssetName(attachmentAssets),
+                firstAssetUrl(attachmentAssets),
+                writeAssets(attachmentAssets),
                 serviceItemRepository.findAllByOrderBySortOrderAscCreatedAtAsc().size()
         );
-        return new ServiceItemResponse(serviceItemRepository.save(item));
+        return toResponse(serviceItemRepository.save(item));
     }
 
     @Transactional
@@ -67,19 +79,25 @@ public class ServiceItemService {
                 .orElseThrow(() -> new CustomException(ErrorCode.SERVICE_ITEM_NOT_FOUND));
         String category = request.getCategory().trim();
         serviceCategoryService.getBySlugOrThrow(category);
+        List<MediaAssetDto> videoAssets = normalizeAssets(request.getVideoAssets(), request.getVideoName(), request.getVideoData());
+        List<MediaAssetDto> imageAssets = normalizeAssets(request.getImageAssets(), request.getImageName(), request.getImageData());
+        List<MediaAssetDto> attachmentAssets = normalizeAssets(request.getAttachmentAssets(), request.getAttachmentName(), request.getAttachmentData());
         item.update(
                 category,
                 request.getTitle().trim(),
                 request.getContent().trim(),
-                normalizeNullable(request.getVideoName()),
-                normalizeNullable(request.getVideoData()),
+                firstAssetName(videoAssets),
+                firstAssetUrl(videoAssets),
+                writeAssets(videoAssets),
                 normalizeNullable(request.getLinkUrl()),
-                normalizeNullable(request.getImageName()),
-                normalizeNullable(request.getImageData()),
-                normalizeNullable(request.getAttachmentName()),
-                normalizeNullable(request.getAttachmentData())
+                firstAssetName(imageAssets),
+                firstAssetUrl(imageAssets),
+                writeAssets(imageAssets),
+                firstAssetName(attachmentAssets),
+                firstAssetUrl(attachmentAssets),
+                writeAssets(attachmentAssets)
         );
-        return new ServiceItemResponse(item);
+        return toResponse(item);
     }
 
     @Transactional
@@ -105,8 +123,83 @@ public class ServiceItemService {
         }
 
         return serviceItemRepository.findAllByOrderBySortOrderAscCreatedAtAsc().stream()
-                .map(ServiceItemResponse::new)
+                .map(this::toResponse)
                 .toList();
+    }
+
+    private ServiceItemResponse toResponse(ServiceItem item) {
+        List<MediaAssetDto> videoAssets = readAssets(item.getVideoAssetsJson(), item.getVideoName(), item.getVideoData());
+        List<MediaAssetDto> imageAssets = readAssets(item.getImageAssetsJson(), item.getImageName(), item.getImageData());
+        List<MediaAssetDto> attachmentAssets = readAssets(item.getAttachmentAssetsJson(), item.getAttachmentName(), item.getAttachmentData());
+
+        return new ServiceItemResponse(
+                item.getId(),
+                item.getCategory(),
+                item.getTitle(),
+                item.getContent(),
+                item.getVideoName(),
+                item.getVideoData(),
+                videoAssets,
+                item.getLinkUrl(),
+                item.getImageName(),
+                item.getImageData(),
+                imageAssets,
+                item.getAttachmentName(),
+                item.getAttachmentData(),
+                attachmentAssets,
+                item.getSortOrder(),
+                item.getCreatedAt().toString(),
+                item.getUpdatedAt().toString()
+        );
+    }
+
+    private List<MediaAssetDto> normalizeAssets(List<MediaAssetDto> assets, String legacyName, String legacyUrl) {
+        List<MediaAssetDto> normalized = (assets == null ? List.<MediaAssetDto>of() : assets).stream()
+                .filter(asset -> asset != null && normalizeNullable(asset.getUrl()) != null)
+                .map(asset -> new MediaAssetDto(
+                        normalizeNullable(asset.getName()),
+                        normalizeNullable(asset.getUrl())
+                ))
+                .toList();
+
+        if (!normalized.isEmpty()) {
+            return normalized;
+        }
+
+        String url = normalizeNullable(legacyUrl);
+        if (url == null) {
+            return List.of();
+        }
+        return List.of(new MediaAssetDto(normalizeNullable(legacyName), url));
+    }
+
+    private List<MediaAssetDto> readAssets(String json, String legacyName, String legacyUrl) {
+        if (json != null && !json.isBlank()) {
+            try {
+                return objectMapper.readValue(json, new TypeReference<List<MediaAssetDto>>() {});
+            } catch (JsonProcessingException ignored) {
+            }
+        }
+        return normalizeAssets(null, legacyName, legacyUrl);
+    }
+
+    private String writeAssets(List<MediaAssetDto> assets) {
+        if (assets == null || assets.isEmpty()) {
+            return null;
+        }
+        try {
+            return objectMapper.writeValueAsString(assets);
+        } catch (JsonProcessingException e) {
+            throw new CustomException(ErrorCode.INVALID_UPLOAD_REQUEST);
+        }
+    }
+
+    private String firstAssetName(List<MediaAssetDto> assets) {
+        return assets.isEmpty() ? null : normalizeNullable(assets.get(0).getName());
+    }
+
+    private String firstAssetUrl(List<MediaAssetDto> assets) {
+        return assets.isEmpty() ? null : normalizeNullable(assets.get(0).getUrl());
     }
 
     private String normalizeNullable(String value) {

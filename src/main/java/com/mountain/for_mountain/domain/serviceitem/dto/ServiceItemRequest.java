@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Getter
 @NoArgsConstructor
 public class ServiceItemRequest {
@@ -27,7 +29,13 @@ public class ServiceItemRequest {
 
     private String imageData;
 
+    private List<MediaAssetDto> imageAssets;
+
     private String attachmentName;
 
     private String attachmentData;
+
+    private List<MediaAssetDto> attachmentAssets;
+
+    private List<MediaAssetDto> videoAssets;
 }

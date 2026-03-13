@@ -21,6 +21,16 @@ function isImageAttachment(imageName: string | null, imageData: string | null) {
   return /\.(png|jpe?g|gif|webp|svg|bmp|ico)$/i.test(imageName);
 }
 
+function getPrimaryImage(item: ServiceItemDto) {
+  if (item.imageAssets?.length) {
+    return item.imageAssets[0];
+  }
+  if (item.imageData) {
+    return { name: item.imageName, url: item.imageData };
+  }
+  return null;
+}
+
 function createPreviewLines(content: string) {
   const lines = content
     .split("\n")
@@ -253,60 +263,64 @@ export default function ServicesSection() {
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {activeItems.map((item) => (
-                <Link
-                  key={item.id}
-                  href={`/services/${item.id}`}
-                  className="service-card group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.05)] transition-all duration-300 hover:-translate-y-1 hover:border-orange-200 hover:shadow-[0_18px_40px_rgba(249,115,22,0.10)]"
-                >
-                  <div className="relative aspect-[16/10] overflow-hidden border-b border-slate-200 bg-[linear-gradient(135deg,#f8fafc_0%,#fff7ed_55%,#ffedd5_100%)]">
-                    {isImageAttachment(item.imageName, item.imageData) && item.imageData ? (
-                      <Image
-                        src={item.imageData}
-                        alt={item.imageName ?? item.title}
-                        fill
-                        unoptimized
-                        className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-orange-300">
-                        <div className="flex h-20 w-20 items-center justify-center rounded-[1.5rem] border border-white/60 bg-white/80 shadow-sm backdrop-blur">
-                          {renderServiceCategoryIcon(activeCategory?.iconKey ?? "folder", "h-8 w-8")}
+              {activeItems.map((item) => {
+                const primaryImage = getPrimaryImage(item);
+
+                return (
+                  <Link
+                    key={item.id}
+                    href={`/services/${item.id}`}
+                    className="service-card group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.05)] transition-all duration-300 hover:-translate-y-1 hover:border-orange-200 hover:shadow-[0_18px_40px_rgba(249,115,22,0.10)]"
+                  >
+                    <div className="relative aspect-[16/10] overflow-hidden border-b border-slate-200 bg-[linear-gradient(135deg,#f8fafc_0%,#fff7ed_55%,#ffedd5_100%)]">
+                      {primaryImage && isImageAttachment(primaryImage.name, primaryImage.url) ? (
+                        <Image
+                          src={primaryImage.url}
+                          alt={primaryImage.name ?? item.title}
+                          fill
+                          unoptimized
+                          className="object-contain p-4 transition-transform duration-500 group-hover:scale-[1.02]"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-orange-300">
+                          <div className="flex h-20 w-20 items-center justify-center rounded-[1.5rem] border border-white/60 bg-white/80 shadow-sm backdrop-blur">
+                            {renderServiceCategoryIcon(activeCategory?.iconKey ?? "folder", "h-8 w-8")}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/80 via-slate-950/32 to-transparent px-6 pb-5 pt-16">
+                        <div className="flex items-center gap-3">
+                          <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold tracking-[0.12em] text-white/90 backdrop-blur">
+                            {activeCategory?.name ?? item.category}
+                          </span>
                         </div>
                       </div>
-                    )}
+                    </div>
 
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/80 via-slate-950/32 to-transparent px-6 pb-5 pt-16">
-                      <div className="flex items-center gap-3">
-                        <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold tracking-[0.12em] text-white/90 backdrop-blur">
-                          {activeCategory?.name ?? item.category}
+                    <div className="flex flex-1 flex-col px-5 py-5">
+                      <div className="flex items-start justify-between gap-4">
+                        <h4 className="line-clamp-2 text-lg font-bold leading-7 text-slate-900">{item.title}</h4>
+                        <div className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-500 md:flex">
+                          {renderServiceCategoryIcon(activeCategory?.iconKey ?? "folder")}
+                        </div>
+                      </div>
+
+                      <div className="mt-4 h-px w-full bg-slate-200" />
+
+                      <div className="mt-4 space-y-1 overflow-hidden">
+                        {renderPreview(createPreviewLines(item.content))}
+                      </div>
+
+                      <div className="mt-6 border-t border-slate-200 pt-4">
+                        <span className="text-sm font-medium text-orange-500 transition-colors duration-200 group-hover:text-orange-600">
+                          詳しくはクリックしてください
                         </span>
                       </div>
                     </div>
-                  </div>
-
-                  <div className="flex flex-1 flex-col px-5 py-5">
-                    <div className="flex items-start justify-between gap-4">
-                      <h4 className="line-clamp-2 text-lg font-bold leading-7 text-slate-900">{item.title}</h4>
-                      <div className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-500 md:flex">
-                        {renderServiceCategoryIcon(activeCategory?.iconKey ?? "folder")}
-                      </div>
-                    </div>
-
-                    <div className="mt-4 h-px w-full bg-slate-200" />
-
-                    <div className="mt-4 space-y-1 overflow-hidden">
-                      {renderPreview(createPreviewLines(item.content))}
-                    </div>
-
-                    <div className="mt-6 border-t border-slate-200 pt-4">
-                      <span className="text-sm font-medium text-orange-500 transition-colors duration-200 group-hover:text-orange-600">
-                        詳しくはクリックしてください
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                );
+              })}
             </div>
           )}
         </div>

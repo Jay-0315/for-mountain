@@ -28,6 +28,7 @@ import {
   deleteServiceCategory,
   deleteServiceItem,
   reorderServiceItems,
+  type MediaAsset,
   type ServiceCategoryDto,
   type ServiceItemDto,
   fetchPartnerCards,
@@ -450,6 +451,10 @@ async function uploadFileWithPresign(token: string, file: File, directory: strin
     directory,
   });
   return uploadFileToPresignedUrl(presigned, file);
+}
+
+function removeAssetAt(assets: MediaAsset[], index: number) {
+  return assets.filter((_, currentIndex) => currentIndex !== index);
 }
 
 function moveItem<T extends { id: number }>(items: T[], activeId: number, targetId: number) {
@@ -1066,13 +1071,10 @@ export function ServiceItemsTab() {
   const [category, setCategory] = useState("");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [videoName, setVideoName] = useState<string | null>(null);
-  const [videoData, setVideoData] = useState<string | null>(null);
+  const [videoAssets, setVideoAssets] = useState<MediaAsset[]>([]);
   const [linkUrl, setLinkUrl] = useState("");
-  const [imageName, setImageName] = useState<string | null>(null);
-  const [imageData, setImageData] = useState<string | null>(null);
-  const [attachmentName, setAttachmentName] = useState<string | null>(null);
-  const [attachmentData, setAttachmentData] = useState<string | null>(null);
+  const [imageAssets, setImageAssets] = useState<MediaAsset[]>([]);
+  const [attachmentAssets, setAttachmentAssets] = useState<MediaAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -1116,13 +1118,10 @@ export function ServiceItemsTab() {
     setCategory(categories[0]?.slug ?? "");
     setTitle("");
     setContent("");
-    setVideoName(null);
-    setVideoData(null);
+    setVideoAssets([]);
     setLinkUrl("");
-    setImageName(null);
-    setImageData(null);
-    setAttachmentName(null);
-    setAttachmentData(null);
+    setImageAssets([]);
+    setAttachmentAssets([]);
     setError("");
     setView("form");
   };
@@ -1132,13 +1131,10 @@ export function ServiceItemsTab() {
     setCategory(item.category);
     setTitle(item.title);
     setContent(item.content);
-    setVideoName(item.videoName);
-    setVideoData(item.videoData);
+    setVideoAssets(item.videoAssets?.length ? item.videoAssets : item.videoData ? [{ name: item.videoName, url: item.videoData }] : []);
     setLinkUrl(item.linkUrl ?? "");
-    setImageName(item.imageName);
-    setImageData(item.imageData);
-    setAttachmentName(item.attachmentName);
-    setAttachmentData(item.attachmentData);
+    setImageAssets(item.imageAssets?.length ? item.imageAssets : item.imageData ? [{ name: item.imageName, url: item.imageData }] : []);
+    setAttachmentAssets(item.attachmentAssets?.length ? item.attachmentAssets : item.attachmentData ? [{ name: item.attachmentName, url: item.attachmentData }] : []);
     setError("");
     setView("form");
   };
@@ -1207,8 +1203,7 @@ export function ServiceItemsTab() {
     setError("");
     try {
       const data = await uploadFileWithPresign(token, file, "services/attachments");
-      setAttachmentName(file.name);
-      setAttachmentData(data);
+      setAttachmentAssets((current) => [...current, { name: file.name, url: data }]);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "添付ファイルのアップロードに失敗しました。");
     } finally {
@@ -1225,8 +1220,7 @@ export function ServiceItemsTab() {
     setError("");
     try {
       const data = await uploadFileWithPresign(token, file, "services/images");
-      setImageName(file.name);
-      setImageData(data);
+      setImageAssets((current) => [...current, { name: file.name, url: data }]);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "画像のアップロードに失敗しました。");
     } finally {
@@ -1243,8 +1237,7 @@ export function ServiceItemsTab() {
     setError("");
     try {
       const data = await uploadFileWithPresign(token, file, "services/videos");
-      setVideoName(file.name);
-      setVideoData(data);
+      setVideoAssets((current) => [...current, { name: file.name, url: data }]);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "動画のアップロードに失敗しました。");
     } finally {
@@ -1258,17 +1251,23 @@ export function ServiceItemsTab() {
     setSaving(true);
     setError("");
     try {
+      const primaryVideo = videoAssets[0] ?? null;
+      const primaryImage = imageAssets[0] ?? null;
+      const primaryAttachment = attachmentAssets[0] ?? null;
       const payload = {
         category,
         title,
         content,
-        videoName,
-        videoData,
+        videoName: primaryVideo?.name ?? null,
+        videoData: primaryVideo?.url ?? null,
+        videoAssets,
         linkUrl: linkUrl.trim() || null,
-        imageName,
-        imageData,
-        attachmentName,
-        attachmentData,
+        imageName: primaryImage?.name ?? null,
+        imageData: primaryImage?.url ?? null,
+        imageAssets,
+        attachmentName: primaryAttachment?.name ?? null,
+        attachmentData: primaryAttachment?.url ?? null,
+        attachmentAssets,
       };
 
       if (editItem) {
@@ -1391,34 +1390,25 @@ export function ServiceItemsTab() {
             <label className="flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 transition-colors hover:border-orange-300 hover:bg-orange-50/40">
               <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
               <div>
-                <p className="text-sm font-medium text-slate-700">{imageName ?? "画像をアップロード"}</p>
+                <p className="text-sm font-medium text-slate-700">画像をアップロード</p>
                 <p className="mt-1 text-xs text-slate-400">{uploading ? "読み込み中..." : "PNG / JPG / WebP など"}</p>
               </div>
               <span className="text-sm font-semibold text-orange-500">選択</span>
             </label>
-            {imageData && (
-              <div className="mt-3 overflow-hidden rounded-xl border border-slate-100 bg-white p-3">
-                <Image
-                  src={imageData}
-                  alt={imageName ?? "Image preview"}
-                  width={1200}
-                  height={800}
-                  unoptimized
-                  className="h-auto max-h-72 w-auto rounded-lg object-contain"
-                />
+            {imageAssets.length > 0 && (
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                {imageAssets.map((asset, index) => (
+                  <div key={`${asset.url}-${index}`} className="overflow-hidden rounded-xl border border-slate-100 bg-white p-3">
+                    <Image src={asset.url} alt={asset.name ?? "Image preview"} width={1200} height={800} unoptimized className="h-auto max-h-56 w-full rounded-lg object-contain" />
+                    <div className="mt-2 flex items-center justify-between gap-3">
+                      <p className="truncate text-xs text-slate-500">{asset.name ?? "画像"}</p>
+                      <button type="button" onClick={() => setImageAssets((current) => removeAssetAt(current, index))} className="text-xs font-semibold text-red-500 hover:text-red-600">
+                        削除
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            )}
-            {imageName && (
-              <button
-                type="button"
-                onClick={() => {
-                  setImageName(null);
-                  setImageData(null);
-                }}
-                className="mt-2 text-xs font-semibold text-red-500 hover:text-red-600"
-              >
-                画像を削除
-              </button>
             )}
           </div>
 
@@ -1427,27 +1417,25 @@ export function ServiceItemsTab() {
             <label className="flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 transition-colors hover:border-orange-300 hover:bg-orange-50/40">
               <input type="file" accept="video/*" className="hidden" onChange={handleVideoChange} />
               <div>
-                <p className="text-sm font-medium text-slate-700">{videoName ?? "動画をアップロード"}</p>
+                <p className="text-sm font-medium text-slate-700">動画をアップロード</p>
                 <p className="mt-1 text-xs text-slate-400">{uploading ? "読み込み中..." : "MP4 / WebM / MOV など"}</p>
               </div>
               <span className="text-sm font-semibold text-orange-500">選択</span>
             </label>
-            {videoData && (
-              <div className="mt-3 overflow-hidden rounded-xl border border-slate-100 bg-slate-950">
-                <video src={videoData} controls playsInline className="max-h-72 w-full bg-black" />
+            {videoAssets.length > 0 && (
+              <div className="mt-3 grid gap-3">
+                {videoAssets.map((asset, index) => (
+                  <div key={`${asset.url}-${index}`} className="overflow-hidden rounded-xl border border-slate-100 bg-slate-950 p-3">
+                    <video src={asset.url} controls playsInline className="max-h-72 w-full rounded-lg bg-black" />
+                    <div className="mt-2 flex items-center justify-between gap-3">
+                      <p className="truncate text-xs text-slate-300">{asset.name ?? "動画"}</p>
+                      <button type="button" onClick={() => setVideoAssets((current) => removeAssetAt(current, index))} className="text-xs font-semibold text-red-400 hover:text-red-500">
+                        削除
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            )}
-            {videoName && (
-              <button
-                type="button"
-                onClick={() => {
-                  setVideoName(null);
-                  setVideoData(null);
-                }}
-                className="mt-2 text-xs font-semibold text-red-500 hover:text-red-600"
-              >
-                動画を削除
-              </button>
             )}
           </div>
 
@@ -1456,34 +1444,27 @@ export function ServiceItemsTab() {
             <label className="flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 transition-colors hover:border-orange-300 hover:bg-orange-50/40">
               <input type="file" className="hidden" onChange={handleAttachmentChange} />
               <div>
-                <p className="text-sm font-medium text-slate-700">{attachmentName ?? "ファイルをアップロード"}</p>
+                <p className="text-sm font-medium text-slate-700">ファイルをアップロード</p>
                 <p className="mt-1 text-xs text-slate-400">{uploading ? "読み込み中..." : "PDF, image, document など"}</p>
               </div>
               <span className="text-sm font-semibold text-orange-500">選択</span>
             </label>
-            {attachmentData && isImageAttachment(attachmentName, attachmentData) && (
-              <div className="mt-3 overflow-hidden rounded-xl border border-slate-100 bg-white p-3">
-                <Image
-                  src={attachmentData}
-                  alt={attachmentName ?? "Attachment preview"}
-                  width={1200}
-                  height={800}
-                  unoptimized
-                  className="h-auto max-h-72 w-auto rounded-lg object-contain"
-                />
+            {attachmentAssets.length > 0 && (
+              <div className="mt-3 grid gap-3">
+                {attachmentAssets.map((asset, index) => (
+                  <div key={`${asset.url}-${index}`} className="overflow-hidden rounded-xl border border-slate-100 bg-white p-3">
+                    {isImageAttachment(asset.name, asset.url) && (
+                      <Image src={asset.url} alt={asset.name ?? "Attachment preview"} width={1200} height={800} unoptimized className="h-auto max-h-56 w-full rounded-lg object-contain" />
+                    )}
+                    <div className="mt-2 flex items-center justify-between gap-3">
+                      <p className="truncate text-xs text-slate-500">{asset.name ?? "添付ファイル"}</p>
+                      <button type="button" onClick={() => setAttachmentAssets((current) => removeAssetAt(current, index))} className="text-xs font-semibold text-red-500 hover:text-red-600">
+                        削除
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            )}
-            {attachmentName && (
-              <button
-                type="button"
-                onClick={() => {
-                  setAttachmentName(null);
-                  setAttachmentData(null);
-                }}
-                className="mt-2 text-xs font-semibold text-red-500 hover:text-red-600"
-              >
-                添付を削除
-              </button>
             )}
           </div>
 
@@ -1505,7 +1486,9 @@ export function ServiceItemsTab() {
   if (view === "detail" && selectedItem) {
     const categoryInfo = categories.find((item) => item.slug === selectedItem.category);
     const categoryLabel = categoryInfo ? categoryInfo.name : selectedItem.category;
-    const hasImageAttachment = isImageAttachment(selectedItem.imageName, selectedItem.imageData);
+    const imageAssetsToShow = selectedItem.imageAssets?.length ? selectedItem.imageAssets : selectedItem.imageData ? [{ name: selectedItem.imageName, url: selectedItem.imageData }] : [];
+    const videoAssetsToShow = selectedItem.videoAssets?.length ? selectedItem.videoAssets : selectedItem.videoData ? [{ name: selectedItem.videoName, url: selectedItem.videoData }] : [];
+    const attachmentAssetsToShow = selectedItem.attachmentAssets?.length ? selectedItem.attachmentAssets : selectedItem.attachmentData ? [{ name: selectedItem.attachmentName, url: selectedItem.attachmentData }] : [];
 
     return (
       <div className="max-w-4xl space-y-6">
@@ -1529,23 +1512,24 @@ export function ServiceItemsTab() {
           </div>
           <div className="space-y-5 px-6 py-6">
             <MarkdownContent content={selectedItem.content} className="space-y-4" />
-            {hasImageAttachment && selectedItem.imageData && (
-              <div className="overflow-hidden rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                <Image
-                  src={selectedItem.imageData}
-                  alt={selectedItem.imageName ?? "Service image"}
-                  width={1200}
-                  height={800}
-                  unoptimized
-                  className="h-auto w-full rounded-xl object-contain"
-                />
+            {imageAssetsToShow.length > 0 && (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {imageAssetsToShow.map((asset, index) => (
+                  <div key={`${asset.url}-${index}`} className="overflow-hidden rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                    <Image src={asset.url} alt={asset.name ?? "Service image"} width={1200} height={800} unoptimized className="h-auto w-full rounded-xl object-contain" />
+                  </div>
+                ))}
               </div>
             )}
             <div>
               <p className="text-xs font-medium text-slate-400">動画</p>
-              {selectedItem.videoData ? (
-                <div className="mt-2 overflow-hidden rounded-xl border border-slate-100 bg-slate-950">
-                  <video src={selectedItem.videoData} controls playsInline className="w-full bg-black" />
+              {videoAssetsToShow.length > 0 ? (
+                <div className="mt-2 grid gap-3">
+                  {videoAssetsToShow.map((asset, index) => (
+                    <div key={`${asset.url}-${index}`} className="overflow-hidden rounded-xl border border-slate-100 bg-slate-950">
+                      <video src={asset.url} controls playsInline className="w-full bg-black" />
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <p className="mt-1 text-sm text-slate-500">未設定</p>
@@ -1563,14 +1547,19 @@ export function ServiceItemsTab() {
             </div>
             <div>
               <p className="text-xs font-medium text-slate-400">詳細資料</p>
-              {selectedItem.attachmentData ? (
-                <a
-                  href={selectedItem.attachmentData}
-                  download={selectedItem.attachmentName ?? "attachment"}
-                  className="mt-1 inline-flex text-sm font-semibold text-orange-600 hover:underline"
-                >
-                  {selectedItem.attachmentName ?? "添付ファイルをダウンロード"}
-                </a>
+              {attachmentAssetsToShow.length > 0 ? (
+                <div className="mt-1 flex flex-col gap-2">
+                  {attachmentAssetsToShow.map((asset, index) => (
+                    <a
+                      key={`${asset.url}-${index}`}
+                      href={asset.url}
+                      download={asset.name ?? "attachment"}
+                      className="inline-flex text-sm font-semibold text-orange-600 hover:underline"
+                    >
+                      {asset.name ?? "添付ファイルをダウンロード"}
+                    </a>
+                  ))}
+                </div>
               ) : (
                 <p className="mt-1 text-sm text-slate-500">添付なし</p>
               )}
