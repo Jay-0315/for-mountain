@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { adminLogin } from "@/lib/api";
 import { setMockAdminSession } from "./mock-store";
 
 const REMEMBERED_USERNAME_KEY = "remembered_admin_username";
 
-export default function AdminPage() {
+function AdminPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [username, setUsername] = useState("");
@@ -134,4 +134,12 @@ export default function AdminPage() {
 
 function isSafeRedirectPath(path: string | null): path is string {
   return Boolean(path && path.startsWith("/admin"));
+}
+
+export default function AdminPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-50" />}>
+      <AdminPageContent />
+    </Suspense>
+  );
 }
