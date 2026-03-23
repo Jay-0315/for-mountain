@@ -240,7 +240,7 @@ export default function AboutSection() {
             {activeTab === "philosophy" && (
               <div className="grid grid-cols-2 gap-6 border-t border-slate-100 pt-8 mt-8 md:grid-cols-4">
                 {companyValues.map((value) => (
-                  <div key={value.key} className="public-soft-float flex flex-col items-center text-center gap-3">
+                  <div key={value.key} className="flex flex-col items-center text-center gap-3">
                     <div className={`flex h-16 w-16 items-center justify-center rounded-full shadow-md ${value.color}`}>
                       {value.icon}
                     </div>

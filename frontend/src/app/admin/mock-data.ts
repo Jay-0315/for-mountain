@@ -61,7 +61,7 @@ export interface AttendanceRecord {
   status: "出勤" | "欠勤" | "半休" | "有休" | "休日";
 }
 
-export type LeaveStatus = "待機中" | "承認" | "否認";
+export type LeaveStatus = "待機中" | "承認" | "拒否";
 export type LeaveType = "有給休暇" | "慶弔休暇" | "病気休暇" | "無給休暇";
 
 export interface LeaveRequest {
@@ -286,7 +286,7 @@ export const mockLeaveRequests: LeaveRequest[] = [
   { id: 2, employeeId: 14, employeeName: "許才元",     department: "開発 Part2",    leaveType: "有給休暇", startDate: "2026-03-10", endDate: "2026-03-11", days: 2, reason: "旅行のため",   status: "待機中", appliedAt: "2026-03-01" },
   { id: 3, employeeId:  9, employeeName: "李賢圭",     department: "開発 Part1",    leaveType: "病気休暇", startDate: "2026-03-15", endDate: "2026-03-15", days: 1, reason: "体調不良",     status: "待機中", appliedAt: "2026-03-02" },
   { id: 4, employeeId: 12, employeeName: "高伊珍",     department: "開発 Part2",    leaveType: "慶弔休暇", startDate: "2026-03-20", endDate: "2026-03-22", days: 3, reason: "家族の慶事",   status: "待機中", appliedAt: "2026-03-03" },
-  { id: 5, employeeId: 13, employeeName: "辛珠賢",     department: "開発 Part2",    leaveType: "有給休暇", startDate: "2026-02-20", endDate: "2026-02-21", days: 2, reason: "私用のため",   status: "否認",   appliedAt: "2026-02-15" },
+  { id: 5, employeeId: 13, employeeName: "辛珠賢",     department: "開発 Part2",    leaveType: "有給休暇", startDate: "2026-02-20", endDate: "2026-02-21", days: 2, reason: "私用のため",   status: "拒否",   appliedAt: "2026-02-15" },
   { id: 6, employeeId:  7, employeeName: "丁秀炫",     department: "開発 Part1",    leaveType: "有給休暇", startDate: "2026-03-25", endDate: "2026-03-25", days: 1, reason: "私用のため",   status: "待機中", appliedAt: "2026-03-04" },
   { id: 7, employeeId: 17, employeeName: "金到炫",     department: "開発 Part2",    leaveType: "有給休暇", startDate: "2026-02-10", endDate: "2026-02-12", days: 3, reason: "旅行",         status: "承認",   appliedAt: "2026-02-01" },
 ];

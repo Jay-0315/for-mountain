@@ -14,7 +14,6 @@ import { type Department, type DeptNotice } from "../mock-data";
 
 const MANAGEMENT_JOB_TITLES = new Set(["管理職", "役員"]);
 const RESTRICTED_DEPARTMENTS = new Set<string>(["開発 Part1", "開発 Part2"]);
-const CALENDAR_FILTER_DEPARTMENTS: Department[] = ["開発 Part1", "開発 Part2"];
 const NOTICE_PARENT_MAP: Partial<Record<Department, Department>> = {
   "技術グループ1": "技術本部",
   "技術グループ2": "技術本部",
@@ -25,7 +24,7 @@ const WEEK_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
 const LEAVE_BADGE: Record<LeaveDto["status"], string> = {
   "待機中": "bg-yellow-100 text-yellow-700 ring-yellow-200",
   "承認": "bg-green-100 text-green-700 ring-green-200",
-  "否認": "bg-red-100 text-red-600 ring-red-200",
+  "拒否": "bg-red-100 text-red-600 ring-red-200",
 };
 
 function StatCard({
@@ -356,10 +355,10 @@ export default function DashboardPage() {
   const [employees, setEmployees] = useState<EmployeeDto[]>([]);
   const [leaves, setLeaves] = useState<LeaveDto[]>([]);
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
-  const [departmentFilter, setDepartmentFilter] = useState<Department | "全部門">("全部門");
   const [mobileWeekIndex, setMobileWeekIndex] = useState(0);
+  const [calendarView, setCalendarView] = useState<"grid" | "week">("grid");
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
-  const [summaryModal, setSummaryModal] = useState<"birthdays" | "pendingLeaves" | null>(null);
+  const [summaryModal, setSummaryModal] = useState<"birthdays" | "pendingLeaves" | "monthLeaves" | null>(null);
 
   useEffect(() => {
     fetchDeptNotices()
@@ -385,11 +384,7 @@ export default function DashboardPage() {
     return leave.employeeId === viewer.employee?.id;
   });
   const pendingLeave = pendingLeavesForViewer.length;
-  const effectiveDepartment = viewer.canViewAll
-    ? departmentFilter === "全部門"
-      ? "全部門"
-      : departmentFilter
-    : viewer.employee?.department ?? "全部門";
+  const effectiveDepartment = viewer.canViewAll ? "全部門" : viewer.employee?.department ?? "全部門";
 
   const visibleLeaves = leaves.filter((leave) => {
     if (effectiveDepartment === "全部門") return true;
@@ -424,7 +419,7 @@ export default function DashboardPage() {
 
     const filtered = deptNotices.filter((notice) => (allowedDepartments ? allowedDepartments.has(notice.department) : true));
     return filtered.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5);
-  }, [deptNotices, effectiveDepartment, viewer.canViewAll, viewer.employee]);
+  }, [deptNotices, viewer.canViewAll, viewer.employee]);
   const selectedDayKey = selectedDay ? formatDay(selectedDay) : null;
   const selectedDayLeaves = selectedDayKey
     ? visibleLeaves.filter((leave) => leaveIncludesDate(leave, selectedDayKey))
@@ -519,6 +514,45 @@ export default function DashboardPage() {
           )}
         </SummaryDetailModal>
       )}
+      {summaryModal === "monthLeaves" && (
+        <SummaryDetailModal
+          title="承認済み休暇"
+          subtitle={`${currentMonth.toLocaleDateString("ja-JP", { month: "long" })} の承認済み休暇一覧`}
+          onClose={() => setSummaryModal(null)}
+        >
+          {monthLeaves.filter((l) => l.status !== "待機中").length === 0 ? (
+            <p className="py-6 text-center text-sm text-slate-400">今月の休暇申請はありません。</p>
+          ) : (
+            <div className="space-y-2">
+              {monthLeaves.filter((l) => l.status !== "待機中").map((leave) => (
+                <button
+                  key={`monthleave-summary-${leave.id}`}
+                  type="button"
+                  onClick={() => {
+                    setSummaryModal(null);
+                    router.push(`/admin/leave/${leave.id}`);
+                  }}
+                  className={`w-full rounded-xl px-4 py-3 text-left ring-1 transition-colors ${LEAVE_BADGE[leave.status]} hover:opacity-80`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-slate-900">{leave.employeeName}</p>
+                      <p className="mt-1 truncate text-xs text-slate-500">
+                        {viewer.canViewAll ? `${leave.department} · ` : ""}
+                        {leave.leaveType} · {leave.startDate}
+                        {leave.startDate !== leave.endDate ? ` ~ ${leave.endDate}` : ""}
+                      </p>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-white/70 px-2 py-0.5 text-[11px] font-semibold">
+                      {leave.status}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </SummaryDetailModal>
+      )}
 
       <div>
         <h2 className="text-lg font-bold text-slate-900">ダッシュボード</h2>
@@ -542,15 +576,15 @@ export default function DashboardPage() {
           }
         />
         <StatChip
-          label="今月の誕生日"
-          value={loadingPeople ? "-" : monthBirthdays.length}
-          sub="名"
-          color="bg-pink-50"
-          onClick={() => !loadingPeople && setSummaryModal("birthdays")}
+          label="承認済み休暇"
+          value={loadingPeople ? "-" : monthLeaves.filter((l) => l.status !== "待機中").length}
+          sub="件"
+          color="bg-orange-50"
+          onClick={() => !loadingPeople && setSummaryModal("monthLeaves")}
           icon={
-            <svg className="w-6 h-6 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M12 8v8m-4-4h8m1-7H7a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2z" />
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
           }
         />
@@ -571,15 +605,15 @@ export default function DashboardPage() {
           }
         />
         <StatCard
-          label="今月の誕生日"
-          value={loadingPeople ? "-" : monthBirthdays.length}
-          sub="名"
-          color="bg-pink-50"
-          onClick={() => !loadingPeople && setSummaryModal("birthdays")}
+          label="承認済み休暇"
+          value={loadingPeople ? "-" : monthLeaves.filter((l) => l.status !== "待機中").length}
+          sub="件"
+          color="bg-orange-50"
+          onClick={() => !loadingPeople && setSummaryModal("monthLeaves")}
           icon={
-            <svg className="w-6 h-6 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M12 8v8m-4-4h8m1-7H7a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2z" />
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
           }
         />
@@ -587,13 +621,37 @@ export default function DashboardPage() {
 
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-100 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <h3 className="text-sm font-semibold text-slate-900">休暇カレンダー</h3>
-            <p className="mt-1 text-xs text-slate-400">
-              {viewer.canViewAll
-                ? "開発 Part1・Part2 외 인원은 전체 휴가 일정을 확인할 수 있습니다."
-                : `${viewer.employee?.department ?? "所属部門"} の休暇予定のみ表示します。`}
-            </p>
+          <div className="flex items-center gap-4">
+            <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+              <button
+                type="button"
+                onClick={() => setCalendarView("grid")}
+                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  calendarView === "grid"
+                    ? "bg-white text-slate-800 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 6h18M3 14h18M3 18h18" />
+                </svg>
+                グリッド
+              </button>
+              <button
+                type="button"
+                onClick={() => setCalendarView("week")}
+                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  calendarView === "week"
+                    ? "bg-white text-slate-800 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                週表示
+              </button>
+            </div>
           </div>
 
           <div className="flex flex-col gap-3 lg:items-end">
@@ -629,51 +687,23 @@ export default function DashboardPage() {
               </button>
             </div>
 
-            {viewer.canViewAll && (
-              <div className="flex flex-wrap gap-2 lg:justify-end">
-                {(["全部門", ...CALENDAR_FILTER_DEPARTMENTS] as const).map((department) => (
-                  <button
-                    key={department}
-                    type="button"
-                    onClick={() => setDepartmentFilter(department)}
-                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
-                      departmentFilter === department
-                        ? "admin-pill-active"
-                        : "admin-pill"
-                    }`}
-                  >
-                    {department}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
         </div>
 
-        <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/70 flex flex-wrap gap-3 text-xs text-slate-500">
-          <span className="font-medium text-slate-700">
-            {viewer.canViewAll
-              ? effectiveDepartment === "全部門"
-                ? "全パート表示"
-                : `${effectiveDepartment} 表示`
-              : `${viewer.employee?.department ?? "所属部門"} 表示`}
-          </span>
-          <span>当月休暇 {monthLeaves.length}件</span>
-          <span>承認済み {approvedCount}件</span>
-          <span>誕生日 {monthBirthdays.length}名</span>
-        </div>
 
-        <div className="hidden sm:grid grid-cols-7 border-b border-slate-100 bg-slate-50">
-          {WEEK_LABELS.map((label, index) => (
-            <div key={label} className={`px-3 py-2 text-center text-sm font-semibold ${getWeekdayTextColor(index)}`}>
-              {label}
-            </div>
-          ))}
-        </div>
+        {calendarView === "grid" && (
+          <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50">
+            {WEEK_LABELS.map((label, index) => (
+              <div key={label} className={`px-3 py-2 text-center text-sm font-semibold ${getWeekdayTextColor(index)}`}>
+                {label}
+              </div>
+            ))}
+          </div>
+        )}
 
-        <div className="grid grid-cols-3 gap-2 p-3 sm:hidden">
-          {viewer.tokenRole === "ADMIN" ? (
-            <div className="col-span-3 space-y-3">
+        {calendarView === "week" && (
+          <div className="p-3">
+            <div className="space-y-3">
               <div className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2">
                 <button
                   type="button"
@@ -729,9 +759,7 @@ export default function DashboardPage() {
                         return !Number.isNaN(birthDate.getTime()) && birthDate.getMonth() === day.getMonth() && birthDate.getDate() === day.getDate();
                       });
 
-                      if (!isCurrentMonth) {
-                        return null;
-                      }
+                      if (!isCurrentMonth) return null;
 
                       return (
                         <button
@@ -756,7 +784,7 @@ export default function DashboardPage() {
                           <div className="mt-2 space-y-1.5">
                             {dayBirthdays.slice(0, 2).map((employee) => (
                               <div
-                                key={`admin-mobile-birthday-${employee.id}-${dayKey}`}
+                                key={`week-birthday-${employee.id}-${dayKey}`}
                                 className={`rounded-lg px-3 py-3.5 text-base ring-1 ${
                                   isPastDay
                                     ? "bg-slate-50 text-slate-400 ring-slate-200"
@@ -768,7 +796,7 @@ export default function DashboardPage() {
                             ))}
                             {dayLeaves.slice(0, 2).map((leave) => (
                               <div
-                                key={`admin-mobile-leave-${leave.id}-${dayKey}`}
+                                key={`week-leave-${leave.id}-${dayKey}`}
                                 className={`rounded-lg px-3 py-3.5 text-base ring-1 ${
                                   isPastDay ? "bg-slate-50 text-slate-400 ring-slate-200" : LEAVE_BADGE[leave.status]
                                 }`}
@@ -787,73 +815,12 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
-          ) : (
-            monthDays
-              .filter((day) => day.getMonth() === currentMonth.getMonth())
-              .map((day) => {
-                const dayKey = formatDay(day);
-                const isPastDay = dayKey < todayKey;
-                const dayLeaves = visibleLeaves.filter((leave) => leaveIncludesDate(leave, dayKey));
-                const dayBirthdays = employees.filter((employee) => {
-                  const birthDate = new Date(employee.birthDate);
-                  return !Number.isNaN(birthDate.getTime()) && birthDate.getMonth() === day.getMonth() && birthDate.getDate() === day.getDate();
-                });
-                const eventCount = dayBirthdays.length + dayLeaves.length;
+          </div>
+        )}
 
-                return (
-                  <button
-                    key={`mobile-${dayKey}`}
-                    type="button"
-                    onClick={() => !isPastDay && setSelectedDay(day)}
-                    disabled={isPastDay}
-                    className={`rounded-2xl border border-slate-100 p-2.5 text-left transition-colors ${
-                      isPastDay
-                        ? "cursor-not-allowed bg-slate-100"
-                        : `hover:border-orange-200 hover:bg-orange-50/40 ${getWeekendSurface(day.getDay())}`
-                    }`}
-                  >
-                    <div className="relative min-h-[64px]">
-                      <div className="pr-14">
-                        <p className={`flex h-5 items-center text-base font-semibold ${isPastDay ? "text-slate-400" : "text-slate-900"}`}>
-                          <span className="inline-flex w-6 justify-end tabular-nums">
-                            {day.getDate()}
-                          </span>
-                          <span className="ml-0.5">日</span>
-                        </p>
-                        <p className={`mt-1 flex h-4 items-center text-xs font-medium ${isPastDay ? "text-slate-300" : getWeekdayTextColor(day.getDay())}`}>{formatWeekday(day)}</p>
-                      </div>
-                      <div className="absolute bottom-0 right-0 flex flex-col items-end gap-1">
-                        {eventCount > 0 ? (
-                          <>
-                            <span className={`inline-flex min-w-[38px] items-center justify-center rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ${
-                              isPastDay
-                                ? "bg-slate-50 text-slate-400 ring-slate-200"
-                                : "bg-orange-50 text-orange-600 ring-orange-200"
-                            }`}>
-                              休 {dayLeaves.length}
-                            </span>
-                            <span className={`inline-flex min-w-[38px] items-center justify-center rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ${
-                              isPastDay
-                                ? "bg-slate-50 text-slate-400 ring-slate-200"
-                                : "bg-pink-50 text-pink-600 ring-pink-200"
-                            }`}>
-                              E {dayBirthdays.length}
-                            </span>
-                          </>
-                        ) : (
-                          <span className="inline-flex min-w-[38px] items-center justify-center rounded-full bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-400 ring-1 ring-slate-200">
-                            無し
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })
-          )}
-        </div>
 
-        <div className="hidden sm:grid sm:grid-cols-7">
+        {calendarView === "grid" && (
+          <div className="grid grid-cols-7">
           {monthDays.map((day) => {
             const dayKey = formatDay(day);
             const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
@@ -917,7 +884,7 @@ export default function DashboardPage() {
                     >
                       <p className="font-semibold truncate">{leave.employeeName}</p>
                       <p className="mt-0.5 truncate">
-                        {viewer.canViewAll && effectiveDepartment === "全部門" ? `${leave.department} · ` : ""}
+                        {viewer.canViewAll ? `${leave.department} · ` : ""}
                         {leave.leaveType}
                       </p>
                     </div>
@@ -932,7 +899,8 @@ export default function DashboardPage() {
               </button>
             );
           })}
-        </div>
+          </div>
+        )}
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm">

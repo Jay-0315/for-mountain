@@ -47,6 +47,7 @@ app:
   admin:
     init-username: ${ADMIN_INIT_USERNAME:admin}
     init-password: ${ADMIN_INIT_PASSWORD}
+  frontend-base-url: ${APP_FRONTEND_BASE_URL}
   mail:
     to: ${MAIL_TO}
   s3:

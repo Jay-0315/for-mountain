@@ -55,6 +55,9 @@ public class Employee {
     @Column(nullable = false, length = 10)
     private String status;
 
+    @Column(nullable = true)
+    private Integer annualLeaveDays;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
@@ -64,7 +67,7 @@ public class Employee {
     public static Employee create(String employeeNumber, String name, String nameKana,
                                   String nationality, LocalDate birthDate, String department,
                                   String position, String jobTitle, LocalDate joinDate, String email,
-                                  String status) {
+                                  String status, Integer annualLeaveDays) {
         Employee e = new Employee();
         e.employeeNumber = employeeNumber;
         e.name = name;
@@ -77,6 +80,7 @@ public class Employee {
         e.joinDate = joinDate;
         e.email = email;
         e.status = status;
+        e.annualLeaveDays = annualLeaveDays;
         e.createdAt = LocalDateTime.now();
         e.updatedAt = LocalDateTime.now();
         return e;
@@ -84,7 +88,7 @@ public class Employee {
 
     public void update(String employeeNumber, String name, String nameKana, String nationality, LocalDate birthDate,
                        String department, String position, String jobTitle, LocalDate joinDate,
-                       String email, String status) {
+                       String email, String status, Integer annualLeaveDays) {
         this.employeeNumber = employeeNumber;
         this.name = name;
         this.nameKana = nameKana;
@@ -96,6 +100,7 @@ public class Employee {
         this.joinDate = joinDate;
         this.email = email;
         this.status = status;
+        this.annualLeaveDays = annualLeaveDays;
         this.updatedAt = LocalDateTime.now();
     }
 }

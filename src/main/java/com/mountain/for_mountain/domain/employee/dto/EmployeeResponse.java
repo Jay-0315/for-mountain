@@ -20,6 +20,7 @@ public class EmployeeResponse {
     private final String joinDate;
     private final String email;
     private final String status;
+    private final Integer annualLeaveDays;
 
     public EmployeeResponse(Employee employee) {
         this.id = employee.getId();
@@ -34,5 +35,6 @@ public class EmployeeResponse {
         this.joinDate = employee.getJoinDate().toString();
         this.email = employee.getEmail();
         this.status = employee.getStatus();
+        this.annualLeaveDays = employee.getAnnualLeaveDays();
     }
 }

@@ -70,6 +70,7 @@ function EmployeeModal({
     joinDate:       employee?.joinDate ?? "",
     email:          employee?.email ?? "",
     status:         employee?.status ?? "在籍",
+    annualLeaveDays: employee?.annualLeaveDays != null ? String(employee.annualLeaveDays) : "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState("");
@@ -81,10 +82,14 @@ function EmployeeModal({
     setError("");
     setLoading(true);
     try {
+      const payload = {
+        ...form,
+        annualLeaveDays: form.annualLeaveDays !== "" ? Number(form.annualLeaveDays) : null,
+      };
       if (isEdit && employee) {
-        await updateEmployee(token, employee.id, form);
+        await updateEmployee(token, employee.id, payload);
       } else {
-        await createEmployee(token, form);
+        await createEmployee(token, payload);
       }
       onSaved();
     } catch (err: unknown) {
@@ -150,6 +155,20 @@ function EmployeeModal({
               </select>
             </div>
           ))}
+
+          <div>
+            <label className="block text-xs font-medium text-slate-700 mb-1">年間有給日数</label>
+            <input
+              type="number"
+              min={0}
+              max={365}
+              value={form.annualLeaveDays}
+              onChange={(e) => set("annualLeaveDays", e.target.value)}
+              placeholder="例: 20"
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-900
+                         focus:outline-none focus:ring-2 focus:ring-orange-400"
+            />
+          </div>
 
           {error && (
             <p className="text-red-500 text-xs bg-red-50 px-3 py-2 rounded-lg">{error}</p>

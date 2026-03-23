@@ -37,7 +37,7 @@ public class Leave {
     @Column(length = 500)
     private String reason;
 
-    // 待機中 / 承認 / 否認
+    // 待機中 / 承認 / 拒否
     @Column(nullable = false, length = 10)
     private String status;
 

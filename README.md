@@ -1,778 +1,421 @@
-<details>
-<summary><strong>Korean Version (Click to Expand)</strong></summary>
-
 # For Mountain
 
-  Spring Boot 기반의 RESTful API 서버 프로젝트입니다. 계산기 기능과 환율 조회 기능을 제공합니다.
+한국어와 일본어 설명을 함께 포함한 프로젝트 안내 문서입니다.
 
-  ## 기술 스택
-- Java: 17
-- Spring Boot: 3.4.0 
-- Build Tool: Gradle
-- Database: 
-- MySQL 8.0 (개발 환경)
-- H2 (운영 환경)
-- ORM: Spring Data JPA
-- API Documentation: SpringDoc OpenAPI (Swagger) 2.8.0
-- Container: Docker, Docker Compose 
-- Validation: Spring Boot Validation
-- Lombok: 코드 간소화
+This repository contains a public company website and an internal admin system built around a Spring Boot API and a Next.js frontend.
 
-  ## 도메인
+## Korean
 
-  현재 스웨거로 API를 테스트 할 수 있습니다.
+### 프로젝트 개요
 
-  https://for-mountain-service-505197475308.asia-northeast3.run.app/swagger-ui/index.html#/Exchange%20API/getExchangeRates
+For Mountain은 회사 소개용 웹사이트와 사내 운영 기능을 함께 제공하는 웹 서비스입니다.
 
-  ## 주요 기능
+- 백엔드: Spring Boot REST API
+- 프론트엔드: Next.js 기반 웹 애플리케이션
+- 주요 영역: 회사 소개, 뉴스, 서비스 소개, 문의 접수, 관리자 로그인, 직원 관리, 그룹 관리, 휴가 관리, 공지 관리, 웹사이트 콘텐츠 관리
 
-  ## 1. 계산기 API 
-  기본 사칙연산 (덧셈, 뺄셈, 곱셈, 나눗셈) 지원
-  계산 이력 자동 저장 (MySQL/H2 데이터베이스)
-  0으로 나누기 예외 처리
-  잘못된 연산자 예외 처리
+현재 저장소는 루트의 백엔드와 `frontend/` 프론트엔드로 나뉘어 있습니다.
 
-  ### 2. 환율 조회 API
-  실시간 환율 정보 조회
-  Frankfurter API 연동 (https://api.frankfurter.app)
-  기준 통화 설정 가능 (기본값: KRW)
-  다양한 통화 환율 정보 제공
+### 기술 스택
 
-  ### 3. 공통 기능
-  전역 예외 처리 (GlobalExceptionHandler)
-  커스텀 예외 처리
-  에러 코드 관리
-  Swagger API 문서 자동 생성
+- Java 17
+- Spring Boot 3.4
+- Spring Data JPA
+- Spring Security
+- JWT
+- Redis
+- MySQL
+- AWS S3 Presigned Upload
+- Spring Mail
+- Swagger / SpringDoc OpenAPI
+- Gradle
+- Next.js 16
+- React 19
+- TypeScript
+- Tailwind CSS v4
+- GSAP
+- Docker / Docker Compose
+- Caddy
 
-  ### 배포 플랫폼
+### 주요 기능
 
-  이 프로젝트는 Google Cloud Run에 자동 배포됩니다.
+#### 대외 웹사이트
 
-  - 플랫폼: Google Cloud Platform (GCP)
-  - 서비스: Cloud Run
-  - 리전: asia-northeast3 (서울)
-  - CI/CD: GitHub Actions
-  - 컨테이너 레지스트리: Artifact Registry
+- 메인 랜딩 페이지
+- 회사 소개
+- 서비스 소개
+- 뉴스 목록 및 상세 조회
+- 채용 정보 섹션
+- 문의 폼 제출
+- 파트너 소개
 
-  ### 자동 배포 프로세스
+#### 관리자 기능
 
-  GitHub Actions를 통해 main 브랜치에 푸시되면 자동으로 배포가 진행됩니다.
+- 관리자 로그인
+- 직원 관리
+- 그룹 관리
+- 휴가 신청 및 승인 관리
+- 사내 공지 관리
+- 부서 공지 관리
+- 웹사이트 게시글 관리
+- 서비스 카테고리 및 서비스 항목 관리
+- 파트너 카드 관리
+- 파일 업로드용 Presigned URL 발급
 
-  ### 필요한 GitHub Secrets
+#### 공통 기능
 
-  배포를 위해서는 다음 GitHub Secrets가 설정되어 있어야 합니다:
+- JWT 기반 인증/인가
+- 역할 기반 접근 제어
+- 전역 예외 처리
+- Swagger API 문서 제공
 
-  - GCP_PROJECT_ID: GCP 프로젝트 ID
-  - GCP_SA_KEY: GCP 서비스 계정 키 (JSON 형식)
+### 디렉터리 구조
 
+```text
+.
+├── src/                # Spring Boot 백엔드
+├── frontend/           # Next.js 프론트엔드
+├── docker/             # Caddy 등 배포 관련 파일
+├── build.gradle        # 백엔드 빌드 설정
+├── docker-compose.yml  # 통합 실행용 Compose
+└── README.md
+```
 
-  ### 배포 확인
+### 실행 환경
 
-  배포가 완료되면 Cloud Run 콘솔에서 서비스 URL을 확인할 수 있습니다:
+#### 백엔드 로컬 실행
 
-  - Cloud Run 콘솔: https://console.cloud.google.com/run
-  - 서비스 URL: 배포 완료 후 제공되는 HTTPS URL
+사전 요구사항
 
-  ### 환경 변수
+- Java 17
+- MySQL
+- Redis
 
-  운영 환경에서는 다음 환경 변수가 설정됩니다:
+실행 순서
 
-  - SPRING_PROFILES_ACTIVE=prod: 운영 프로파일 활성화
+```bash
+./gradlew bootRun
+```
 
-  추가 환경 변수가 필요한 경우 deploy.yml의 env_vars 섹션에 추가할 수 있습니다.
+기본 프로파일은 `dev`이며, 로컬 개발에서는 MySQL과 Redis가 준비되어 있어야 합니다.
 
-### 시작하기
+백엔드 기본 주소
 
-### 사전 요구사항
+- `http://localhost:8080`
 
-- Java 17 이상
-- Gradle 7.x 이상 (또는 Gradle Wrapper 사용)
-- MySQL 8.0 (개발 환경, 선택사항)
-- Docker & Docker Compose (컨테이너 실행 시)
+Swagger UI
 
-### 로컬 환경 실행
+- `http://localhost:8080/swagger-ui/index.html`
 
-1. 저장소 클론
+#### 프론트엔드 로컬 실행
 
-   git clone <repository-url>
-   cd for-mountain
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-2. 데이터베이스 설정
-   
-   개발 환경에서는 MySQL을 사용합니다. 다음 중 하나를 선택하세요:
-   
-   - Docker Compose 사용:
-     
-     docker-compose up -d mysql-db
-     
-     MySQL이 `localhost:3308`에서 실행됩니다.
-   
-   - 로컬 MySQL 사용:
-     MySQL 8.0 설치 및 실행
-     mountain_db 데이터베이스 생성
-     application-dev.yml의 데이터베이스 연결 정보 확인 및 수정
+프론트엔드 기본 주소
 
-3. 애플리케이션 빌드
+- `http://localhost:3000`
 
-   ./gradlew build
+개발 모드에서는 프론트가 로컬 백엔드 `http://localhost:8080`을 대상으로 프록시 요청을 보냅니다.
 
-   
-   Windows의 경우:
+### Docker Compose 실행
 
-   gradlew.bat build
+프로덕션에 가까운 형태로 실행하려면 다음 명령을 사용합니다.
 
+```bash
+docker-compose up -d --build
+```
 
-4. 애플리케이션 실행
+구성 서비스
 
-   ./gradlew bootRun
+- `backend`
+- `frontend`
+- `mountain-redis`
+- `caddy`
 
-   
-   또는 빌드된 JAR 파일 실행:
-  
-   java -jar build/libs/for-mountain-0.0.1-SNAPSHOT.jar
-  
+주의사항
 
-5. 애플리케이션 접속 확인
-   - 서버가 `http://localhost:8080`에서 실행됩니다.
-   - Swagger UI: http://localhost:8080/swagger-ui.html
+- `backend`는 `prod` 프로파일로 실행됩니다.
+- 운영용 데이터베이스는 외부 MySQL 접속 정보를 환경 변수로 받아 사용합니다.
+- 실행 전에 `.env` 또는 셸 환경 변수로 필요한 값을 준비해야 합니다.
 
+### 주요 환경 변수
 
-### 주요 API 엔드포인트
+백엔드
 
-#### 1. 계산기 API
+- `SPRING_PROFILES_ACTIVE`
+- `SPRING_DATASOURCE_URL`
+- `SPRING_DATASOURCE_USERNAME`
+- `SPRING_DATASOURCE_PASSWORD`
+- `SPRING_DATA_REDIS_HOST`
+- `SPRING_DATA_REDIS_PORT`
+- `JWT_SECRET`
+- `MAIL_HOST`
+- `MAIL_PORT`
+- `MAIL_USERNAME`
+- `MAIL_PASSWORD`
+- `MAIL_TO`
+- `ADMIN_INIT_USERNAME`
+- `ADMIN_INIT_PASSWORD`
 
-/api/v1/calculator/calculate
+프론트엔드
 
-계산을 수행하고 결과를 데이터베이스에 저장합니다.
+- `BACKEND_URL`
+- `NODE_ENV`
 
-## 지원 연산자: 
-## + (덧셈)
-## - (뺄셈)
-## * (곱셈)
-## / (나눗셈)
+배포
 
+- `SITE_DOMAIN`
+- `ACME_EMAIL`
 
-#### 2. 환율 조회 API
+### API 개요
 
-/api/v1/exchange?base=KRW
+대표 엔드포인트 예시
 
-실시간 환율 정보를 조회합니다.
+- `POST /api/v1/auth/login`
+- `POST /api/v1/auth/password/setup`
+- `GET /api/v1/board`
+- `GET /api/v1/board/{id}`
+- `POST /api/v1/contact`
+- `GET /api/v1/employees`
+- `GET /api/v1/groups`
+- `GET /api/v1/leaves`
+- `GET /api/v1/announcements`
+- `GET /api/v1/dept-notices`
+- `GET /api/v1/service-categories`
+- `GET /api/v1/service-items`
+- `POST /api/v1/uploads/presign`
 
-  - base: 기준 통화 (기본값: KRW)
-    - 예: USD, EUR, JPY, KRW 등
+정확한 요청/응답 구조는 Swagger 문서를 기준으로 확인하는 것을 권장합니다.
 
+### 권한 정책
 
-## 환경 설정
+- 대부분의 `GET /api/v1/**` 조회 API는 공개 접근 가능
+- 로그인/비밀번호 설정은 공개 접근 가능
+- 문의 접수는 공개 접근 가능
+- 관리자 생성, 게시글 작성/수정/삭제, 업로드 URL 발급 등은 관리자 권한 필요
+- 휴가 관련 일부 기능은 일반 사용자 권한으로도 사용 가능
 
-## 프로파일 설정
+### 테스트
 
-애플리케이션은 다음 프로파일을 지원합니다:
-
-- dev: 개발 환경 (기본값)
-  - MySQL 데이터베이스 사용
-  - SQL 로깅 활성화
-  - Hibernate DDL 자동 업데이트
-
-- prod: 운영 환경
-  - H2 인메모리 데이터베이스 사용
-  - H2 Console 활성화 (http://localhost:8080/h2-console)
-
-
-### Docker Compose로 전체 스택 실행
-
-- docker-compose up -d
-
-#### MySQL만 실행
-
-- docker-compose up -d mysql-db
-
-#### 애플리케이션만 빌드 및 실행
-
-- ./gradlew build
-docker-compose up -d backend
-
-### 컨테이너 상태 확인
-
-- docker-compose ps
-
-### 컨테이너 로그 확인
-
-- docker-compose logs -f backend
-- docker-compose logs -f mysql-db
-
-### 컨테이너 중지 및 제거
-
-- docker-compose down
-
-### 완전히 제거
-
-- docker-compose down -v
-
-### 테스트 실행
-
+```bash
 ./gradlew test
+```
 
-### 테스트 리포트 확인
+### 참고 사항
 
-- HTML 리포트: `build/reports/tests/test/index.html`
-
-### 테스트 커버리지
-
-- `CalculatorServiceTest`: 계산기 서비스 로직 테스트
-- `ForMountainApplicationTests`: 애플리케이션 컨텍스트 로드 테스트
-
-## 에러 코드
-
-애플리케이션에서 사용하는 에러 코드:
-
-- INVALID_OPERATOR  400  Unknown operator. 
-- DIVISION_BY_ZERO  400  Cannot divide by zero. 
-
-### JAR 파일 빌드
-
-./gradlew clean build
-
-JAR 파일 위치:
-- `build/libs/for-mountain-0.0.1-SNAPSHOT.jar`
-
-### Docker 이미지 빌드
-
-docker build -t for-mountain:latest .
-
-### Docker 이미지 실행
-
-docker run -p 8080:8080 for-mountain:latest
-
-## 작성자
-
-Jaehoon Choi
-
+- 현재 프로젝트는 초기 계산기/환율 예제 수준을 넘어, 회사 사이트와 관리자 시스템까지 포함하도록 확장되어 있습니다.
+- README는 현재 코드 구조를 기준으로 다시 정리했습니다.
+- 민감한 정보는 설정 파일에 직접 두기보다 환경 변수로 관리하는 것을 권장합니다.
 
 ---
 
-NOTICE: 
-- 개발 환경에서는 MySQL을 사용하며, 로컬 MySQL이 실행 중이어야 합니다.
-- 운영 환경에서는 H2 인메모리 데이터베이스를 사용합니다.
-- Docker Compose를 사용하면 MySQL 컨테이너가 자동으로 실행됩니다.
+## Japanese
 
-</details>
+### プロジェクト概要
 
-<br>
+For Mountain は、会社紹介用の公開サイトと社内運用向けの管理システムをあわせて提供する Web サービスです。
 
-<details>
-<summary><strong>English Version (Click to Expand)</strong></summary>
+- バックエンド: Spring Boot REST API
+- フロントエンド: Next.js ベースの Web アプリケーション
+- 主な対象機能: 会社紹介、ニュース、サービス紹介、お問い合わせ、管理者ログイン、社員管理、グループ管理、休暇管理、各種お知らせ管理、Web サイトコンテンツ管理
 
-# For Mountain
+リポジトリは、ルート配下のバックエンドと `frontend/` 配下のフロントエンドに分かれています。
 
-A Spring Boot-based RESTful API server project. Provides calculator functions and exchange rate lookup functions.
+### 技術スタック
 
-## Tech Stack
-- Java: 17
-- Spring Boot: 3.4.0
-- Build Tool: Gradle
-- Database:
-- MySQL 8.0 (Development Environment)
-- H2 (Production Environment)
-- ORM: Spring Data JPA
-- API Documentation: SpringDoc OpenAPI (Swagger) 2.8.0
-- Container: Docker, Docker Compose
-- Validation: Spring Boot Validation
-- Lombok: Code simplification
+- Java 17
+- Spring Boot 3.4
+- Spring Data JPA
+- Spring Security
+- JWT
+- Redis
+- MySQL
+- AWS S3 Presigned Upload
+- Spring Mail
+- Swagger / SpringDoc OpenAPI
+- Gradle
+- Next.js 16
+- React 19
+- TypeScript
+- Tailwind CSS v4
+- GSAP
+- Docker / Docker Compose
+- Caddy
 
-## Domain
+### 主な機能
 
-Currently, you can test the API via Swagger.
+#### 公開サイト
 
-https://for-mountain-service-505197475308.asia-northeast3.run.app/swagger-ui/index.html#/Exchange%20API/getExchangeRates
+- トップページ
+- 会社紹介
+- サービス紹介
+- ニュース一覧・詳細表示
+- 採用情報セクション
+- お問い合わせフォーム
+- パートナー紹介
 
-## Key Features
+#### 管理機能
 
-### 1. Calculator API
-Supports basic arithmetic operations (Addition, Subtraction, Multiplication, Division)
-Automatically saves calculation history (MySQL/H2 Database)
-Exception handling for division by zero
-Exception handling for invalid operators
+- 管理者ログイン
+- 社員管理
+- グループ管理
+- 休暇申請・承認管理
+- 社内お知らせ管理
+- 部署別お知らせ管理
+- Web サイト記事管理
+- サービスカテゴリ・サービス項目管理
+- パートナーカード管理
+- Presigned URL の発行によるファイルアップロード
 
-### 2. Exchange Rate API
-Real-time exchange rate lookup
-Frankfurter API integration (https://api.frankfurter.app)
-Base currency configuration available (Default: KRW)
-Provides exchange rate information for various currencies
+#### 共通機能
 
-### 3. Common Features
-Global Exception Handling (GlobalExceptionHandler)
-Custom Exception Handling
-Error Code Management
-Automatic Swagger API documentation generation
+- JWT ベースの認証・認可
+- ロールベースのアクセス制御
+- グローバル例外処理
+- Swagger API ドキュメント
 
-### Deployment Platform
+### ディレクトリ構成
 
-This project is automatically deployed to Google Cloud Run.
+```text
+.
+├── src/                # Spring Boot バックエンド
+├── frontend/           # Next.js フロントエンド
+├── docker/             # Caddy などのデプロイ関連ファイル
+├── build.gradle        # バックエンドのビルド設定
+├── docker-compose.yml  # 全体起動用 Compose
+└── README.md
+```
 
-- Platform: Google Cloud Platform (GCP)
-- Service: Cloud Run
-- Region: asia-northeast3 (Seoul)
-- CI/CD: GitHub Actions
-- Container Registry: Artifact Registry
+### ローカル実行
 
-### Auto Deployment Process
+#### バックエンド
 
-Deployment proceeds automatically when pushed to the main branch via GitHub Actions.
+前提条件
 
-### Required GitHub Secrets
+- Java 17
+- MySQL
+- Redis
 
-The following GitHub Secrets must be set for deployment:
+起動コマンド
 
-- GCP_PROJECT_ID: GCP Project ID
-- GCP_SA_KEY: GCP Service Account Key (JSON format)
+```bash
+./gradlew bootRun
+```
 
-### Deployment Verification
+デフォルトプロファイルは `dev` です。ローカル開発時は MySQL と Redis が必要です。
 
-Once deployment is complete, you can check the service URL in the Cloud Run Console:
+バックエンド URL
 
-- Cloud Run Console: https://console.cloud.google.com/run
-- Service URL: HTTPS URL provided after deployment completion
+- `http://localhost:8080`
 
-### Environment Variables
+Swagger UI
 
-The following environment variables are set in the production environment:
+- `http://localhost:8080/swagger-ui/index.html`
 
-- SPRING_PROFILES_ACTIVE=prod: Activate production profile
+#### フロントエンド
 
-If additional environment variables are required, they can be added to the env_vars section of deploy.yml.
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-### Getting Started
+フロントエンド URL
 
-### Prerequisites
+- `http://localhost:3000`
 
-- Java 17 or higher
-- Gradle 7.x or higher (or use Gradle Wrapper)
-- MySQL 8.0 (Development environment, optional)
-- Docker & Docker Compose (For container execution)
+開発モードでは、フロントエンドはローカルのバックエンド `http://localhost:8080` にプロキシします。
 
-### Local Execution
+### Docker Compose での起動
 
-1. Clone Repository
+本番に近い構成で起動する場合は、次のコマンドを使用します。
 
-   git clone <repository-url>
-   cd for-mountain
+```bash
+docker-compose up -d --build
+```
 
-2. Database Setup
+構成サービス
 
-   MySQL is used in the development environment. Choose one of the following:
+- `backend`
+- `frontend`
+- `mountain-redis`
+- `caddy`
 
-    - Using Docker Compose:
+注意事項
 
-      docker-compose up -d mysql-db
+- `backend` は `prod` プロファイルで起動します。
+- 本番用データベースは外部 MySQL 接続を前提としています。
+- 起動前に `.env` または環境変数で必要な値を設定してください。
 
-      MySQL will run at `localhost:3308`.
+### 主な環境変数
 
-    - Using Local MySQL:
-      Install and run MySQL 8.0
-      Create `mountain_db` database
-      Check and modify database connection info in `application-dev.yml`
+バックエンド
 
-3. Build Application
+- `SPRING_PROFILES_ACTIVE`
+- `SPRING_DATASOURCE_URL`
+- `SPRING_DATASOURCE_USERNAME`
+- `SPRING_DATASOURCE_PASSWORD`
+- `SPRING_DATA_REDIS_HOST`
+- `SPRING_DATA_REDIS_PORT`
+- `JWT_SECRET`
+- `MAIL_HOST`
+- `MAIL_PORT`
+- `MAIL_USERNAME`
+- `MAIL_PASSWORD`
+- `MAIL_TO`
+- `ADMIN_INIT_USERNAME`
+- `ADMIN_INIT_PASSWORD`
 
-   ./gradlew build
+フロントエンド
 
+- `BACKEND_URL`
+- `NODE_ENV`
 
-For Windows:
+デプロイ
 
-gradlew.bat build
+- `SITE_DOMAIN`
+- `ACME_EMAIL`
 
+### API 概要
 
-4. Run Application
+代表的なエンドポイント
 
-   ./gradlew bootRun
+- `POST /api/v1/auth/login`
+- `POST /api/v1/auth/password/setup`
+- `GET /api/v1/board`
+- `GET /api/v1/board/{id}`
+- `POST /api/v1/contact`
+- `GET /api/v1/employees`
+- `GET /api/v1/groups`
+- `GET /api/v1/leaves`
+- `GET /api/v1/announcements`
+- `GET /api/v1/dept-notices`
+- `GET /api/v1/service-categories`
+- `GET /api/v1/service-items`
+- `POST /api/v1/uploads/presign`
 
+詳細なリクエストおよびレスポンス仕様は Swagger を参照してください。
 
-Or run the built JAR file:
+### 権限方針
 
-java -jar build/libs/for-mountain-0.0.1-SNAPSHOT.jar
+- 多くの `GET /api/v1/**` 読み取り API は公開
+- ログインと初期パスワード設定は公開
+- お問い合わせ送信は公開
+- 管理者アカウント作成、記事作成・更新・削除、アップロード URL 発行などは管理者権限が必要
+- 休暇関連の一部機能は一般ユーザーでも利用可能
 
+### テスト
 
-5. Verify Application Connection
-    - Server runs at `http://localhost:8080`
-    - Swagger UI: http://localhost:8080/swagger-ui.html
-
-### Key API Endpoints
-
-#### 1. Calculator API
-
-/api/v1/calculator/calculate
-
-Performs a calculation and saves the result to the database.
-
-## Supported Operators:
-## + (Addition)
-## - (Subtraction)
-## * (Multiplication)
-## / (Division)
-
-
-#### 2. Exchange Rate API
-
-/api/v1/exchange?base=KRW
-
-Retrieves real-time exchange rate information.
-
-- base: Base currency (Default: KRW)
-    - e.g.: USD, EUR, JPY, KRW, etc.
-
-
-## Configuration
-
-## Profile Configuration
-
-The application supports the following profiles:
-
-- dev: Development Environment (Default)
-    - Uses MySQL Database
-    - SQL Logging enabled
-    - Hibernate DDL auto-update
-
-- prod: Production Environment
-    - Uses H2 In-memory Database
-    - H2 Console enabled (http://localhost:8080/h2-console)
-
-
-### Run Full Stack with Docker Compose
-
-- docker-compose up -d
-
-#### Run Only MySQL
-
-- docker-compose up -d mysql-db
-
-#### Build and Run Application Only
-
-- ./gradlew build
-  docker-compose up -d backend
-
-### Check Container Status
-
-- docker-compose ps
-
-### Check Container Logs
-
-- docker-compose logs -f backend
-- docker-compose logs -f mysql-db
-
-### Stop and Remove Containers
-
-- docker-compose down
-
-### Completely Remove
-
-- docker-compose down -v
-
-### Run Tests
-
+```bash
 ./gradlew test
+```
 
-### Check Test Report
+### 補足
 
-- HTML Report: `build/reports/tests/test/index.html`
-
-### Test Coverage
-
-- `CalculatorServiceTest`: Calculator service logic tests
-- `ForMountainApplicationTests`: Application context load tests
-
-## Error Codes
-
-Error codes used in the application:
-
-- INVALID_OPERATOR  400  Unknown operator.
-- DIVISION_BY_ZERO  400  Cannot divide by zero.
-
-### Build JAR File
-
-./gradlew clean build
-
-JAR File Location:
-- `build/libs/for-mountain-0.0.1-SNAPSHOT.jar`
-
-### Build Docker Image
-
-docker build -t for-mountain:latest .
-
-### Run Docker Image
-
-docker run -p 8080:8080 for-mountain:latest
-
-## Author
-
-Jaehoon Choi
-
-
----
-
-NOTICE:
-- The Development environment uses MySQL, and a local MySQL instance must be running.
-- The Production environment uses H2 in-memory database.
-- Using Docker Compose will automatically start the MySQL container.
-
-</details>
-
-
-<br>
-
-<details>
-<summary><strong> Japanese Version (Click to Expand)</strong></summary>
-
-# For Mountain
-
-Spring BootベースのRESTful APIサーバープロジェクトです。計算機機能と為替レート照会機能を提供します。
-
-## 技術スタック
-- Java: 17
-- Spring Boot: 3.4.0
-- Build Tool: Gradle
-- Database:
-- MySQL 8.0 (開発環境)
-- H2 (運営環境)
-- ORM: Spring Data JPA
-- API Documentation: SpringDoc OpenAPI (Swagger) 2.8.0
-- Container: Docker, Docker Compose
-- Validation: Spring Boot Validation
-- Lombok: コード簡素化
-
-## ドメイン
-
-現在、SwaggerでAPIをテストすることができます。
-
-https://for-mountain-service-505197475308.asia-northeast3.run.app/swagger-ui/index.html#/Exchange%20API/getExchangeRates
-
-## 主な機能
-
-### 1. 計算機 API
-基本四則演算（加算、減算、乗算、除算）をサポート
-計算履歴の自動保存（MySQL/H2 データベース）
-0除算の例外処理
-不正な演算子の例外処理
-
-### 2. 為替レート照会 API
-リアルタイム為替レート情報の照会
-Frankfurter API連携 (https://api.frankfurter.app)
-基準通貨の設定が可能（デフォルト：KRW）
-多様な通貨の為替レート情報を提供
-
-### 3. 共通機能
-グローバル例外処理 (GlobalExceptionHandler)
-カスタム例外処理
-エラーコード管理
-Swagger APIドキュメントの自動生成
-
-### デプロイプラットフォーム
-
-このプロジェクトはGoogle Cloud Runに自動デプロイされます。
-
-- プラットフォーム: Google Cloud Platform (GCP)
-- サービス: Cloud Run
-- リージョン: asia-northeast3 (ソウル)
-- CI/CD: GitHub Actions
-- コンテナレジストリ: Artifact Registry
-
-### 自動デプロイプロセス
-
-GitHub Actionsを通じてmainブランチにプッシュされると、自動的にデプロイが行われます。
-
-### 必要な GitHub Secrets
-
-デプロイのためには、以下のGitHub Secretsが設定されている必要があります：
-
-- GCP_PROJECT_ID: GCP プロジェクトID
-- GCP_SA_KEY: GCP サービスアカウントキー (JSON形式)
-
-### デプロイ確認
-
-デプロイが完了すると、Cloud RunコンソールでサービスURLを確認できます：
-
-- Cloud Run コンソール: https://console.cloud.google.com/run
-- サービス URL: デプロイ完了後に提供されるHTTPS URL
-
-### 環境変数
-
-運営環境では以下の環境変数が設定されます：
-
-- SPRING_PROFILES_ACTIVE=prod: 運営プロファイルを有効化
-
-追加の環境変数が必要な場合は、deploy.ymlのenv_varsセクションに追加できます。
-
-
-### 開始方法 (Getting Started)
-
-### 前提条件
-
-- Java 17 以上
-- Gradle 7.x 以上 (または Gradle Wrapper 使用)
-- MySQL 8.0 (開発環境、任意)
-- Docker & Docker Compose (コンテナ実行時)
-
-### ローカル環境での実行
-
-1. リポジトリのクローン
-
-   git clone <repository-url>
-   cd for-mountain
-
-2. データベース設定
-
-   開発環境ではMySQLを使用します。以下のいずれかを選択してください：
-
-    - Docker Compose 使用:
-
-      docker-compose up -d mysql-db
-
-      MySQLが `localhost:3308` で実行されます。
-
-    - ローカル MySQL 使用:
-      MySQL 8.0 インストールおよび実行
-      `mountain_db` データベース作成
-      `application-dev.yml` のデータベース接続情報を確認および修正
-
-3. アプリケーションのビルド
-
-   ./gradlew build
-
-
-Windowsの場合:
-
-gradlew.bat build
-
-
-4. アプリケーションの実行
-
-   ./gradlew bootRun
-
-
-またはビルドされたJARファイルの実行:
-
-java -jar build/libs/for-mountain-0.0.1-SNAPSHOT.jar
-
-
-5. アプリケーション接続確認
-    - サーバーは `http://localhost:8080` で実行されます。
-    - Swagger UI: http://localhost:8080/swagger-ui.html
-
-### 主な API エンドポイント
-
-#### 1. 計算機 API
-
-/api/v1/calculator/calculate
-
-計算を実行し、結果をデータベースに保存します。
-
-## サポートする演算子:
-## + (加算)
-## - (減算)
-## * (乗算)
-## / (除算)
-
-
-#### 2. 為替レート照会 API
-
-/api/v1/exchange?base=KRW
-
-リアルタイムの為替レート情報を照会します。
-
-- base: 基準通貨 (デフォルト: KRW)
-    - 例: USD, EUR, JPY, KRW など
-
-
-## 環境設定
-
-## プロファイル設定
-
-アプリケーションは以下のプロファイルをサポートします：
-
-- dev: 開発環境 (デフォルト)
-    - MySQL データベース使用
-    - SQL ロギング有効化
-    - Hibernate DDL 自動更新
-
-- prod: 本番環境
-    - H2 インメモリデータベース使用
-    - H2 Console 有効化 (http://localhost:8080/h2-console)
-
-
-### Docker Composeでフルスタック実行
-
-- docker-compose up -d
-
-#### MySQLのみ実行
-
-- docker-compose up -d mysql-db
-
-#### アプリケーションのみビルドして実行
-
-- ./gradlew build
-  docker-compose up -d backend
-
-### コンテナ状態確認
-
-- docker-compose ps
-
-### コンテナログ確認
-
-- docker-compose logs -f backend
-- docker-compose logs -f mysql-db
-
-### コンテナ停止および削除
-
-- docker-compose down
-
-### 完全削除
-
-- docker-compose down -v
-
-### テスト実行
-
-./gradlew test
-
-### テストリポート確認
-
-- HTML リポート: `build/reports/tests/test/index.html`
-
-### テストカバレッジ
-
-- `CalculatorServiceTest`: 計算機サービスロジックのテスト
-- `ForMountainApplicationTests`: アプリケーションコンテキストロードのテスト
-
-## エラーコード
-
-アプリケーションで使用されるエラーコード：
-
-- INVALID_OPERATOR  400  Unknown operator.
-- DIVISION_BY_ZERO  400  Cannot divide by zero.
-
-### JAR ファイルビルド
-
-./gradlew clean build
-
-JAR ファイルの場所:
-- `build/libs/for-mountain-0.0.1-SNAPSHOT.jar`
-
-### Docker イメージビルド
-
-docker build -t for-mountain:latest .
-
-### Docker イメージ実行
-
-docker run -p 8080:8080 for-mountain:latest
-
-## 作成者
-
-Jaehoon Choi
-
-
----
-
-NOTICE:
-- 開発環境ではMySQLを使用するため、ローカルでMySQLが実行されている必要があります。
-- 本番環境ではH2インメモリデータベースを使用します。
-- Docker Composeを使用すると、MySQLコンテナが自動的に実行されます。
-
-</details>
+- このプロジェクトは、初期のサンプル API 構成から拡張され、会社サイトと管理システムを含む形になっています。
+- README は現在のコードベースに合わせて整理し直しています。
+- 機密情報は設定ファイルに直接書かず、環境変数で管理する運用を推奨します。

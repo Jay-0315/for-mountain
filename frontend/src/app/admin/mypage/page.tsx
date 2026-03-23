@@ -8,7 +8,7 @@ import { getSessionPayload } from "@/lib/session";
 const STATUS_COLOR: Record<string, string> = {
   待機中: "bg-yellow-100 text-yellow-700",
   承認: "bg-green-100 text-green-700",
-  否認: "bg-red-100 text-red-600",
+  拒否: "bg-red-100 text-red-600",
 };
 
 export default function MyPage() {
@@ -38,12 +38,19 @@ export default function MyPage() {
   }, []);
 
   const summary = useMemo(() => {
+    const approvedDays = leaves
+      .filter((leave) => leave.status === "承認")
+      .reduce((sum, leave) => sum + leave.days, 0);
+    const remaining =
+      employee?.annualLeaveDays != null ? employee.annualLeaveDays - approvedDays : null;
     return {
       total: leaves.length,
       pending: leaves.filter((leave) => leave.status === "待機中").length,
       approved: leaves.filter((leave) => leave.status === "承認").length,
+      approvedDays,
+      remaining,
     };
-  }, [leaves]);
+  }, [leaves, employee]);
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -70,6 +77,45 @@ export default function MyPage() {
           </div>
         ) : (
           <p className="text-sm text-red-500">현재 로그인 정보와 연결된 사원 정보가 없습니다.</p>
+        )}
+      </div>
+
+      {/* 잔여 휴가 카드 */}
+      <div className="rounded-2xl border border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50 p-5 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-medium text-orange-600">残有給休暇</p>
+            <div className="mt-1 flex items-baseline gap-1.5">
+              {summary.remaining != null ? (
+                <>
+                  <span className={`text-3xl font-bold ${summary.remaining <= 3 ? "text-red-500" : "text-orange-500"}`}>
+                    {summary.remaining}
+                  </span>
+                  <span className="text-sm font-medium text-orange-400">日</span>
+                  <span className="ml-2 text-xs text-slate-400">/ {employee?.annualLeaveDays}日</span>
+                </>
+              ) : (
+                <span className="text-base font-medium text-slate-400">未設定</span>
+              )}
+            </div>
+          </div>
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100">
+            <svg className="h-6 w-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+        </div>
+        {summary.remaining != null && (
+          <div className="mt-3">
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-orange-100">
+              <div
+                className={`h-full rounded-full transition-all ${summary.remaining <= 3 ? "bg-red-400" : "bg-orange-400"}`}
+                style={{ width: `${Math.max(0, Math.min(100, (summary.remaining / (employee?.annualLeaveDays ?? 1)) * 100))}%` }}
+              />
+            </div>
+            <p className="mt-1.5 text-xs text-slate-400">使用済み {summary.approvedDays}日</p>
+          </div>
         )}
       </div>
 

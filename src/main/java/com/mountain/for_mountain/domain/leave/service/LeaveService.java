@@ -13,12 +13,14 @@ import com.mountain.for_mountain.domain.leave.model.entity.Leave;
 import com.mountain.for_mountain.domain.leave.repository.LeaveRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -27,12 +29,15 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class LeaveService {
 
-    private static final List<String> CANCELLABLE_STATUSES = List.of("待機中", "否認");
+    private static final List<String> CANCELLABLE_STATUSES = List.of("待機中", "拒否", "却下", "否認");
 
     private final LeaveRepository leaveRepository;
     private final EmployeeRepository employeeRepository;
     private final GroupRepository groupRepository;
     private final JavaMailSender mailSender;
+
+    @Value("${app.frontend-base-url:}")
+    private String frontendBaseUrl;
 
     public List<LeaveResponse> getList(String status, String department) {
         return leaveRepository.findAllByOrderByCreatedAtDesc().stream()
@@ -149,7 +154,8 @@ public class LeaveService {
     }
 
     private String buildLeaveRequestMailBody(Employee employee, Leave leave, Employee leader) {
-        return String.join("\n",
+        String approvalUrl = buildApprovalUrl(leave.getId());
+        List<String> lines = new ArrayList<>(List.of(
                 "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
                 "休暇申請通知",
                 "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
@@ -160,8 +166,23 @@ public class LeaveService {
                 "期間        : " + leave.getStartDate() + " ~ " + leave.getEndDate(),
                 "日数        : " + leave.getDays() + "日",
                 "申請理由    : " + (leave.getReason() == null || leave.getReason().isBlank() ? "-" : leave.getReason()),
-                "",
-                "社内システムで内容をご確認ください。"
-        );
+                ""
+        ));
+        if (approvalUrl != null) {
+            lines.add("確認URL    : " + approvalUrl);
+            lines.add("");
+        }
+        lines.add("社内システムで内容をご確認ください。");
+        return String.join("\n", lines);
+    }
+
+    private String buildApprovalUrl(Long leaveId) {
+        if (frontendBaseUrl == null || frontendBaseUrl.isBlank()) {
+            return null;
+        }
+        String normalizedBaseUrl = frontendBaseUrl.endsWith("/")
+                ? frontendBaseUrl.substring(0, frontendBaseUrl.length() - 1)
+                : frontendBaseUrl;
+        return normalizedBaseUrl + "/admin/leave/" + leaveId;
     }
 }

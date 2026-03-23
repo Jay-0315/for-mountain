@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import GridRunnerBackdrop from "@/components/ui/GridRunnerBackdrop";
 
 export default function Footer() {
@@ -24,12 +25,12 @@ export default function Footer() {
             <div>
               <p className="text-white text-sm font-semibold mb-3">サイトマップ</p>
               <ul className="space-y-2 text-sm">
-                <li><a href="#top" className="hover:text-white transition-colors">トップ</a></li>
-                <li><a href="#about" className="hover:text-white transition-colors">企業情報</a></li>
-                <li><a href="#services" className="hover:text-white transition-colors">事業内容</a></li>
-                <li><a href="#news" className="hover:text-white transition-colors">お知らせ</a></li>
-                <li><a href="#recruit" className="hover:text-white transition-colors">採用情報</a></li>
-                <li><a href="#contact" className="hover:text-white transition-colors">お問い合わせ</a></li>
+                <li><Link href="/" className="hover:text-white transition-colors">トップ</Link></li>
+                <li><Link href="/about" className="hover:text-white transition-colors">企業情報</Link></li>
+                <li><Link href="/services" className="hover:text-white transition-colors">事業内容</Link></li>
+                <li><Link href="/news" className="hover:text-white transition-colors">お知らせ</Link></li>
+                <li><Link href="/recruit" className="hover:text-white transition-colors">採用情報</Link></li>
+                <li><Link href="/contact" className="hover:text-white transition-colors">お問い合わせ</Link></li>
               </ul>
             </div>
             <div>

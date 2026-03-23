@@ -16,9 +16,9 @@ import { getSessionPayload, getSessionRole } from "@/lib/session";
 const STATUS_COLOR: Record<string, string> = {
   待機中: "bg-yellow-100 text-yellow-700",
   承認: "bg-green-100 text-green-700",
-  否認: "bg-red-100 text-red-600",
+  拒否: "bg-red-100 text-red-600",
 };
-const CANCELLABLE_STATUSES = new Set<LeaveDto["status"]>(["待機中", "否認"]);
+const CANCELLABLE_STATUSES = new Set<LeaveDto["status"]>(["待機中", "拒否"]);
 
 export default function LeaveDetailPage() {
   const params = useParams<{ id: string }>();
@@ -168,8 +168,8 @@ export default function LeaveDetailPage() {
           {isAdmin ? (
             leave.status === "待機中" ? (
               <>
-                <button onClick={() => handleStatusUpdate("否認")} className="admin-btn-danger px-4 py-2">
-                  否認
+                <button onClick={() => handleStatusUpdate("拒否")} className="admin-btn-danger px-4 py-2">
+                  拒否
                 </button>
                 <button onClick={() => handleStatusUpdate("承認")} className="admin-btn-success px-4 py-2">
                   承認

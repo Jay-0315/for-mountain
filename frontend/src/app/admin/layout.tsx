@@ -100,7 +100,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     const token = sessionStorage.getItem("admin_token");
     if (!token && pathname !== "/admin") {
-      router.replace("/admin");
+      router.replace(`/admin?redirect=${encodeURIComponent(pathname)}`);
       return;
     }
   }, [pathname, router]);

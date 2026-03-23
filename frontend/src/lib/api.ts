@@ -214,6 +214,7 @@ export type EmployeeDto = {
   joinDate: string;
   email: string;
   status: string;
+  annualLeaveDays: number | null;
 };
 
 function collapseWhitespace(value: string) {
@@ -355,6 +356,20 @@ export type LeaveDto = {
   appliedAt: string;
 };
 
+function normalizeLeaveStatus(status: string) {
+  if (status === "否認" || status === "却下") {
+    return "拒否";
+  }
+  return status;
+}
+
+function normalizeLeave(leave: LeaveDto): LeaveDto {
+  return {
+    ...leave,
+    status: normalizeLeaveStatus(leave.status),
+  };
+}
+
 export async function fetchLeaves(params?: {
   status?: string;
   department?: string;
@@ -364,7 +379,8 @@ export async function fetchLeaves(params?: {
   if (params?.department) q.set("department", params.department);
   const res = await fetch(`${API_BASE}/api/v1/leaves?${q}`);
   if (!res.ok) throw new Error("Failed to fetch leaves");
-  return res.json();
+  const leaves = (await res.json()) as LeaveDto[];
+  return leaves.map(normalizeLeave);
 }
 
 export async function createLeave(
@@ -377,7 +393,7 @@ export async function createLeave(
     body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error("Failed to create leave");
-  return res.json();
+  return normalizeLeave((await res.json()) as LeaveDto);
 }
 
 export async function updateLeaveStatus(
@@ -391,7 +407,7 @@ export async function updateLeaveStatus(
     body: JSON.stringify({ status }),
   });
   if (!res.ok) throw new Error("Failed to update leave status");
-  return res.json();
+  return normalizeLeave((await res.json()) as LeaveDto);
 }
 
 export async function cancelLeave(token: string, id: number): Promise<void> {

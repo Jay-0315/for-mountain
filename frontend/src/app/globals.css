@@ -49,6 +49,17 @@ body {
   }
 }
 
+@keyframes cursor-ripple {
+  0% {
+    opacity: 0.6;
+    transform: translate3d(-50%, -50%, 0) scale(0.35);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(-50%, -50%, 0) scale(9.5);
+  }
+}
+
 @layer components {
   .admin-btn-primary {
     @apply rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-orange-200 transition-all hover:-translate-y-0.5 hover:bg-orange-400 hover:shadow-lg hover:shadow-orange-200/80 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0;

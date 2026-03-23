@@ -1,37 +1,71 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image"; // Image 컴포넌트 임포트
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const navItems = [
-  { label: "トップ", href: "#top" },
-  { label: "企業情報", href: "#about" },
-  { label: "事業内容", href: "#services" },
-  { label: "お知らせ", href: "#news" },
-  { label: "採用情報", href: "#recruit" },
-  { label: "お問い合わせ", href: "#contact" },
+  { label: "トップ", href: "/" },
+  { label: "企業情報", href: "/about" },
+  { label: "事業内容", href: "/services" },
+  { label: "お知らせ", href: "/news" },
+  { label: "採用情報", href: "/recruit" },
+  { label: "お問い合わせ", href: "/contact" },
   { label: "社員専用", href: "/admin" },
 ];
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [inHero, setInHero] = useState(true);
+  const pathname = usePathname();
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+
+      if (pathname !== "/") {
+        setInHero(false);
+        return;
+      }
+
+      const hero = document.getElementById("top");
+      if (!hero) {
+        setInHero(false);
+        return;
+      }
+
+      const heroBottom = hero.offsetTop + hero.offsetHeight;
+      const headerHeight = 64;
+      setInHero(window.scrollY + headerHeight < heroBottom);
+    };
+
+    handleScroll();
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [pathname]);
+
+  const transparentHeader = inHero && !menuOpen;
+
+  const isActive = (href: string) => {
+    if (href === "/") return pathname === "/";
+    return pathname.startsWith(href);
+  };
 
   return (
       <header
           className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-              scrolled ? "bg-white/95 backdrop-blur-sm shadow-sm" : "bg-transparent"
+              transparentHeader
+                ? "bg-transparent"
+                : scrolled
+                  ? "bg-white/95 shadow-sm backdrop-blur-sm"
+                  : "bg-white/88 backdrop-blur-sm"
           }`}
       >
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          {/* 로고 영역 수정: 이미지 + 텍스트 */}
-          <a href="#top" className="flex items-center gap-2.5 group">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+          {/* 로고 */}
+          <Link href="/" className="group flex min-w-0 items-center gap-2 sm:gap-2.5">
             <Image
                 src="/mountain-logo.png"
                 alt="株式会社マウンテン symbol"
@@ -40,35 +74,40 @@ export default function Header() {
                 className="object-contain"
                 priority
             />
-            {/* 회사명 텍스트 */}
             <span
-                className={`text-lg font-bold tracking-tight transition-colors ${
-                    scrolled ? "text-slate-900" : "text-white group-hover:text-orange-100"
+                className={`min-w-0 truncate text-sm font-bold tracking-tight transition-colors sm:text-lg ${
+                    transparentHeader
+                      ? "text-white group-hover:text-orange-300"
+                      : "text-slate-900 group-hover:text-orange-600"
                 }`}
             >
-            <span className={`${scrolled ? "text-orange-600" : "text-orange-300"}`}>株式会社</span>
-            MOUNTAIN
-          </span>
-          </a>
+              <span className={transparentHeader ? "text-orange-300" : "text-orange-600"}>株式会社</span>
+              <span className="ml-0.5 sm:ml-0">MOUNTAIN</span>
+            </span>
+          </Link>
 
           {/* 데스크톱 내비게이션 */}
           <nav className="hidden lg:flex items-center gap-6">
             {navItems.map((item) => (
-                <a
+                <Link
                     key={item.href}
                     href={item.href}
-                    className={`text-sm font-medium transition-colors whitespace-nowrap ${
-                        scrolled ? "text-slate-600 hover:text-orange-600" : "text-white hover:text-orange-200"
+                    className={`whitespace-nowrap text-sm font-medium transition-colors ${
+                        isActive(item.href)
+                          ? "text-orange-600"
+                          : transparentHeader
+                            ? "text-white hover:text-orange-300"
+                            : "text-slate-800 hover:text-orange-600"
                     }`}
                 >
                   {item.label}
-                </a>
+                </Link>
             ))}
           </nav>
 
           {/* 모바일 메뉴 버튼 */}
           <button
-              className={`lg:hidden p-2 ${scrolled ? "text-slate-700" : "text-white"}`}
+              className={`p-2 lg:hidden ${transparentHeader ? "text-slate-900" : "text-slate-700"}`}
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label="メニューを開く"
           >
@@ -82,18 +121,22 @@ export default function Header() {
           </button>
         </div>
 
-        {/* 모바일 메뉴 (배경색 추가) */}
+        {/* 모바일 메뉴 */}
         {menuOpen && (
-            <div className="lg:hidden bg-white border-t border-slate-100 px-6 py-4 flex flex-col gap-4 shadow-lg">
+            <div className="flex flex-col gap-4 border-t border-slate-100 bg-white px-4 py-4 shadow-lg lg:hidden">
               {navItems.map((item) => (
-                  <a
+                  <Link
                       key={item.href}
                       href={item.href}
-                      className="text-sm font-medium text-slate-700 hover:text-orange-600 py-1"
+                      className={`py-1 text-sm font-medium transition-colors ${
+                          isActive(item.href)
+                            ? "text-orange-600"
+                            : "text-slate-700 hover:text-orange-600"
+                      }`}
                       onClick={() => setMenuOpen(false)}
                   >
                     {item.label}
-                  </a>
+                  </Link>
               ))}
             </div>
         )}

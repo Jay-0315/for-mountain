@@ -55,7 +55,8 @@ public class EmployeeService {
                 request.getJobTitle(),
                 LocalDate.parse(request.getJoinDate()),
                 request.getEmail(),
-                request.getStatus()
+                request.getStatus(),
+                request.getAnnualLeaveDays()
         );
         Employee saved = employeeRepository.save(employee);
         syncAccountRole(saved.getEmployeeNumber(), saved.getPosition());
@@ -77,7 +78,8 @@ public class EmployeeService {
                 request.getJobTitle(),
                 LocalDate.parse(request.getJoinDate()),
                 request.getEmail(),
-                request.getStatus()
+                request.getStatus(),
+                request.getAnnualLeaveDays()
         );
         syncAccountRole(employee.getEmployeeNumber(), employee.getPosition());
         return new EmployeeResponse(employee);

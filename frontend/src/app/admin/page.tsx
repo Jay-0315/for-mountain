@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { adminLogin } from "@/lib/api";
 import { setMockAdminSession } from "./mock-store";
 
@@ -9,22 +9,24 @@ const REMEMBERED_USERNAME_KEY = "remembered_admin_username";
 
 export default function AdminPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [rememberUsername, setRememberUsername] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const redirectPath = searchParams.get("redirect");
 
   useEffect(() => {
     const saved = sessionStorage.getItem("admin_token");
-    if (saved) router.replace("/admin/dashboard");
+    if (saved) router.replace(isSafeRedirectPath(redirectPath) ? redirectPath : "/admin/dashboard");
 
     const remembered = localStorage.getItem(REMEMBERED_USERNAME_KEY);
     if (remembered) {
       setUsername(remembered);
       setRememberUsername(true);
     }
-  }, [router]);
+  }, [redirectPath, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +45,7 @@ export default function AdminPage() {
         const { token } = await adminLogin(username, password);
         sessionStorage.setItem("admin_token", token);
       }
-      router.replace("/admin/dashboard");
+      router.replace(isSafeRedirectPath(redirectPath) ? redirectPath : "/admin/dashboard");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "コードが正しくありません。");
     } finally {
@@ -128,4 +130,8 @@ export default function AdminPage() {
       </div>
     </div>
   );
+}
+
+function isSafeRedirectPath(path: string | null): path is string {
+  return Boolean(path && path.startsWith("/admin"));
 }

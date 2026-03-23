@@ -50,4 +50,6 @@ public class EmployeeRequest {
     @NotBlank
     @Size(max = 10)
     private String status;
+
+    private Integer annualLeaveDays;
 }
