@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
+import { TextPlugin } from "gsap/TextPlugin";
 
 const INTRO_CODE_LINES = [
   "boot.sequence('mountain-core');",
@@ -13,6 +14,14 @@ const INTRO_CODE_LINES = [
 export default function PageIntro() {
   const [done, setDone] = useState(false);
   const introRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    gsap.registerPlugin(TextPlugin);
+
+    // Never let the intro permanently cover the page if an animation step fails.
+    const fallback = window.setTimeout(() => setDone(true), 5000);
+    return () => window.clearTimeout(fallback);
+  }, []);
 
   useGSAP(
     () => {
