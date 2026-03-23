@@ -5,6 +5,8 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { TextPlugin } from "gsap/TextPlugin";
 
+gsap.registerPlugin(TextPlugin);
+
 const INTRO_CODE_LINES = [
   "boot.sequence('mountain-core');",
   "sync.network({ edge: true, status: 'warm' });",
@@ -16,8 +18,6 @@ export default function PageIntro() {
   const introRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    gsap.registerPlugin(TextPlugin);
-
     // Never let the intro permanently cover the page if an animation step fails.
     const fallback = window.setTimeout(() => setDone(true), 5000);
     return () => window.clearTimeout(fallback);

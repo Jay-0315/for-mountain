@@ -5,6 +5,8 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { TextPlugin } from "gsap/TextPlugin";
 
+gsap.registerPlugin(TextPlugin);
+
 type Particle = {
   x: number;
   y: number;
@@ -506,11 +508,9 @@ export default function HeroSection() {
   // ── GSAP 타임라인 + TextPlugin ────────────────────────────────
   useGSAP(
     () => {
-      gsap.registerPlugin(TextPlugin);
-
       // 초기 상태
       gsap.set(
-        [".hero-badge", ".hero-title-line1", ".hero-cta-1", ".hero-cta-2", ".hero-scroll"],
+        [".hero-badge", ".hero-title-line1", ".hero-cta-1", ".hero-scroll"],
         { opacity: 0, y: 30 }
       );
       gsap.set(".hero-sub", { opacity: 0, y: 20 });
@@ -613,7 +613,6 @@ export default function HeroSection() {
         )
         .to(".hero-sub", { opacity: 1, y: 0, duration: 0.7 }, "-=0.6")
         .to(".hero-cta-1", { opacity: 1, y: 0, duration: 0.6 }, "-=0.4")
-        .to(".hero-cta-2", { opacity: 1, y: 0, duration: 0.6 }, "-=0.45")
         .to(".hero-scroll", { opacity: 1, y: 0, duration: 0.5 }, "-=0.2");
 
       gsap.to(haloRef.current, {
