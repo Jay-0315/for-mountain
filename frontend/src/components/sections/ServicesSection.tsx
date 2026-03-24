@@ -3,7 +3,6 @@
 import { useRef, useState, useCallback, useEffect, type ReactNode } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -140,14 +139,6 @@ export default function ServicesSection() {
               { opacity: 0, y: 14 },
               { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }
             );
-            const cards = el.querySelectorAll(".service-card");
-            if (cards.length > 0) {
-              gsap.fromTo(
-                cards,
-                { opacity: 0, y: 30 },
-                { opacity: 1, y: 0, duration: 0.5, stagger: 0.1, ease: "power3.out" }
-              );
-            }
           });
         },
       });
@@ -157,39 +148,24 @@ export default function ServicesSection() {
 
   useGSAP(
     () => {
-      gsap.registerPlugin(ScrollTrigger);
-
       gsap.from(".services-header", {
         opacity: 0,
         y: 50,
         duration: 0.9,
+        delay: 0.1,
         ease: "power3.out",
-        scrollTrigger: { trigger: ".services-header", start: "top 82%", once: true },
       });
 
       gsap.from(".services-tabs", {
         opacity: 0,
         y: 30,
         duration: 0.7,
+        delay: 0.4,
         ease: "power3.out",
-        scrollTrigger: { trigger: ".services-tabs", start: "top 85%", once: true },
       });
     },
     { scope: sectionRef }
   );
-
-  useEffect(() => {
-    const el = contentRef.current;
-    if (!el) return;
-    const cards = Array.from(el.querySelectorAll<HTMLElement>(".service-card"));
-    if (cards.length === 0) return;
-    gsap.killTweensOf(cards);
-    gsap.fromTo(
-      cards,
-      { opacity: 0, y: 40 },
-      { opacity: 1, y: 0, duration: 0.6, stagger: 0.12, ease: "power3.out", clearProps: "all" }
-    );
-  }, [activeTab]);
 
   useEffect(() => {
     Promise.all([fetchServiceCategories(), fetchServiceItems()])
@@ -205,6 +181,7 @@ export default function ServicesSection() {
       .finally(() => setLoading(false));
   }, []);
 
+
   const activeCategory = categories.find((category) => category.slug === activeTab) ?? categories[0] ?? null;
   const activeItems = activeCategory
     ? items.filter((item) => item.category === activeCategory.slug)
@@ -212,6 +189,12 @@ export default function ServicesSection() {
 
   return (
     <section ref={sectionRef} id="services" className="overflow-hidden bg-gray-50 pt-44 pb-[32rem]">
+      <style>{`
+        @keyframes svc-card-up {
+          from { opacity: 0; transform: translateY(28px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
       <div className="mx-auto max-w-6xl px-6 sm:px-10 lg:px-6">
         <div className="services-header mb-24 text-center">
           <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-orange-600">Services</p>
@@ -262,7 +245,7 @@ export default function ServicesSection() {
               登録された事業項目がありません。
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+            <div key={activeTab} className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
               {activeItems.map((item) => {
                 const primaryImage = getPrimaryImage(item);
 
@@ -271,6 +254,7 @@ export default function ServicesSection() {
                     key={item.id}
                     href={`/services/${item.id}`}
                     className="service-card group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.05)] transition-all duration-300 hover:-translate-y-1 hover:border-orange-200 hover:shadow-[0_18px_40px_rgba(249,115,22,0.10)]"
+                    style={{ animation: "svc-card-up 0.45s ease-out both" }}
                   >
                     <div className="relative aspect-[16/10] overflow-hidden border-b border-slate-200 bg-[linear-gradient(135deg,#f8fafc_0%,#fff7ed_55%,#ffedd5_100%)]">
                       {primaryImage && isImageAttachment(primaryImage.name, primaryImage.url) ? (
