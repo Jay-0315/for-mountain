@@ -140,9 +140,12 @@ export function calcNextGrant(
     grantDate.setFullYear(firstGrant.getFullYear() + a);
   }
 
+  // 0~6개월 미만(a=0): preview 5일이 이미 부여돼 있으므로 추가 부여는 5일
+  const days = a === 0 ? 5 : getGrantDays(a);
+
   return {
     date:      grantDate,
-    days:      getGrantDays(a),
+    days,
     daysUntil: daysBetween(today, grantDate),
   };
 }
