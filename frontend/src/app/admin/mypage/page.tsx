@@ -4,6 +4,12 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { fetchEmployees, fetchLeaves, type EmployeeDto, type LeaveDto } from "@/lib/api";
 import { getSessionPayload } from "@/lib/session";
+import {
+  calcLeaveGrant,
+  formatDateStr,
+  formatDateDisplay,
+  daysBetween,
+} from "@/lib/leaveUtils";
 
 const STATUS_COLOR: Record<string, string> = {
   待機中: "bg-yellow-100 text-yellow-700",
@@ -38,19 +44,58 @@ export default function MyPage() {
   }, []);
 
   const summary = useMemo(() => {
-    const approvedDays = leaves
-      .filter((leave) => leave.status === "承認")
-      .reduce((sum, leave) => sum + leave.days, 0);
-    const remaining =
-      employee?.annualLeaveDays != null ? employee.annualLeaveDays - approvedDays : null;
+    const today = new Date();
+    const grant = employee?.joinDate ? calcLeaveGrant(employee.joinDate, today) : null;
+
+    // 현재 사이클 내 승인된 휴가만 집계
+    const grantStartStr = grant ? formatDateStr(grant.grantStart) : "";
+    const nextGrantStr  = grant ? formatDateStr(grant.nextGrant)  : "";
+
+    const approvedDays = grant
+      ? leaves
+          .filter(
+            (l) =>
+              l.status === "承認" &&
+              l.startDate >= grantStartStr &&
+              l.startDate < nextGrantStr
+          )
+          .reduce((sum, l) => sum + l.days, 0)
+      : 0;
+
+    const remaining = grant ? grant.grantDays - approvedDays : null;
+
+    // 다음 단계까지 남은 일수 (6개월 미만 구간에서만 표시)
+    const daysUntilNext =
+      grant && grant.a === 0 && today < grant.nextGrant
+        ? daysBetween(today, grant.nextGrant)
+        : null;
+
     return {
-      total: leaves.length,
-      pending: leaves.filter((leave) => leave.status === "待機中").length,
-      approved: leaves.filter((leave) => leave.status === "承認").length,
+      total:    leaves.length,
+      pending:  leaves.filter((l) => l.status === "待機中").length,
+      approved: leaves.filter((l) => l.status === "承認").length,
       approvedDays,
       remaining,
+      grant,
+      daysUntilNext,
     };
   }, [leaves, employee]);
+
+  const { grant, remaining, approvedDays, daysUntilNext } = summary;
+
+  // 진행률 바 (0~100)
+  const progressPct = grant && remaining != null
+    ? Math.max(0, Math.min(100, (remaining / grant.grantDays) * 100))
+    : 0;
+
+  // 사이클 기간 표시 (예: 2025.08.01 〜 2026.07.31)
+  const cyclePeriod = grant
+    ? (() => {
+        const end = new Date(grant.nextGrant);
+        end.setDate(end.getDate() - 1);
+        return `${formatDateDisplay(grant.grantStart)} 〜 ${formatDateDisplay(end)}`;
+      })()
+    : null;
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -82,43 +127,81 @@ export default function MyPage() {
 
       {/* 잔여 휴가 카드 */}
       <div className="rounded-2xl border border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50 p-5 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            {/* 라벨 */}
             <p className="text-xs font-medium text-orange-600">
-              {summary.remaining != null
-                ? `有給休暇が残り${summary.remaining}日あります`
+              {remaining != null
+                ? remaining > 0
+                  ? `有給休暇が残り ${remaining} 日あります`
+                  : "有給休暇の残日数はありません"
                 : "有給休暇"}
             </p>
+
+            {/* 숫자 */}
             <div className="mt-1 flex items-baseline gap-1.5">
-              {summary.remaining != null ? (
+              {remaining != null ? (
                 <>
-                  <span className={`text-3xl font-bold ${summary.remaining <= 3 ? "text-red-500" : "text-orange-500"}`}>
-                    {summary.remaining}
+                  <span
+                    className={`text-3xl font-bold ${
+                      remaining === 0
+                        ? "text-slate-400"
+                        : remaining <= 3
+                        ? "text-red-500"
+                        : grant?.grantDays === 30
+                        ? "text-orange-600"
+                        : "text-orange-500"
+                    }`}
+                  >
+                    {remaining}
                   </span>
                   <span className="text-sm font-medium text-orange-400">日</span>
-                  <span className="ml-2 text-xs text-slate-400">/ {employee?.annualLeaveDays}日</span>
+                  <span className="ml-2 text-xs text-slate-400">/ {grant?.grantDays}日</span>
+                  {grant?.grantDays === 30 && (
+                    <span className="ml-1 rounded-full bg-orange-200 px-2 py-0.5 text-[10px] font-bold text-orange-700">
+                      上限
+                    </span>
+                  )}
                 </>
               ) : (
-                <span className="text-base font-medium text-slate-400">未設定</span>
+                <span className="text-base font-medium text-slate-400">—</span>
               )}
             </div>
+
+            {/* 사이클 기간 */}
+            {cyclePeriod && (
+              <p className="mt-1 text-[11px] text-slate-400">付与期間: {cyclePeriod}</p>
+            )}
           </div>
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100">
+
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-orange-100">
             <svg className="h-6 w-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                 d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           </div>
         </div>
-        {summary.remaining != null && (
+
+        {/* 진행률 바 */}
+        {remaining != null && grant && (
           <div className="mt-3">
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-orange-100">
               <div
-                className={`h-full rounded-full transition-all ${summary.remaining <= 3 ? "bg-red-400" : "bg-orange-400"}`}
-                style={{ width: `${Math.max(0, Math.min(100, (summary.remaining / (employee?.annualLeaveDays ?? 1)) * 100))}%` }}
+                className={`h-full rounded-full transition-all ${
+                  remaining <= 3 ? "bg-red-400" : "bg-orange-400"
+                }`}
+                style={{ width: `${progressPct}%` }}
               />
             </div>
-            <p className="mt-1.5 text-xs text-slate-400">使用済み {summary.approvedDays}日</p>
+            <div className="mt-1.5 flex items-center justify-between">
+              <p className="text-xs text-slate-400">使用済み {approvedDays}日</p>
+              {/* 6개월 미만 구간: 다음 단계까지 안내 */}
+              {daysUntilNext != null && grant.grantDays === 5 && (
+                <p className="text-[11px] text-orange-400">
+                  あと {daysUntilNext} 日で +5日付与
+                </p>
+              )}
+            </div>
           </div>
         )}
       </div>
