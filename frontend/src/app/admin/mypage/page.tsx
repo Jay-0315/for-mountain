@@ -63,10 +63,11 @@ export default function MyPage() {
   return (
     <div className="max-w-4xl space-y-6">
       {/* ── 헤더 ── */}
-      <div className="rounded-2xl overflow-hidden border border-orange-100 bg-white shadow-sm">
-        <div className="bg-gradient-to-r from-orange-500 to-amber-400 px-5 py-4">
-          <h2 className="text-lg font-bold text-white">マイページ</h2>
-          <p className="mt-0.5 text-sm text-orange-100">本人の情報と休暇申請状況を確認できます。</p>
+      <div className="rounded-2xl overflow-hidden border border-slate-100 bg-white shadow-sm">
+        <div className="h-1 bg-gradient-to-r from-orange-400 to-amber-300" />
+        <div className="px-5 py-4">
+          <h2 className="text-lg font-bold text-slate-900">マイページ</h2>
+          <p className="mt-0.5 text-sm text-slate-500">本人の情報と休暇申請状況を確認できます。</p>
         </div>
       </div>
 

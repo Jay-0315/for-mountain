@@ -123,10 +123,11 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-2xl space-y-6">
-      <div className="rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-sm">
-        <div className="bg-gradient-to-r from-slate-700 to-slate-600 px-5 py-4">
-          <h2 className="text-lg font-bold text-white">設定</h2>
-          <p className="mt-0.5 text-sm text-slate-300">管理者アカウントの設定を行います。</p>
+      <div className="rounded-2xl overflow-hidden border border-slate-100 bg-white shadow-sm">
+        <div className="h-1 bg-gradient-to-r from-slate-500 to-slate-400" />
+        <div className="px-5 py-4">
+          <h2 className="text-lg font-bold text-slate-900">設定</h2>
+          <p className="mt-0.5 text-sm text-slate-500">管理者アカウントの設定を行います。</p>
         </div>
       </div>
 
