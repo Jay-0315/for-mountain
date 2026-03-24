@@ -14,30 +14,30 @@ export default function PartnersSection() {
   }, []);
 
   return (
-    <section id="partners" className="overflow-hidden bg-gray-50 py-24">
-      <div className="mx-auto max-w-6xl px-6">
+    <section id="partners" className="relative z-10 overflow-hidden pt-44 pb-64">
+      <div className="mx-auto max-w-6xl px-6 sm:px-10 lg:px-6">
         <div className="mb-16 text-center">
-          <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-orange-600">
+          <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-orange-400">
             MOUNTAIN PARTNERS
           </p>
-          <h2 className="mb-6 text-4xl font-bold text-slate-900 md:text-5xl">
+          <h2 className="mb-6 text-4xl font-bold text-white md:text-5xl">
             株式会社マウンテン 協力会社
           </h2>
           <div className="mx-auto mb-6 h-1 w-20 bg-orange-500" />
-          <p className="mx-auto max-w-2xl text-lg text-slate-500">
+          <p className="mx-auto max-w-2xl text-lg text-slate-400">
             共に成長し、革新を創り出す株式会社マウンテンの大切なパートナー企業様です。
           </p>
         </div>
 
         {cards.length === 0 ? (
-          <div className="rounded-[2rem] border border-dashed border-slate-200 bg-white px-6 py-14 text-center text-sm text-slate-400">
+          <div className="rounded-[2rem] border border-dashed border-slate-700 bg-slate-900/50 px-6 py-14 text-center text-sm text-slate-500">
             登録された協力会社カードがありません。
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-3 gap-3 xl:grid-cols-4">
             {cards.map((card) => {
               const content = (
-                <div className="group relative overflow-hidden rounded-[1.35rem] border border-slate-100 bg-white shadow-sm shadow-slate-200/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:shadow-orange-100">
+                <div className="group relative overflow-hidden rounded-[1.35rem] border border-slate-700/60 bg-slate-900 shadow-sm shadow-black/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:shadow-orange-900/40">
                   <div className="absolute -inset-4 -z-10 rounded-[2.25rem] bg-slate-100/80 opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-100" />
                   <div className="relative aspect-[1.15/1] overflow-hidden bg-white p-4">
                     <Image

@@ -6,7 +6,7 @@ export default function AboutPage() {
   return (
     <>
       <Header />
-      <main>
+      <main className="pt-20">
         <AboutSection />
       </main>
       <Footer />

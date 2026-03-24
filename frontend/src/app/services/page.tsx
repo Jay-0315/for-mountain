@@ -6,7 +6,7 @@ export default function ServicesPage() {
   return (
     <>
       <Header />
-      <main>
+      <main className="pt-20">
         <ServicesSection />
       </main>
       <Footer />

@@ -272,11 +272,11 @@ export default function RecruitSection() {
   };
 
   return (
-    <section ref={sectionRef} id="recruit" className="py-24 bg-slate-50 overflow-hidden">
-      <div className="max-w-6xl mx-auto px-6">
+    <section ref={sectionRef} id="recruit" className="pt-44 pb-[32rem] bg-gray-50 overflow-hidden">
+      <div className="max-w-6xl mx-auto px-6 sm:px-10 lg:px-6">
 
         {/* 섹션 헤더 */}
-        <div className="recruit-header text-center mb-14">
+        <div className="recruit-header text-center mb-24">
           <p className="text-orange-600 text-sm font-semibold uppercase tracking-widest mb-3">
             Recruit
           </p>

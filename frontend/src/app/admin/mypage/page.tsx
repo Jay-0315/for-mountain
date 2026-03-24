@@ -84,7 +84,11 @@ export default function MyPage() {
       <div className="rounded-2xl border border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50 p-5 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium text-orange-600">残有給休暇</p>
+            <p className="text-xs font-medium text-orange-600">
+              {summary.remaining != null
+                ? `有給休暇が残り${summary.remaining}日あります`
+                : "有給休暇"}
+            </p>
             <div className="mt-1 flex items-baseline gap-1.5">
               {summary.remaining != null ? (
                 <>

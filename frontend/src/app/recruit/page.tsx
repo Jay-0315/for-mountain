@@ -6,7 +6,7 @@ export default function RecruitPage() {
   return (
     <>
       <Header />
-      <main>
+      <main className="pt-20">
         <RecruitSection />
       </main>
       <Footer />

@@ -5,7 +5,7 @@ import GridRunnerBackdrop from "@/components/ui/GridRunnerBackdrop";
 
 export default function Footer() {
   return (
-    <footer className="relative overflow-hidden bg-slate-900 py-12 text-slate-400">
+    <footer className="relative overflow-hidden bg-slate-900 pt-24 pb-12 text-slate-400">
       <GridRunnerBackdrop />
 
       <div className="relative z-10 max-w-6xl mx-auto px-6">

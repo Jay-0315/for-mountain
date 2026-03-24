@@ -211,9 +211,9 @@ export default function ServicesSection() {
     : [];
 
   return (
-    <section ref={sectionRef} id="services" className="overflow-hidden bg-white py-24">
-      <div className="mx-auto max-w-6xl px-6">
-        <div className="services-header mb-12 text-center">
+    <section ref={sectionRef} id="services" className="overflow-hidden bg-gray-50 pt-44 pb-[32rem]">
+      <div className="mx-auto max-w-6xl px-6 sm:px-10 lg:px-6">
+        <div className="services-header mb-24 text-center">
           <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-orange-600">Services</p>
           <h2 className="mb-4 text-4xl font-bold text-slate-900 md:text-5xl">事業内容</h2>
           <p className="mx-auto max-w-xl text-lg text-slate-500">株式会社マウンテン &gt; Services</p>

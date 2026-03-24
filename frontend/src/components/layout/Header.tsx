@@ -37,7 +37,7 @@ export default function Header() {
       }
 
       const heroBottom = hero.offsetTop + hero.offsetHeight;
-      const headerHeight = 64;
+      const headerHeight = 80;
       setInHero(window.scrollY + headerHeight < heroBottom);
     };
 
@@ -63,19 +63,19 @@ export default function Header() {
                   : "bg-white/88 backdrop-blur-sm"
           }`}
       >
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+        <div className="mx-auto flex h-20 max-w-6xl items-center justify-between px-6 sm:px-10">
           {/* 로고 */}
-          <Link href="/" className="group flex min-w-0 items-center gap-2 sm:gap-2.5">
+          <Link href="/" className="group flex min-w-0 items-center gap-2.5 sm:gap-3">
             <Image
                 src="/mountain-logo.png"
                 alt="株式会社マウンテン symbol"
-                width={34}
-                height={34}
+                width={42}
+                height={42}
                 className="object-contain"
                 priority
             />
             <span
-                className={`min-w-0 truncate text-sm font-bold tracking-tight transition-colors sm:text-lg ${
+                className={`min-w-0 truncate text-base font-bold tracking-tight transition-colors sm:text-xl ${
                     transparentHeader
                       ? "text-white group-hover:text-orange-300"
                       : "text-slate-900 group-hover:text-orange-600"
@@ -87,12 +87,12 @@ export default function Header() {
           </Link>
 
           {/* 데스크톱 내비게이션 */}
-          <nav className="hidden lg:flex items-center gap-6">
+          <nav className="hidden lg:flex items-center gap-8">
             {navItems.map((item) => (
                 <Link
                     key={item.href}
                     href={item.href}
-                    className={`whitespace-nowrap text-sm font-medium transition-colors ${
+                    className={`whitespace-nowrap text-[15px] font-medium transition-colors ${
                         isActive(item.href)
                           ? "text-orange-600"
                           : transparentHeader
@@ -107,11 +107,11 @@ export default function Header() {
 
           {/* 모바일 메뉴 버튼 */}
           <button
-              className={`p-2 lg:hidden ${transparentHeader ? "text-slate-900" : "text-slate-700"}`}
+              className={`p-2 lg:hidden ${transparentHeader ? "text-white" : "text-slate-700"}`}
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label="メニューを開く"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               {menuOpen ? (
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               ) : (
@@ -123,12 +123,12 @@ export default function Header() {
 
         {/* 모바일 메뉴 */}
         {menuOpen && (
-            <div className="flex flex-col gap-4 border-t border-slate-100 bg-white px-4 py-4 shadow-lg lg:hidden">
+            <div className="flex flex-col gap-1 border-t border-slate-100 bg-white px-6 py-4 shadow-lg lg:hidden">
               {navItems.map((item) => (
                   <Link
                       key={item.href}
                       href={item.href}
-                      className={`py-1 text-sm font-medium transition-colors ${
+                      className={`py-2.5 text-[15px] font-medium transition-colors ${
                           isActive(item.href)
                             ? "text-orange-600"
                             : "text-slate-700 hover:text-orange-600"

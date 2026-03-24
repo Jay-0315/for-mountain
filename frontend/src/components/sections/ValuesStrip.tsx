@@ -1,0 +1,142 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
+
+const values = [
+  {
+    key: "VALUE",
+    ja: "価値創造",
+    color: "bg-yellow-400",
+    glow: "rgba(250,204,21,1)",
+    glowSoft: "rgba(250,204,21,0.35)",
+    icon: (
+      <svg className="w-11 h-11 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+  },
+  {
+    key: "HARMONY",
+    ja: "環境と変化との調和",
+    color: "bg-emerald-500",
+    glow: "rgba(16,185,129,1)",
+    glowSoft: "rgba(16,185,129,0.35)",
+    icon: (
+      <svg className="w-11 h-11 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+          d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+      </svg>
+    ),
+  },
+  {
+    key: "CHALLENGE",
+    ja: "絶え間ない挑戦",
+    color: "bg-rose-500",
+    glow: "rgba(244,63,94,1)",
+    glowSoft: "rgba(244,63,94,0.35)",
+    icon: (
+      <svg className="w-11 h-11 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+          d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+      </svg>
+    ),
+  },
+  {
+    key: "TRUST",
+    ja: "人と社会との信頼",
+    color: "bg-orange-500",
+    glow: "rgba(249,115,22,1)",
+    glowSoft: "rgba(249,115,22,0.35)",
+    icon: (
+      <svg className="w-11 h-11 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+      </svg>
+    ),
+  },
+];
+
+export default function ValuesStrip() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        itemRefs.current,
+        { opacity: 0, y: 50, scale: 0.75 },
+        {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.6,
+          ease: "back.out(1.4)",
+          stagger: 0.15,
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: "top 80%",
+            once: true,
+          },
+        }
+      );
+    }, sectionRef);
+
+    return () => ctx.revert();
+  }, []);
+
+  return (
+    <>
+      <style>{`
+        @keyframes neon-breathe {
+          0%, 100% {
+            box-shadow:
+              0 0 6px var(--neon),
+              0 0 18px var(--neon),
+              0 0 40px var(--neon-soft),
+              0 0 70px var(--neon-soft);
+          }
+          50% {
+            box-shadow:
+              0 0 2px var(--neon),
+              0 0 6px var(--neon),
+              0 0 12px var(--neon-soft),
+              0 0 20px var(--neon-soft);
+          }
+        }
+      `}</style>
+
+      <section ref={sectionRef} className="relative z-10 py-32">
+        <div className="mx-auto max-w-7xl px-10 lg:px-20">
+          <div className="grid grid-cols-2 gap-16 sm:grid-cols-4 sm:gap-20">
+            {values.map((v, i) => (
+              <div
+                key={v.key}
+                ref={(el) => { itemRefs.current[i] = el; }}
+                className="flex flex-col items-center gap-5 text-center"
+              >
+                <div
+                  className={`flex h-24 w-24 items-center justify-center rounded-full ${v.color}`}
+                  style={{
+                    "--neon": v.glow,
+                    "--neon-soft": v.glowSoft,
+                    animation: `neon-breathe 3s ease-in-out infinite`,
+                    animationDelay: `${i * 0.75}s`,
+                  } as React.CSSProperties}
+                >
+                  {v.icon}
+                </div>
+                <p className="text-sm font-extrabold tracking-widest text-white">{v.key}</p>
+                <p className="text-sm text-slate-400">{v.ja}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}

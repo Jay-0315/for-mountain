@@ -238,8 +238,8 @@ export default function ContactSection() {
   };
 
   return (
-    <section ref={sectionRef} id="contact" className="py-24 bg-white overflow-hidden">
-      <div className="max-w-6xl mx-auto px-6">
+    <section ref={sectionRef} id="contact" className="pt-44 pb-[32rem] bg-gray-50 overflow-hidden">
+      <div className="max-w-6xl mx-auto px-6 sm:px-10 lg:px-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
 
           {/* 왼쪽 설명 */}

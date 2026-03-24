@@ -653,7 +653,7 @@ export default function HeroSection() {
     <section
       ref={containerRef}
       id="top"
-      className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top,#09111f_0%,#03070f_40%,#010309_100%)]"
+      className="relative z-10 min-h-screen flex items-center justify-center overflow-hidden"
     >
       {/* Canvas Particle 배경 */}
       <canvas

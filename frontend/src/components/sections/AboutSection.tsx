@@ -194,11 +194,11 @@ export default function AboutSection() {
   const activeTabData = tabs.find((t) => t.id === activeTab)!;
 
   return (
-    <section ref={sectionRef} id="about" className="py-24 bg-slate-50 overflow-hidden">
-      <div className="max-w-6xl mx-auto px-6">
+    <section ref={sectionRef} id="about" className="pt-44 pb-[32rem] bg-gray-50 overflow-hidden">
+      <div className="max-w-6xl mx-auto px-6 sm:px-10 lg:px-6">
 
         {/* 섹션 헤더 */}
-        <div className="about-header text-center mb-14">
+        <div className="about-header text-center mb-24">
           <p className="text-orange-600 text-sm font-semibold uppercase tracking-widest mb-3">
             About Us
           </p>
@@ -211,7 +211,7 @@ export default function AboutSection() {
         </div>
 
         {/* 기업이념 / 기업목표 탭 */}
-        <div className="about-tab-panel mb-14">
+        <div className="about-tab-panel mb-24">
           {/* 탭 버튼 */}
           <div className="flex gap-2 mb-6">
             {tabs.map((tab) => (

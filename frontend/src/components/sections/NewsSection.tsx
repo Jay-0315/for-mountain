@@ -195,20 +195,18 @@ export default function NewsSection() {
   const formatDate = (iso: string) => iso.replaceAll("-", ".");
 
   return (
-    <section ref={sectionRef} id="news" className="py-24 bg-white overflow-hidden">
-      <div className="max-w-6xl mx-auto px-6">
+    <section ref={sectionRef} id="news" className="pt-44 pb-[32rem] bg-gray-50 overflow-hidden">
+      <div className="max-w-6xl mx-auto px-6 sm:px-10 lg:px-6">
 
         {/* 섹션 헤더 */}
-        <div className="news-header text-center mb-12">
+        <div className="news-header text-center mb-24">
           <p className="text-orange-600 text-sm font-semibold uppercase tracking-widest mb-3">
             News
           </p>
           <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
             お知らせ
           </h2>
-          <div className="mx-auto mb-4 h-1.5 w-28 overflow-hidden rounded-full bg-orange-100">
-            <div className="public-accent-bar h-full w-full rounded-full" />
-          </div>
+
           <p className="text-slate-500 text-lg max-w-xl mx-auto">
             株式会社マウンテン &gt; お知らせ
           </p>
