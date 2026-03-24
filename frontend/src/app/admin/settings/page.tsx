@@ -123,7 +123,12 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-2xl space-y-6">
-      <h2 className="text-lg font-bold text-slate-900">設定</h2>
+      <div className="rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-sm">
+        <div className="bg-gradient-to-r from-slate-700 to-slate-600 px-5 py-4">
+          <h2 className="text-lg font-bold text-white">設定</h2>
+          <p className="mt-0.5 text-sm text-slate-300">管理者アカウントの設定を行います。</p>
+        </div>
+      </div>
 
       <SectionCard title="社員アカウント発行">
         <form onSubmit={handleIssueAccount} className="space-y-4">

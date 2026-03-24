@@ -250,21 +250,25 @@ export default function EmployeesPage() {
       )}
 
       <div className="max-w-5xl space-y-5">
-        <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-bold text-slate-900">社員管理</h2>
-          {isAdmin && (
-            <div className="mt-4 flex justify-end border-t border-slate-100 pt-4">
+        <div className="rounded-2xl overflow-hidden border border-slate-100 bg-white shadow-sm">
+          <div className="h-1 bg-gradient-to-r from-emerald-400 to-green-300" />
+          <div className="flex items-center justify-between gap-4 px-5 py-4">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">社員管理</h2>
+              <p className="mt-0.5 text-sm text-slate-500">在籍・休職・退職の社員情報を一元管理します。</p>
+            </div>
+            {isAdmin && (
               <button
                 onClick={() => setModalEmployee(null)}
-                className="admin-btn-primary inline-flex items-center justify-center gap-2 px-4 py-2"
+                className="admin-btn-primary inline-flex shrink-0 items-center justify-center gap-2 px-4 py-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
                 社員を追加
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* 검색 + 필터 */}
@@ -306,8 +310,8 @@ export default function EmployeesPage() {
 
         {/* 테이블 */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-          <div className="px-5 py-3.5 border-b border-slate-100 bg-slate-50">
-            <p className="text-xs font-semibold text-slate-500">
+          <div className="px-5 py-3.5 border-b border-emerald-100 bg-gradient-to-r from-emerald-50 to-white">
+            <p className="text-xs font-semibold text-emerald-700">
               {loading ? "読み込み中..." : `全体 ${employees.length} 名 / 表示 ${filtered.length} 名`}
             </p>
           </div>
@@ -320,14 +324,14 @@ export default function EmployeesPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-100">
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500">氏名</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 hidden sm:table-cell">部署</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 hidden md:table-cell">職級</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 hidden lg:table-cell">社員番号</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 hidden xl:table-cell">入社日</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500">状態</th>
-                    <th className="px-5 py-3 text-xs font-semibold text-slate-500 text-right">操作</th>
+                  <tr className="border-b border-emerald-100 bg-gradient-to-r from-emerald-50/60 to-white">
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-emerald-700">氏名</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-emerald-700 hidden sm:table-cell">部署</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-emerald-700 hidden md:table-cell">職級</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-emerald-700 hidden lg:table-cell">社員番号</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-emerald-700 hidden xl:table-cell">入社日</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-emerald-700">状態</th>
+                    <th className="px-5 py-3 text-xs font-semibold text-emerald-700 text-right">操作</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">

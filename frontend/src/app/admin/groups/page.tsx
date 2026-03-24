@@ -373,7 +373,7 @@ function StatCard({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-start gap-4">
         <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${color}`}>
           {icon}
@@ -385,6 +385,22 @@ function StatCard({
       </div>
     </div>
   );
+}
+
+const GROUP_ACCENT: Record<string, { border: string; leaderBg: string; leaderLabel: string; leaderPos: string; memberTag: string }> = {
+  "管理部":           { border: "border-l-orange-400",  leaderBg: "from-orange-50 to-amber-50 border-orange-100",    leaderLabel: "text-orange-600",  leaderPos: "text-orange-400",  memberTag: "bg-orange-50 border-orange-100 text-orange-700" },
+  "技術本部":         { border: "border-l-emerald-400", leaderBg: "from-emerald-50 to-green-50 border-emerald-100",  leaderLabel: "text-emerald-600", leaderPos: "text-emerald-400", memberTag: "bg-emerald-50 border-emerald-100 text-emerald-700" },
+  "技術グループ1":    { border: "border-l-green-400",   leaderBg: "from-green-50 to-lime-50 border-green-100",       leaderLabel: "text-green-600",   leaderPos: "text-green-400",   memberTag: "bg-green-50 border-green-100 text-green-700" },
+  "技術グループ2":    { border: "border-l-lime-500",    leaderBg: "from-lime-50 to-yellow-50 border-lime-100",       leaderLabel: "text-lime-700",    leaderPos: "text-lime-500",    memberTag: "bg-lime-50 border-lime-100 text-lime-700" },
+  "開発 Part1":      { border: "border-l-yellow-400",  leaderBg: "from-yellow-50 to-amber-50 border-yellow-100",    leaderLabel: "text-yellow-700",  leaderPos: "text-yellow-500",  memberTag: "bg-yellow-50 border-yellow-100 text-yellow-700" },
+  "開発 Part2":      { border: "border-l-amber-400",   leaderBg: "from-amber-50 to-orange-50 border-amber-100",     leaderLabel: "text-amber-600",   leaderPos: "text-amber-400",   memberTag: "bg-amber-50 border-amber-100 text-amber-700" },
+  "サービスグループ": { border: "border-l-red-400",    leaderBg: "from-red-50 to-rose-50 border-red-100",           leaderLabel: "text-red-600",     leaderPos: "text-red-400",     memberTag: "bg-red-50 border-red-100 text-red-700" },
+  "営業１グループ":   { border: "border-l-rose-400",   leaderBg: "from-rose-50 to-pink-50 border-rose-100",         leaderLabel: "text-rose-600",    leaderPos: "text-rose-400",    memberTag: "bg-rose-50 border-rose-100 text-rose-700" },
+};
+const DEFAULT_ACCENT = { border: "border-l-slate-300", leaderBg: "from-slate-50 to-white border-slate-100", leaderLabel: "text-slate-500", leaderPos: "text-slate-400", memberTag: "bg-slate-50 border-slate-100 text-slate-600" };
+
+function resolveGroupAccent(group: GroupDto) {
+  return GROUP_ACCENT[group.name] ?? GROUP_ACCENT[resolveGroupParent(group) ?? ""] ?? DEFAULT_ACCENT;
 }
 
 function GroupCard({
@@ -406,10 +422,11 @@ function GroupCard({
   const leader = employees.find((employee) => employee.id === group.leaderId);
   const parentName = resolveGroupParent(group);
   const displayDescription = getDisplayDescription(group);
+  const accent = resolveGroupAccent(group);
 
   return (
     <div
-      className={`rounded-2xl border border-slate-100 bg-white shadow-sm transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-md ${
+      className={`rounded-2xl border border-slate-100 border-l-4 ${accent.border} bg-white shadow-sm transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-md ${
         compact ? "p-4" : "p-5"
       }`}
     >
@@ -454,10 +471,10 @@ function GroupCard({
       </div>
 
       <div className={`grid gap-4 border-t border-slate-100 pt-4 ${compact ? "mt-3 sm:grid-cols-[180px_minmax(0,1fr)]" : "mt-4 sm:grid-cols-[220px_minmax(0,1fr)]"}`}>
-        <div className="rounded-xl bg-slate-50 p-4">
-          <p className="text-xs font-medium text-slate-500">グループ長</p>
+        <div className={`rounded-xl bg-gradient-to-br ${accent.leaderBg} border p-4`}>
+          <p className={`text-xs font-medium ${accent.leaderLabel}`}>グループ長</p>
           <p className="mt-2 text-sm font-semibold text-slate-900">{group.leaderName}</p>
-          <p className="mt-1 text-xs text-slate-400">
+          <p className={`mt-1 text-xs ${accent.leaderPos}`}>
             {leader?.position ?? "未設定"}
           </p>
         </div>
@@ -468,7 +485,7 @@ function GroupCard({
             {members.map((member) => (
               <span
                 key={member.id}
-                className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600"
+                className={`rounded-full border px-3 py-1 text-xs font-medium ${accent.memberTag}`}
               >
                 {member.name}
               </span>
@@ -647,33 +664,34 @@ export default function GroupsPage() {
       )}
 
       <div className="max-w-5xl space-y-6">
-        <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-          <div>
-            <h2 className="text-lg font-bold text-slate-900">グループ管理</h2>
-            <p className="mt-0.5 text-sm text-slate-500">
-              部署別のグループ構成とグループ長、所属人数を一画面で管理します。
-            </p>
-          </div>
-          {isAdmin && (
-            <div className="mt-4 flex justify-end border-t border-slate-100 pt-4">
+        <div className="rounded-2xl overflow-hidden border border-slate-100 bg-white shadow-sm">
+          <div className="h-1 bg-gradient-to-r from-orange-400 to-amber-300" />
+          <div className="flex items-center justify-between gap-4 px-5 py-4">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">グループ管理</h2>
+              <p className="mt-0.5 text-sm text-slate-500">
+                部署別のグループ構成とグループ長、所属人数を一画面で管理します。
+              </p>
+            </div>
+            {isAdmin && (
               <button
                 onClick={() => setModalGroup(null)}
-                className="admin-btn-primary inline-flex items-center justify-center gap-2 px-4 py-2"
+                className="admin-btn-primary inline-flex shrink-0 items-center justify-center gap-2 px-4 py-2"
               >
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
                 グループ追加
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <StatCard
             label="登録グループ数"
             value={loading ? "-" : groups.length}
-            color="bg-orange-50"
+            color="bg-orange-100"
             icon={
               <svg className="h-6 w-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -683,9 +701,9 @@ export default function GroupsPage() {
           <StatCard
             label="在籍社員数"
             value={loading ? "-" : activeEmployees.length}
-            color="bg-green-50"
+            color="bg-emerald-100"
             icon={
-              <svg className="h-6 w-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-6 w-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m5 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             }
@@ -693,9 +711,9 @@ export default function GroupsPage() {
           <StatCard
             label="未所属社員"
             value={loading ? "-" : unassignedEmployees.length}
-            color="bg-yellow-50"
+            color="bg-yellow-100"
             icon={
-              <svg className="h-6 w-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 9v2m0 4h.01M10.29 3.86l-7.5 13A1 1 0 003.66 18h16.68a1 1 0 00.87-1.14l-7.5-13a1 1 0 00-1.74 0z" />
               </svg>
             }

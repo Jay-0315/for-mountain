@@ -554,11 +554,14 @@ export default function DashboardPage() {
         </SummaryDetailModal>
       )}
 
-      <div>
-        <h2 className="text-lg font-bold text-slate-900">ダッシュボード</h2>
-        <p className="text-slate-500 text-sm mt-0.5">
-          {new Date().toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric", weekday: "long" })}
-        </p>
+      <div className="rounded-2xl overflow-hidden border border-slate-100 bg-white shadow-sm">
+        <div className="h-1 bg-gradient-to-r from-orange-400 to-amber-300" />
+        <div className="px-5 py-4">
+          <h2 className="text-lg font-bold text-slate-900">ダッシュボード</h2>
+          <p className="text-slate-500 text-sm mt-0.5">
+            {new Date().toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric", weekday: "long" })}
+          </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-2 sm:hidden">

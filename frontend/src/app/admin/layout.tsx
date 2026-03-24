@@ -145,10 +145,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* 사이드바 */}
       <aside
-        className={`fixed top-0 left-0 h-full w-64 bg-slate-900 z-30 flex flex-col
+        className={`fixed top-0 left-0 h-full w-64 z-30 flex flex-col
+          bg-gradient-to-b from-slate-900 via-slate-900 to-slate-800
           transition-transform duration-300 ease-in-out
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}
       >
+        {/* 상단 오렌지 액센트 바 */}
+        <div className="h-1 w-full bg-gradient-to-r from-orange-500 via-amber-400 to-orange-500 shrink-0" />
         {/* 로고 */}
         <div className="h-16 flex items-center px-6 border-b border-slate-800/50">
           <Link href="/admin/dashboard" className="flex items-center gap-2.5 group">
@@ -177,9 +180,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 key={item.href}
                 href={item.href}
                 onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all
                   ${active
-                    ? "bg-orange-500 text-white"
+                    ? "bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-md shadow-orange-500/30"
                     : "text-slate-400 hover:bg-slate-800 hover:text-white"
                   }`}
               >
@@ -246,8 +249,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </header>
 
         {/* 페이지 컨텐츠 */}
-        <main className="flex-1 p-4 sm:p-6">
-          {children}
+        <main className="flex-1 p-4 sm:p-6 bg-slate-100/80">
+          <div className="mx-auto max-w-7xl">
+            {children}
+          </div>
         </main>
       </div>
     </div>

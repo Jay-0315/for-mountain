@@ -45,7 +45,13 @@ function WebsiteManagementPageContent() {
 
   return (
     <div className="max-w-5xl space-y-5">
-      <h2 className="text-lg font-bold text-slate-900">ウェブサイト管理</h2>
+      <div className="rounded-2xl overflow-hidden border border-slate-100 bg-white shadow-sm">
+        <div className="h-1 bg-gradient-to-r from-amber-400 to-orange-300" />
+        <div className="px-5 py-4">
+          <h2 className="text-lg font-bold text-slate-900">ウェブサイト管理</h2>
+          <p className="mt-0.5 text-sm text-slate-500">お知らせ・協力会社・事業分野の公開コンテンツを管理します。</p>
+        </div>
+      </div>
       <WebsiteManageTabBar active={activeTab} onChange={setActiveTab} />
       <div>
         {activeTab === "website" && <WebsiteTab />}

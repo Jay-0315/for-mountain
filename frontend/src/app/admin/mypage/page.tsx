@@ -63,9 +63,11 @@ export default function MyPage() {
   return (
     <div className="max-w-4xl space-y-6">
       {/* ── 헤더 ── */}
-      <div>
-        <h2 className="text-lg font-bold text-slate-900">マイページ</h2>
-        <p className="mt-0.5 text-sm text-slate-500">本人の情報と休暇申請状況を確認できます。</p>
+      <div className="rounded-2xl overflow-hidden border border-orange-100 bg-white shadow-sm">
+        <div className="bg-gradient-to-r from-orange-500 to-amber-400 px-5 py-4">
+          <h2 className="text-lg font-bold text-white">マイページ</h2>
+          <p className="mt-0.5 text-sm text-orange-100">本人の情報と休暇申請状況を確認できます。</p>
+        </div>
       </div>
 
       {/* ── 사원 정보 ── */}
@@ -92,58 +94,52 @@ export default function MyPage() {
 
       {/* ── 잔여 휴가 카드 ── */}
       <div className="rounded-2xl border border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50 p-5 shadow-sm">
-        <div className="flex items-start justify-between gap-4">
-          {/* 좌측: 풀 목록 */}
-          <div className="min-w-0 flex-1 space-y-4">
-            {summary.pools.length === 0 ? (
-              <p className="text-sm text-slate-400">有給休暇の残日数はありません</p>
-            ) : (
-              summary.pools.map((pool, i) => {
-                const pct = Math.max(0, Math.min(100, (pool.remainingDays / pool.grantDays) * 100));
-                const urgent = pool.remainingDays <= 3;
-                return (
-                  <div key={i}>
-                    {/* 소진 기한 문구 */}
-                    <p className={`text-sm font-medium ${urgent ? "text-red-600" : "text-orange-700"}`}>
-                      <span className="font-bold">{formatDateDisplay(pool.expiryDate)}</span>
-                      までに消化が必要な休暇が{" "}
-                      <span className={`text-lg font-bold ${urgent ? "text-red-500" : "text-orange-500"}`}>
-                        {pool.remainingDays}日
-                      </span>{" "}
-                      残っています
-                    </p>
-                    {/* 진행 바 */}
-                    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-orange-100">
-                      <div
-                        className={`h-full rounded-full transition-all ${urgent ? "bg-red-400" : "bg-orange-400"}`}
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                    {/* 사용 현황 */}
-                    <p className="mt-1.5 text-base font-bold text-orange-500">
-                      使用済み {pool.usedDays}日
-                    </p>
+        {summary.pools.length === 0 ? (
+          <p className="text-sm text-slate-400">有給休暇の残日数はありません</p>
+        ) : (
+          <div className="space-y-5">
+            {summary.pools.map((pool, i) => {
+              const pct = Math.max(0, Math.min(100, (pool.remainingDays / pool.grantDays) * 100));
+              const urgent = pool.remainingDays <= 3;
+              return (
+                <div key={i}>
+                  {/* 헤더: 기한 + 잔여일수 합친 한 문장 */}
+                  <p className={`text-sm font-medium ${urgent ? "text-red-600" : "text-orange-700"}`}>
+                    <span className="font-bold">{formatDateDisplay(pool.expiryDate)}</span>
+                    までに
+                    <span className={`font-bold ${urgent ? "text-red-500" : "text-orange-500"}`}> {pool.remainingDays}日 </span>
+                    消化が必要です！
+                  </p>
+                  {/* 큰 숫자 */}
+                  <div className="mt-1 flex items-end gap-1.5">
+                    <span className={`text-5xl font-bold leading-none ${urgent ? "text-red-500" : "text-orange-500"}`}>
+                      {pool.remainingDays}
+                    </span>
+                    <span className="mb-0.5 text-base font-medium text-orange-400">
+                      日 / {pool.grantDays}日
+                    </span>
                   </div>
-                );
-              })
-            )}
-
-            {/* 다음 부여 안내 (모든 직원) */}
-            {summary.nextGrant && (
-              <p className="text-[12px] font-semibold text-orange-500">
-                {summary.nextGrant.daysUntil}日後に{summary.nextGrant.days}日の休暇が付与されます！
-              </p>
-            )}
+                  {/* 진행 바 */}
+                  <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-orange-100">
+                    <div
+                      className={`h-full rounded-full transition-all ${urgent ? "bg-red-400" : "bg-orange-400"}`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  {/* 하단 row: 사용済み(좌) + 다음 부여(우, 마지막 풀에만) */}
+                  <div className="mt-2 flex items-center justify-between">
+                    <p className="text-xs font-semibold text-orange-500">使用済み {pool.usedDays}日</p>
+                    {i === summary.pools.length - 1 && summary.nextGrant && (
+                      <p className="text-xs font-semibold text-orange-400">
+                        あと{summary.nextGrant.daysUntil}日で{summary.nextGrant.days}日分の休暇が増えますよ！
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
-
-          {/* 우측: 아이콘 */}
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-orange-100">
-            <svg className="h-6 w-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* ── 통계 카드 ── */}

@@ -2279,7 +2279,13 @@ function NoticePageContent() {
 
   return (
     <div className="max-w-5xl space-y-5">
-      <h2 className="text-lg font-bold text-slate-900">お知らせ管理</h2>
+      <div className="rounded-2xl overflow-hidden border border-slate-100 bg-white shadow-sm">
+        <div className="h-1 bg-gradient-to-r from-yellow-400 to-amber-300" />
+        <div className="px-5 py-4">
+          <h2 className="text-lg font-bold text-slate-900">お知らせ管理</h2>
+          <p className="mt-0.5 text-sm text-slate-500">社内・部署別のお知らせを作成・管理します。</p>
+        </div>
+      </div>
       <TabBar active={activeTab} onChange={setActiveTab} />
       <div>
         {activeTab === "internal" && <InternalTab />}
