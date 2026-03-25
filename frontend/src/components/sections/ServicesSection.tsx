@@ -263,7 +263,7 @@ export default function ServicesSection() {
                           alt={primaryImage.name ?? item.title}
                           fill
                           unoptimized
-                          className="object-contain p-4 transition-transform duration-500 group-hover:scale-[1.02]"
+                          className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
                         />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center text-orange-300">

@@ -1,4 +1,12 @@
+import type { Metadata } from "next";
 import Header from "@/components/layout/Header";
+
+export const metadata: Metadata = {
+  title: "ホーム",
+  description:
+    "株式会社マウンテンの公式サイト。ITエンジニアリング・ネットワーク通信機器事業を通じ、お客様のビジネスを支えるIT総合カンパニーです。",
+  alternates: { canonical: "http://13.239.33.235" },
+};
 import Footer from "@/components/layout/Footer";
 import HeroSection from "@/components/sections/HeroSection";
 import PartnersSection from "@/components/sections/PartnerSection";
