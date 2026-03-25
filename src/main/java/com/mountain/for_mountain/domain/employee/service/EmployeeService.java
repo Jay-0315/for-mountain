@@ -59,7 +59,7 @@ public class EmployeeService {
                 request.getAnnualLeaveDays()
         );
         Employee saved = employeeRepository.save(employee);
-        syncAccountRole(saved.getEmployeeNumber(), saved.getPosition());
+        syncAccountRole(saved.getEmployeeNumber(), saved.getPosition(), saved.getDepartment());
         return new EmployeeResponse(saved);
     }
 
@@ -81,7 +81,7 @@ public class EmployeeService {
                 request.getStatus(),
                 request.getAnnualLeaveDays()
         );
-        syncAccountRole(employee.getEmployeeNumber(), employee.getPosition());
+        syncAccountRole(employee.getEmployeeNumber(), employee.getPosition(), employee.getDepartment());
         return new EmployeeResponse(employee);
     }
 
@@ -97,11 +97,11 @@ public class EmployeeService {
         employeeRepository.delete(employee);
     }
 
-    private void syncAccountRole(String employeeNumber, String position) {
+    private void syncAccountRole(String employeeNumber, String position, String department) {
         adminAccountRepository.findByUsername(employeeNumber)
                 .ifPresent(account -> account.syncIdentity(
                         employeeNumber,
-                        accountManagementService.resolveRole(position)
+                        accountManagementService.resolveRole(position, department)
                 ));
     }
 }
