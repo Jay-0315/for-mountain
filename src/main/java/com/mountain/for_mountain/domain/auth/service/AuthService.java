@@ -42,7 +42,7 @@ public class AuthService {
         employeeRepository.findByEmployeeNumber(admin.getUsername())
                 .ifPresent(employee -> admin.syncIdentity(
                         employee.getEmployeeNumber(),
-                        accountManagementService.resolveRole(employee.getPosition())
+                        accountManagementService.resolveRole(employee.getPosition(), employee.getDepartment())
                 ));
         admin.markLogin();
         String token = jwtService.generateAccessToken(admin.getUsername(), admin.getRole());

@@ -35,7 +35,8 @@ export default function ServiceDetailClient() {
 
   const categoryInfo = item ? categories.find((category) => category.slug === item.category) : null;
   const categoryLabel = categoryInfo ? categoryInfo.name : item?.category ?? "";
-  const imageAssets = item?.imageAssets?.length ? item.imageAssets : item?.imageData ? [{ name: item.imageName, url: item.imageData }] : [];
+  const allImageAssets = item?.imageAssets?.length ? item.imageAssets : item?.imageData ? [{ name: item.imageName, url: item.imageData }] : [];
+  const imageAssets = allImageAssets.slice(1); // index 0 はサムネイルのため本文には表示しない
   const videoAssets = item?.videoAssets?.length ? item.videoAssets : item?.videoData ? [{ name: item.videoName, url: item.videoData }] : [];
   const attachmentAssets = item?.attachmentAssets?.length ? item.attachmentAssets : item?.attachmentData ? [{ name: item.attachmentName, url: item.attachmentData }] : [];
 

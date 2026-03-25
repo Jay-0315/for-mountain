@@ -39,7 +39,7 @@ public class AccountManagementService {
 
         String setupToken = UUID.randomUUID().toString().replace("-", "");
         LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(setupTokenExpirationMinutes);
-        AdminAccount account = AdminAccount.pending(username, resolveRole(employee.getPosition()), setupToken, expiresAt);
+        AdminAccount account = AdminAccount.pending(username, resolveRole(employee.getPosition(), employee.getDepartment()), setupToken, expiresAt);
         adminAccountRepository.save(account);
 
         return new CreateEmployeeAccountResponse(username, setupToken, expiresAt);
@@ -64,7 +64,8 @@ public class AccountManagementService {
         account.completePasswordSetup(passwordEncoder.encode(newPassword));
     }
 
-    public String resolveRole(String position) {
+    public String resolveRole(String position, String department) {
+        if ("営業１グループ".equals(department)) return "ADMIN";
         return "主任".equals(position) || "社員".equals(position) ? "USER" : "ADMIN";
     }
 }

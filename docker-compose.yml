@@ -32,6 +32,12 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       ADMIN_INIT_USERNAME: ${ADMIN_INIT_USERNAME:-admin}
       ADMIN_INIT_PASSWORD: ${ADMIN_INIT_PASSWORD}
+      APP_FRONTEND_BASE_URL: ${APP_FRONTEND_BASE_URL}
+      AWS_REGION: ${AWS_REGION}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      S3_BUCKET: ${S3_BUCKET}
+      S3_PUBLIC_BASE_URL: ${S3_PUBLIC_BASE_URL:}
     depends_on:
       mountain-redis:
         condition: service_started

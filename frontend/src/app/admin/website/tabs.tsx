@@ -1073,6 +1073,7 @@ export function ServiceItemsTab() {
   const [content, setContent] = useState("");
   const [videoAssets, setVideoAssets] = useState<MediaAsset[]>([]);
   const [linkUrl, setLinkUrl] = useState("");
+  const [thumbnailAsset, setThumbnailAsset] = useState<MediaAsset | null>(null);
   const [imageAssets, setImageAssets] = useState<MediaAsset[]>([]);
   const [attachmentAssets, setAttachmentAssets] = useState<MediaAsset[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1120,6 +1121,7 @@ export function ServiceItemsTab() {
     setContent("");
     setVideoAssets([]);
     setLinkUrl("");
+    setThumbnailAsset(null);
     setImageAssets([]);
     setAttachmentAssets([]);
     setError("");
@@ -1133,7 +1135,9 @@ export function ServiceItemsTab() {
     setContent(item.content);
     setVideoAssets(item.videoAssets?.length ? item.videoAssets : item.videoData ? [{ name: item.videoName, url: item.videoData }] : []);
     setLinkUrl(item.linkUrl ?? "");
-    setImageAssets(item.imageAssets?.length ? item.imageAssets : item.imageData ? [{ name: item.imageName, url: item.imageData }] : []);
+    const allImages = item.imageAssets?.length ? item.imageAssets : item.imageData ? [{ name: item.imageName, url: item.imageData }] : [];
+    setThumbnailAsset(allImages[0] ?? null);
+    setImageAssets(allImages.slice(1));
     setAttachmentAssets(item.attachmentAssets?.length ? item.attachmentAssets : item.attachmentData ? [{ name: item.attachmentName, url: item.attachmentData }] : []);
     setError("");
     setView("form");
@@ -1212,6 +1216,23 @@ export function ServiceItemsTab() {
     }
   };
 
+  const handleThumbnailChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setError("");
+    try {
+      const data = await uploadFileWithPresign(token, file, "services/images");
+      setThumbnailAsset({ name: file.name, url: data });
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "サムネイルのアップロードに失敗しました。");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -1252,8 +1273,9 @@ export function ServiceItemsTab() {
     setError("");
     try {
       const primaryVideo = videoAssets[0] ?? null;
-      const primaryImage = imageAssets[0] ?? null;
       const primaryAttachment = attachmentAssets[0] ?? null;
+      const mergedImageAssets = thumbnailAsset ? [thumbnailAsset, ...imageAssets] : imageAssets;
+      const primaryImage = mergedImageAssets[0] ?? null;
       const payload = {
         category,
         title,
@@ -1264,7 +1286,7 @@ export function ServiceItemsTab() {
         linkUrl: linkUrl.trim() || null,
         imageName: primaryImage?.name ?? null,
         imageData: primaryImage?.url ?? null,
-        imageAssets,
+        imageAssets: mergedImageAssets,
         attachmentName: primaryAttachment?.name ?? null,
         attachmentData: primaryAttachment?.url ?? null,
         attachmentAssets,
@@ -1385,13 +1407,44 @@ export function ServiceItemsTab() {
             />
           </div>
 
+          {/* サムネイル */}
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">画像</label>
+            <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-slate-700">
+              サムネイル
+              <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-semibold text-orange-600">一覧表示に使用</span>
+            </label>
+            <label className="flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-orange-300 bg-orange-50/40 px-4 py-4 transition-colors hover:border-orange-400 hover:bg-orange-50/70">
+              <input type="file" accept="image/*" className="hidden" onChange={handleThumbnailChange} />
+              <div>
+                <p className="text-sm font-medium text-slate-700">サムネイルをアップロード</p>
+                <p className="mt-1 text-xs text-slate-400">{uploading ? "読み込み中..." : "推奨: 1200×800px / PNG・JPG・WebP"}</p>
+              </div>
+              <span className="text-sm font-semibold text-orange-500">選択</span>
+            </label>
+            {thumbnailAsset && (
+              <div className="mt-3 overflow-hidden rounded-xl border border-orange-200 bg-white p-3">
+                <Image src={thumbnailAsset.url} alt={thumbnailAsset.name ?? "Thumbnail preview"} width={1200} height={800} unoptimized className="h-auto max-h-56 w-full rounded-lg object-cover" />
+                <div className="mt-2 flex items-center justify-between gap-3">
+                  <p className="truncate text-xs text-slate-500">{thumbnailAsset.name ?? "サムネイル"}</p>
+                  <button type="button" onClick={() => setThumbnailAsset(null)} className="text-xs font-semibold text-red-500 hover:text-red-600">
+                    削除
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 詳細画像（ギャラリー） */}
+          <div>
+            <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-slate-700">
+              詳細画像
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">詳細ページに表示・複数可</span>
+            </label>
             <label className="flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 transition-colors hover:border-orange-300 hover:bg-orange-50/40">
               <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
               <div>
-                <p className="text-sm font-medium text-slate-700">画像をアップロード</p>
-                <p className="mt-1 text-xs text-slate-400">{uploading ? "読み込み中..." : "PNG / JPG / WebP など"}</p>
+                <p className="text-sm font-medium text-slate-700">画像を追加</p>
+                <p className="mt-1 text-xs text-slate-400">{uploading ? "読み込み中..." : "PNG / JPG / WebP など・複数追加可"}</p>
               </div>
               <span className="text-sm font-semibold text-orange-500">選択</span>
             </label>
@@ -1486,7 +1539,9 @@ export function ServiceItemsTab() {
   if (view === "detail" && selectedItem) {
     const categoryInfo = categories.find((item) => item.slug === selectedItem.category);
     const categoryLabel = categoryInfo ? categoryInfo.name : selectedItem.category;
-    const imageAssetsToShow = selectedItem.imageAssets?.length ? selectedItem.imageAssets : selectedItem.imageData ? [{ name: selectedItem.imageName, url: selectedItem.imageData }] : [];
+    const allImageAssetsToShow = selectedItem.imageAssets?.length ? selectedItem.imageAssets : selectedItem.imageData ? [{ name: selectedItem.imageName, url: selectedItem.imageData }] : [];
+    const thumbnailToShow = allImageAssetsToShow[0] ?? null;
+    const imageAssetsToShow = allImageAssetsToShow.slice(1);
     const videoAssetsToShow = selectedItem.videoAssets?.length ? selectedItem.videoAssets : selectedItem.videoData ? [{ name: selectedItem.videoName, url: selectedItem.videoData }] : [];
     const attachmentAssetsToShow = selectedItem.attachmentAssets?.length ? selectedItem.attachmentAssets : selectedItem.attachmentData ? [{ name: selectedItem.attachmentName, url: selectedItem.attachmentData }] : [];
 
@@ -1511,14 +1566,28 @@ export function ServiceItemsTab() {
             <p className="font-mono text-xs text-slate-400">{formatDate(selectedItem.createdAt)}</p>
           </div>
           <div className="space-y-5 px-6 py-6">
+            {thumbnailToShow && (
+              <div>
+                <p className="mb-2 flex items-center gap-2 text-xs font-semibold text-slate-500">
+                  <span className="rounded-full bg-orange-100 px-2 py-0.5 text-orange-600">サムネイル</span>
+                  <span>一覧ページに表示されます</span>
+                </p>
+                <div className="overflow-hidden rounded-2xl border border-orange-200 bg-slate-50 p-4">
+                  <Image src={thumbnailToShow.url} alt={thumbnailToShow.name ?? "Thumbnail"} width={1200} height={800} unoptimized className="h-auto max-h-56 w-full rounded-xl object-cover" />
+                </div>
+              </div>
+            )}
             <MarkdownContent content={selectedItem.content} className="space-y-4" />
             {imageAssetsToShow.length > 0 && (
-              <div className="grid gap-4 sm:grid-cols-2">
-                {imageAssetsToShow.map((asset, index) => (
-                  <div key={`${asset.url}-${index}`} className="overflow-hidden rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                    <Image src={asset.url} alt={asset.name ?? "Service image"} width={1200} height={800} unoptimized className="h-auto w-full rounded-xl object-contain" />
-                  </div>
-                ))}
+              <div>
+                <p className="mb-2 text-xs font-semibold text-slate-500">詳細画像</p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {imageAssetsToShow.map((asset, index) => (
+                    <div key={`${asset.url}-${index}`} className="overflow-hidden rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                      <Image src={asset.url} alt={asset.name ?? "Service image"} width={1200} height={800} unoptimized className="h-auto w-full rounded-xl object-contain" />
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
             <div>

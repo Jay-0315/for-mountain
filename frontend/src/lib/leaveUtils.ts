@@ -1,5 +1,5 @@
 /** 부여 일수 시퀀스 (index = a차수, 상한 20일) */
-const GRANT_SCHEDULE = [10, 11, 12, 14, 16, 18, 20, 22, 25, 28, 30] as const;
+const GRANT_SCHEDULE = [10, 11, 12, 14, 16, 18, 20] as const;
 
 function getGrantDays(a: number): number {
   return GRANT_SCHEDULE[Math.min(a, GRANT_SCHEDULE.length - 1)];

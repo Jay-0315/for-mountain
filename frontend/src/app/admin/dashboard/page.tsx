@@ -180,12 +180,7 @@ function resolveViewer(employees: EmployeeDto[]) {
   const subject = payload?.sub ?? null;
   const tokenRole = payload?.role ?? null;
   const employee = employees.find((item) => item.employeeNumber === subject) ?? null;
-  const canViewAll =
-    tokenRole === "ADMIN" ||
-    Boolean(
-      employee &&
-      (MANAGEMENT_JOB_TITLES.has(employee.jobTitle) || !RESTRICTED_DEPARTMENTS.has(employee.department))
-    );
+  const canViewAll = tokenRole === "ADMIN";
 
   return { employee, canViewAll, tokenRole, subject };
 }
