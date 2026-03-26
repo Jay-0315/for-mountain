@@ -3,18 +3,18 @@ RewriteEngine On
 
 # ── API → PHP 프록시 ────────────────────────────────────────
 RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^api/v1/(.*)$ /renewal/proxy.php [QSA,L]
+RewriteRule ^api/v1/(.*)$ /proxy.php [QSA,L]
 
 # ── 업로드 파일 → PHP 프록시 ─────────────────────────────────
 RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^uploads/(.*)$ /renewal/proxy.php [QSA,L]
+RewriteRule ^uploads/(.*)$ /proxy.php [QSA,L]
 
 # ── 동적 라우트 → placeholder HTML 서빙 ────────────────────────
 # 직접 URL 접근 시 placeholder 페이지로 라우팅 (JS가 실제 ID 읽음)
-RewriteRule ^services/(?!_$)([^/]+)/?$ /renewal/services/_/index.html [L]
-RewriteRule ^news/(?!_$)([^/]+)/?$ /renewal/news/_/index.html [L]
+RewriteRule ^services/(?!_$)([^/]+)/?$ /services/_/index.html [L]
+RewriteRule ^news/(?!_$)([^/]+)/?$ /news/_/index.html [L]
 
 # ── SPA 폴백 (그 외 미매칭 경로) ──────────────────────────────
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^ /renewal/index.html [L]
+RewriteRule ^ /index.html [L]

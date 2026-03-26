@@ -54,7 +54,7 @@ jobs:
           key: ${{ secrets.XSERVER_SSH_KEY }}
           port: ${{ secrets.XSERVER_PORT }}
           source: "frontend/out/"
-          target: "/home/xs799946/mountain-info.com/public_html/renewal"
+          target: "/home/xs799946/mountain-info.com/public_html"
           strip_components: 2
 
       - name: Copy proxy.php and .htaccess to public_html
@@ -65,7 +65,7 @@ jobs:
           key: ${{ secrets.XSERVER_SSH_KEY }}
           port: ${{ secrets.XSERVER_PORT }}
           source: "docker/xserver/proxy.php,docker/xserver/.htaccess"
-          target: "/home/xs799946/mountain-info.com/public_html/renewal"
+          target: "/home/xs799946/mountain-info.com/public_html"
           strip_components: 2
 
       # ── 4. 백엔드 재시작 ─────────────────────────────────────────

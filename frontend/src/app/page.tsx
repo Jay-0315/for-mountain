@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Header from "@/components/layout/Header";
 
 export const metadata: Metadata = {
-  title: "ホーム",
+  title: { absolute: "株式会社MOUNTAIN" },
   description:
     "株式会社マウンテンの公式サイト。ITエンジニアリング・ネットワーク通信機器事業を通じ、お客様のビジネスを支えるIT総合カンパニーです。",
   alternates: { canonical: "http://13.239.33.235" },
