@@ -6,7 +6,9 @@ import {
   cancelLeave,
   createLeave,
   fetchEmployees,
+  fetchGroups,
   fetchLeaves,
+  resolveLeaderMemberIds,
   type EmployeeDto,
   type LeaveDto,
   updateLeaveStatus,
@@ -202,8 +204,15 @@ function LeavePageContent() {
   const [records, setRecords]           = useState<LeaveDto[]>([]);
   const [employees, setEmployees]       = useState<EmployeeDto[]>([]);
   const [loading, setLoading]           = useState(true);
-  const [token]                         = useState(() => (typeof window === "undefined" ? "" : sessionStorage.getItem("admin_token") ?? ""));
-  const isAdmin = getSessionRole(token) === "ADMIN";
+  const [token, setToken]               = useState("");
+  const [isAdmin, setIsAdmin]           = useState(false);
+
+  useEffect(() => {
+    const t = sessionStorage.getItem("admin_token") ?? "";
+    setToken(t);
+    setIsAdmin(getSessionRole(t) === "ADMIN");
+  }, []);
+  const [leaderMemberIds, setLeaderMemberIds] = useState<number[] | null | undefined>(undefined);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("すべて");
   const [view, setView]                 = useState<PageView>("list");
   const requestedView = searchParams.get("view");
@@ -213,11 +222,15 @@ function LeavePageContent() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [leaves, employees] = await Promise.all([fetchLeaves(), fetchEmployees()]);
+      const [leaves, employees, groups] = await Promise.all([fetchLeaves(), fetchEmployees(), fetchGroups()]);
       setRecords(leaves);
       setEmployees(employees);
+      const sub = getSessionPayload(sessionStorage.getItem("admin_token")).sub;
+      const currentEmp = employees.find((e) => e.employeeNumber === sub) ?? null;
+      setLeaderMemberIds(currentEmp ? resolveLeaderMemberIds(groups, currentEmp.id) : null);
     } catch {
       setRecords([]);
+      setLeaderMemberIds(null);
     } finally {
       setLoading(false);
     }
@@ -237,9 +250,13 @@ function LeavePageContent() {
     return employee.employeeNumber === getSessionPayload(token).sub;
   }) ?? null;
 
-  const visibleRecords = isAdmin || !currentEmployee
-    ? records
-    : records.filter((record) => record.employeeId === currentEmployee.id);
+  const isLeader = leaderMemberIds !== null && leaderMemberIds !== undefined;
+
+  const visibleRecords = isLeader
+    ? records.filter((r) => leaderMemberIds.includes(r.employeeId))
+    : isAdmin
+      ? records
+      : records.filter((r) => r.employeeId === currentEmployee?.id);
 
   const pendingCount = visibleRecords.filter((r) => r.status === "待機中").length;
 
@@ -386,7 +403,7 @@ function LeavePageContent() {
             </div>
 
             <div className="mt-4 border-t border-slate-100 pt-4">
-              {isAdmin ? (
+              {(isAdmin || isLeader) ? (
                 req.status === "待機中" ? (
                   <div className="flex gap-2">
                     <button
@@ -500,7 +517,7 @@ function LeavePageContent() {
                       </span>
                     </td>
                     <td className="hidden px-5 py-3.5 sm:table-cell">
-                      {isAdmin ? (
+                      {(isAdmin || isLeader) ? (
                         req.status === "待機中" ? (
                           <div className="flex items-center gap-2 justify-end">
                             <button onClick={(event) => {

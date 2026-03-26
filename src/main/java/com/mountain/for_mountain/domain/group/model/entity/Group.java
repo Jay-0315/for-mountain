@@ -26,26 +26,31 @@ public class Group {
     @Column(name = "leader_id")
     private Long leaderId;
 
+    @Column(name = "parent_group_id")
+    private Long parentGroupId;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    public static Group create(String name, String description, Long leaderId) {
+    public static Group create(String name, String description, Long leaderId, Long parentGroupId) {
         Group g = new Group();
         g.name = name;
         g.description = description;
         g.leaderId = leaderId;
+        g.parentGroupId = parentGroupId;
         g.createdAt = LocalDateTime.now();
         g.updatedAt = LocalDateTime.now();
         return g;
     }
 
-    public void update(String name, String description, Long leaderId) {
+    public void update(String name, String description, Long leaderId, Long parentGroupId) {
         this.name = name;
         this.description = description;
         this.leaderId = leaderId;
+        this.parentGroupId = parentGroupId;
         this.updatedAt = LocalDateTime.now();
     }
 

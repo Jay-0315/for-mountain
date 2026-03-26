@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { fetchEmployees, type EmployeeDto } from "@/lib/api";
+import { fetchEmployees, fetchLeaves, fetchGroups, resolveLeaderMemberIds, type EmployeeDto } from "@/lib/api";
 import { getSessionPayload, getSessionRole } from "@/lib/session";
 
 const NAV_ITEMS = [
@@ -51,6 +51,16 @@ const NAV_ITEMS = [
     ),
   },
   {
+    href: "/admin/mygroup",
+    label: "グループ",
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+      </svg>
+    ),
+  },
+  {
     href: "/admin/groups",
     label: "グループ管理",
     icon: (
@@ -85,6 +95,7 @@ const NAV_ITEMS = [
 
 function PAGE_LABEL(pathname: string): string {
   if (pathname.startsWith("/admin/mypage")) return "マイページ";
+  if (pathname.startsWith("/admin/mygroup")) return "グループ";
   const item = NAV_ITEMS.find((n) => pathname.startsWith(n.href));
   return item?.label ?? "管理者";
 }
@@ -94,8 +105,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentEmployee, setCurrentEmployee] = useState<EmployeeDto | null>(null);
-  const token = typeof window === "undefined" ? null : window.sessionStorage.getItem("admin_token");
-  const role = getSessionRole(token);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [leaderMemberIds, setLeaderMemberIds] = useState<number[] | null | undefined>(undefined);
+  const [role, setRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const token = sessionStorage.getItem("admin_token");
+    setRole(getSessionRole(token));
+  }, []);
 
   useEffect(() => {
     const token = sessionStorage.getItem("admin_token");
@@ -107,26 +124,53 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     if (pathname === "/admin") return;
-
     const token = sessionStorage.getItem("admin_token");
     const { sub } = getSessionPayload(token);
-    if (!sub) {
-      return;
-    }
+    if (!sub) return;
 
-    fetchEmployees()
-      .then((employees) => {
-        setCurrentEmployee(employees.find((employee) => employee.employeeNumber === sub) ?? null);
+    Promise.all([fetchEmployees(), fetchGroups(), fetchLeaves()])
+      .then(([employees, groups, leaves]) => {
+        const emp = employees.find((e) => e.employeeNumber === sub) ?? null;
+        setCurrentEmployee(emp);
+        const memberIds = emp ? resolveLeaderMemberIds(groups, emp.id) : null;
+        setLeaderMemberIds(memberIds);
+
+        const pending = leaves.filter((l) => l.status === "待機中");
+        if (memberIds !== null) {
+          setPendingCount(pending.filter((l) => memberIds.includes(l.employeeId)).length);
+        } else if (role === "ADMIN") {
+          setPendingCount(pending.length);
+        } else if (emp) {
+          setPendingCount(pending.filter((l) => l.employeeId === emp.id).length);
+        }
       })
       .catch(() => setCurrentEmployee(null));
-  }, [pathname]);
+  }, [pathname, role]);
 
   // 로그인 페이지는 레이아웃 없이 그냥 렌더링
   if (pathname === "/admin") {
     return <div className="min-h-screen bg-slate-50">{children}</div>;
   }
 
-  const visibleNavItems = NAV_ITEMS.filter((item) => role === "ADMIN" || item.href !== "/admin/settings");
+  // 그룹장 여부 (leaderMemberIds=undefined면 아직 로딩중)
+  const isLeader = leaderMemberIds !== null && leaderMemberIds !== undefined;
+  const isTrueAdmin = role === "ADMIN" && !isLeader;
+
+  // 진짜 ADMIN만: 웹사이트관리
+  const SUPER_ADMIN_ONLY = ["/admin/website"];
+  // ADMIN 또는 그룹장: 그룹관리, 사원관리, 설정
+  const ADMIN_OR_LEADER = ["/admin/groups", "/admin/employees", "/admin/settings"];
+  // 일반 USER만: 그룹(mygroup)
+  const USER_ONLY_MENUS = ["/admin/mygroup"];
+
+  const loading = role === null || leaderMemberIds === undefined;
+  const visibleNavItems = NAV_ITEMS.filter((item) => {
+    if (loading) return !SUPER_ADMIN_ONLY.includes(item.href) && !ADMIN_OR_LEADER.includes(item.href) && !USER_ONLY_MENUS.includes(item.href);
+    if (SUPER_ADMIN_ONLY.includes(item.href)) return isTrueAdmin;
+    if (ADMIN_OR_LEADER.includes(item.href)) return role === "ADMIN";
+    if (USER_ONLY_MENUS.includes(item.href)) return role !== "ADMIN";
+    return true;
+  });
 
   const handleLogout = () => {
     sessionStorage.removeItem("admin_token");
@@ -187,7 +231,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   }`}
               >
                 {item.icon}
-                {item.label}
+                <span className="flex-1">{item.label}</span>
+                {item.href === "/admin/leave" && pendingCount > 0 && (
+                  <span className="bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center leading-none">
+                    {pendingCount}
+                  </span>
+                )}
               </Link>
             );
           })}

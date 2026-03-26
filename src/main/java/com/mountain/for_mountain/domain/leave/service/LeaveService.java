@@ -5,6 +5,7 @@ import com.mountain.for_mountain.common.ErrorCode;
 import com.mountain.for_mountain.domain.employee.model.entity.Employee;
 import com.mountain.for_mountain.domain.employee.repository.EmployeeRepository;
 import com.mountain.for_mountain.domain.group.model.entity.Group;
+import com.mountain.for_mountain.domain.group.repository.GroupMemberRepository;
 import com.mountain.for_mountain.domain.group.repository.GroupRepository;
 import com.mountain.for_mountain.domain.leave.dto.LeaveCreateRequest;
 import com.mountain.for_mountain.domain.leave.dto.LeaveResponse;
@@ -19,9 +20,15 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.security.core.Authentication;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
+import java.util.Set;
 
 @Service
 @Slf4j
@@ -34,13 +41,28 @@ public class LeaveService {
     private final LeaveRepository leaveRepository;
     private final EmployeeRepository employeeRepository;
     private final GroupRepository groupRepository;
+    private final GroupMemberRepository groupMemberRepository;
     private final JavaMailSender mailSender;
 
     @Value("${app.frontend-base-url:}")
     private String frontendBaseUrl;
 
-    public List<LeaveResponse> getList(String status, String department) {
+    public List<LeaveResponse> getList(String status, String department, Authentication authentication) {
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+        Employee caller = employeeRepository.findByEmployeeNumber(authentication.getName())
+                .orElseThrow(() -> new CustomException(ErrorCode.ACCOUNT_NOT_FOUND));
+
+        List<Group> allGroups = groupRepository.findAllByOrderByCreatedAtAsc();
+        Set<Long> leaderMemberIds = resolveLeaderMemberIds(allGroups, caller.getId());
+
         return leaveRepository.findAllByOrderByCreatedAtDesc().stream()
+                .filter(leave -> {
+                    if (isAdmin) return true;
+                    if (leaderMemberIds != null) return leaderMemberIds.contains(leave.getEmployeeId());
+                    return leave.getEmployeeId().equals(caller.getId());
+                })
                 .map(this::toResponse)
                 .filter(leave -> status == null || status.isBlank() || leave.getStatus().equals(status))
                 .filter(leave -> department == null || department.isBlank() || leave.getDepartment().equals(department))
@@ -88,11 +110,48 @@ public class LeaveService {
     }
 
     @Transactional
-    public LeaveResponse updateStatus(Long id, String status) {
+    public LeaveResponse updateStatus(Long id, String status, Authentication authentication) {
         Leave leave = leaveRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.LEAVE_NOT_FOUND));
+
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+        if (!isAdmin) {
+            Employee caller = employeeRepository.findByEmployeeNumber(authentication.getName())
+                    .orElseThrow(() -> new CustomException(ErrorCode.ACCOUNT_NOT_FOUND));
+            List<Group> allGroups = groupRepository.findAllByOrderByCreatedAtAsc();
+            Set<Long> memberIds = resolveLeaderMemberIds(allGroups, caller.getId());
+            if (memberIds == null || !memberIds.contains(leave.getEmployeeId())) {
+                throw new CustomException(ErrorCode.ACCESS_DENIED);
+            }
+        }
+
         leave.updateStatus(status);
         return toResponse(leave);
+    }
+
+    private Set<Long> resolveLeaderMemberIds(List<Group> allGroups, Long employeeId) {
+        List<Group> myGroups = allGroups.stream()
+                .filter(g -> employeeId.equals(g.getLeaderId()))
+                .toList();
+        if (myGroups.isEmpty()) return null;
+
+        Set<Long> memberIds = new HashSet<>();
+        Queue<Group> queue = new LinkedList<>(myGroups);
+        Set<Long> visited = new HashSet<>();
+
+        while (!queue.isEmpty()) {
+            Group group = queue.poll();
+            if (visited.contains(group.getId())) continue;
+            visited.add(group.getId());
+            groupMemberRepository.findByGroupId(group.getId())
+                    .forEach(gm -> memberIds.add(gm.getEmployeeId()));
+            allGroups.stream()
+                    .filter(g -> group.getId().equals(g.getParentGroupId()))
+                    .forEach(queue::add);
+        }
+        return memberIds;
     }
 
     @Transactional

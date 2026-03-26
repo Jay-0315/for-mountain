@@ -24,12 +24,18 @@ export default function LeaveDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const leaveId = Number(params.id);
-  const [token] = useState(() => (typeof window === "undefined" ? "" : sessionStorage.getItem("admin_token") ?? ""));
+  const [token, setToken] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [leave, setLeave] = useState<LeaveDto | null>(null);
   const [employees, setEmployees] = useState<EmployeeDto[]>([]);
   const [error, setError] = useState("");
-  const isAdmin = getSessionRole(token) === "ADMIN";
+
+  useEffect(() => {
+    const t = sessionStorage.getItem("admin_token") ?? "";
+    setToken(t);
+    setIsAdmin(getSessionRole(t) === "ADMIN");
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);

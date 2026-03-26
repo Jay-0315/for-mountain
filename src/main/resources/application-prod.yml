@@ -13,6 +13,9 @@ spring:
     redis:
       host: ${SPRING_DATA_REDIS_HOST:mountain-redis}
       port: ${SPRING_DATA_REDIS_PORT:6379}
+      password: ${SPRING_DATA_REDIS_PASSWORD:}
+      ssl:
+        enabled: ${SPRING_DATA_REDIS_SSL:false}
 
   jpa:
     hibernate:
@@ -50,6 +53,8 @@ app:
   frontend-base-url: ${APP_FRONTEND_BASE_URL}
   mail:
     to: ${MAIL_TO}
+  upload:
+    dir: ${UPLOAD_DIR:/home/xs799946/mountain-info.com/uploads}
   s3:
     region: ${AWS_REGION:}
     bucket: ${S3_BUCKET:}

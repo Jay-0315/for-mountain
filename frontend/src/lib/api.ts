@@ -27,11 +27,8 @@ export type BoardListResponse = {
   last: boolean;
 };
 
-export type PresignedUploadResponse = {
-  uploadUrl: string;
+export type UploadResponse = {
   fileUrl: string;
-  objectKey: string;
-  headers: Record<string, string>;
 };
 
 export type CreateEmployeeAccountResponse = {
@@ -139,33 +136,25 @@ export async function deleteBoardPost(token: string, id: number): Promise<void> 
   if (!res.ok) throw new Error("Failed to delete post");
 }
 
-export async function createPresignedUpload(
+export async function uploadFileToBackend(
   token: string,
-  data: { fileName: string; contentType: string; directory: string }
-): Promise<PresignedUploadResponse> {
-  const res = await fetch(`${API_BASE}/api/v1/uploads/presign`, {
+  file: File,
+  directory: string
+): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("directory", directory);
+  const res = await fetch(`${API_BASE}/api/v1/uploads`, {
     method: "POST",
-    headers: authHeaders(token),
-    body: JSON.stringify(data),
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
   });
   if (!res.ok) {
     const json = await res.json().catch(() => ({}));
-    throw new Error((json as { message?: string }).message ?? "Failed to prepare upload");
+    throw new Error((json as { message?: string }).message ?? "Failed to upload file");
   }
-  return res.json();
-}
-
-export async function uploadFileToPresignedUrl(
-  presigned: PresignedUploadResponse,
-  file: File
-): Promise<string> {
-  const res = await fetch(presigned.uploadUrl, {
-    method: "PUT",
-    headers: presigned.headers,
-    body: file,
-  });
-  if (!res.ok) throw new Error("Failed to upload file to storage");
-  return presigned.fileUrl;
+  const data: UploadResponse = await res.json();
+  return data.fileUrl;
 }
 
 export async function createEmployeeAccount(
@@ -298,6 +287,7 @@ export type GroupDto = {
   leaderId: number | null;
   leaderName: string;
   memberIds: number[];
+  parentGroupId: number | null;
 };
 
 export async function fetchGroups(): Promise<GroupDto[]> {
@@ -306,9 +296,31 @@ export async function fetchGroups(): Promise<GroupDto[]> {
   return res.json();
 }
 
+/** 해당 직원이 리더인 그룹 + 모든 하위 그룹의 memberIds를 합산 */
+export function resolveLeaderMemberIds(groups: GroupDto[], employeeId: number): number[] | null {
+  const myGroups = groups.filter((g) => g.leaderId === employeeId);
+  if (myGroups.length === 0) return null;
+
+  const allIds = new Set<number>();
+  const queue = [...myGroups];
+  const visited = new Set<number>();
+
+  while (queue.length > 0) {
+    const group = queue.shift()!;
+    if (visited.has(group.id)) continue;
+    visited.add(group.id);
+    group.memberIds.forEach((id) => allIds.add(id));
+    groups
+      .filter((g) => g.parentGroupId === group.id)
+      .forEach((child) => queue.push(child));
+  }
+
+  return Array.from(allIds);
+}
+
 export async function createGroup(
   token: string,
-  data: { name: string; description: string; leaderId: number | null; memberIds: number[] }
+  data: { name: string; description: string; leaderId: number | null; memberIds: number[]; parentGroupId?: number | null }
 ): Promise<GroupDto> {
   const res = await fetch(`${API_BASE}/api/v1/groups`, {
     method: "POST",
@@ -322,7 +334,7 @@ export async function createGroup(
 export async function updateGroup(
   token: string,
   id: number,
-  data: { name: string; description: string; leaderId: number | null; memberIds: number[] }
+  data: { name: string; description: string; leaderId: number | null; memberIds: number[]; parentGroupId?: number | null }
 ): Promise<GroupDto> {
   const res = await fetch(`${API_BASE}/api/v1/groups/${id}`, {
     method: "PUT",

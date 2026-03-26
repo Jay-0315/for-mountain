@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { type Department } from "../mock-data";
 import {
   createGroup,
   deleteGroup,
@@ -11,7 +10,7 @@ import {
   type GroupDto,
   updateGroup,
 } from "@/lib/api";
-import { getSessionRole } from "@/lib/session";
+import { getSessionPayload, getSessionRole } from "@/lib/session";
 
 const DEPT_COLOR: Record<string, string> = {
   "開発Part1": "bg-yellow-100 text-yellow-700",
@@ -33,67 +32,7 @@ function resolveDepartmentColor(value: string) {
   return DEPT_COLOR[normalized] ?? "bg-slate-100 text-slate-700";
 }
 
-const TECH_PARENT_MAP: Partial<Record<Department, Department>> = {
-  "技術グループ1": "技術本部",
-  "技術グループ2": "技術本部",
-  "開発 Part1": "技術グループ1",
-  "開発 Part2": "技術グループ2",
-};
-
-const TECH_ROOT: Department = "技術本部";
 type GroupCreateMode = "independent" | "subgroup";
-const GROUP_PARENT_PREFIX = "[PARENT:";
-
-function parseGroupDescription(description: string) {
-  const trimmed = description.trim();
-  if (!trimmed.startsWith(GROUP_PARENT_PREFIX)) {
-    return { parentName: null as string | null, description };
-  }
-
-  const closingIndex = trimmed.indexOf("]");
-  if (closingIndex === -1) {
-    return { parentName: null as string | null, description };
-  }
-
-  const parentValue = trimmed.slice(GROUP_PARENT_PREFIX.length, closingIndex).trim();
-  const nextDescription = trimmed.slice(closingIndex + 1).trim();
-
-  return {
-    parentName: parentValue || null,
-    description: nextDescription,
-  };
-}
-
-function buildGroupDescription(parentName: string | null, description: string) {
-  if (!parentName) {
-    return description;
-  }
-  return `${GROUP_PARENT_PREFIX}${parentName}]${description ? ` ${description}` : ""}`;
-}
-
-function resolveGroupParent(group: GroupDto) {
-  const parsed = parseGroupDescription(group.description ?? "");
-  return parsed.parentName;
-}
-
-function getDisplayDescription(group: GroupDto) {
-  return parseGroupDescription(group.description ?? "").description;
-}
-
-function inferParentNameFromGroup(group: GroupDto) {
-  const fromDescription = resolveGroupParent(group);
-  if (fromDescription) return fromDescription;
-  return null;
-}
-
-function resolveTreeParent(group: GroupDto) {
-  const parentName = resolveGroupParent(group);
-  if (parentName) return parentName;
-  if ((Object.keys(TECH_PARENT_MAP) as Department[]).includes(group.name as Department)) {
-    return TECH_PARENT_MAP[group.name as Department] ?? null;
-  }
-  return null;
-}
 
 function GroupModal({
   groups,
@@ -111,12 +50,11 @@ function GroupModal({
   onSaved: () => void;
 }) {
   const isEdit = group !== null;
-  const initialParentName = group ? inferParentNameFromGroup(group) : null;
-  const [createMode, setCreateMode] = useState<GroupCreateMode>(initialParentName ? "subgroup" : "independent");
+  const [createMode, setCreateMode] = useState<GroupCreateMode>(group?.parentGroupId ? "subgroup" : "independent");
   const [name, setName] = useState(group?.name ?? "");
-  const [parentName, setParentName] = useState(initialParentName ?? "");
+  const [parentGroupId, setParentGroupId] = useState<number | "">(group?.parentGroupId ?? "");
   const [leaderId, setLeaderId] = useState<number | "">(group?.leaderId ?? "");
-  const [description, setDescription] = useState(group ? getDisplayDescription(group) : "");
+  const [description, setDescription] = useState(group?.description ?? "");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const parentOptions = useMemo(() => {
@@ -127,16 +65,13 @@ function GroupModal({
 
   useEffect(() => {
     if (createMode === "independent") {
-      if (parentName !== "") {
-        setParentName("");
-      }
+      setParentGroupId("");
       return;
     }
-
-    if (!parentName && parentOptions[0]) {
-      setParentName(parentOptions[0].name);
+    if (!parentGroupId && parentOptions[0]) {
+      setParentGroupId(parentOptions[0].id);
     }
-  }, [createMode, parentName, parentOptions]);
+  }, [createMode, parentGroupId, parentOptions]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -147,7 +82,7 @@ function GroupModal({
       return;
     }
 
-    if (createMode === "subgroup" && !parentName) {
+    if (createMode === "subgroup" && !parentGroupId) {
       setError("親グループを選択してください。");
       return;
     }
@@ -163,7 +98,8 @@ function GroupModal({
         name: name.trim(),
         leaderId: Number(leaderId),
         memberIds,
-        description: buildGroupDescription(createMode === "subgroup" ? parentName : null, description.trim()),
+        description: description.trim(),
+        parentGroupId: createMode === "subgroup" ? Number(parentGroupId) : null,
       };
 
       if (isEdit && group) {
@@ -248,15 +184,15 @@ function GroupModal({
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-slate-700">親グループ</label>
                   <select
-                    value={parentName}
-                    onChange={(e) => setParentName(e.target.value)}
+                    value={parentGroupId}
+                    onChange={(e) => setParentGroupId(e.target.value ? Number(e.target.value) : "")}
                     className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400"
                   >
                     {parentOptions.length === 0 ? (
                       <option value="">選択できるグループがありません</option>
                     ) : (
                       parentOptions.map((parentGroup) => (
-                        <option key={parentGroup.id} value={parentGroup.name}>
+                        <option key={parentGroup.id} value={parentGroup.id}>
                           {parentGroup.name}
                         </option>
                       ))
@@ -271,12 +207,12 @@ function GroupModal({
             <div>
               <label className="mb-1.5 block text-sm font-medium text-slate-700">親グループ</label>
               <select
-                value={parentName}
-                onChange={(e) => setParentName(e.target.value)}
+                value={parentGroupId}
+                onChange={(e) => setParentGroupId(e.target.value ? Number(e.target.value) : "")}
                 className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400"
               >
                 {parentOptions.map((parentGroup) => (
-                  <option key={parentGroup.id} value={parentGroup.name}>
+                  <option key={parentGroup.id} value={parentGroup.id}>
                     {parentGroup.name}
                   </option>
                 ))}
@@ -400,11 +336,12 @@ const GROUP_ACCENT: Record<string, { border: string; leaderBg: string; leaderLab
 const DEFAULT_ACCENT = { border: "border-l-slate-300", leaderBg: "from-slate-50 to-white border-slate-100", leaderLabel: "text-slate-500", leaderPos: "text-slate-400", memberTag: "bg-slate-50 border-slate-100 text-slate-600" };
 
 function resolveGroupAccent(group: GroupDto) {
-  return GROUP_ACCENT[group.name] ?? GROUP_ACCENT[resolveGroupParent(group) ?? ""] ?? DEFAULT_ACCENT;
+  return GROUP_ACCENT[group.name] ?? DEFAULT_ACCENT;
 }
 
 function GroupCard({
   group,
+  groups,
   employees,
   canManage,
   onEdit,
@@ -412,6 +349,7 @@ function GroupCard({
   compact = false,
 }: {
   group: GroupDto;
+  groups: GroupDto[];
   employees: EmployeeDto[];
   canManage: boolean;
   onEdit: (group: GroupDto) => void;
@@ -420,8 +358,8 @@ function GroupCard({
 }) {
   const members = employees.filter((employee) => group.memberIds.includes(employee.id));
   const leader = employees.find((employee) => employee.id === group.leaderId);
-  const parentName = resolveGroupParent(group);
-  const displayDescription = getDisplayDescription(group);
+  const parentName = group.parentGroupId ? (groups.find((g) => g.id === group.parentGroupId)?.name ?? null) : null;
+  const displayDescription = group.description;
   const accent = resolveGroupAccent(group);
 
   return (
@@ -518,9 +456,9 @@ function TreeNode({
   onDelete: (groupId: number) => void;
   depth?: number;
 }) {
-  const children = allGroups.filter((item) => resolveTreeParent(item) === group.name);
+  const children = allGroups.filter((item) => item.parentGroupId === group.id);
   const hasChildren = children.length > 0;
-  const isOpen = expanded[group.name] ?? false;
+  const isOpen = expanded[group.name] ?? true;
 
   return (
     <div className={`${depth > 0 ? "ml-4 border-l border-slate-200 pl-4 sm:ml-6 sm:pl-5" : ""}`}>
@@ -548,6 +486,7 @@ function TreeNode({
           <div className="min-w-0 flex-1">
             <GroupCard
               group={group}
+              groups={allGroups}
               employees={employees}
               canManage={canManage}
               onEdit={onEdit}
@@ -591,24 +530,46 @@ export default function GroupsPage() {
   const [employees, setEmployees] = useState<EmployeeDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalGroup, setModalGroup] = useState<GroupDto | null | undefined>(undefined);
-  const [token] = useState(() => (typeof window === "undefined" ? "" : sessionStorage.getItem("admin_token") ?? ""));
-  const isAdmin = getSessionRole(token) === "ADMIN";
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({
-    "技術本部": true,
-    "技術グループ1": true,
-    "技術グループ2": true,
-  });
+  const [token, setToken] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const t = sessionStorage.getItem("admin_token") ?? "";
+    setToken(t);
+    setIsAdmin(getSessionRole(t) === "ADMIN");
+  }, []);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const load = () => {
     setLoading(true);
+    const t = sessionStorage.getItem("admin_token") ?? "";
+    const role = getSessionRole(t);
+    const { sub } = getSessionPayload(t);
     Promise.all([fetchGroups(), fetchEmployees()])
-      .then(([groups, employees]) => {
-        setGroups(groups);
+      .then(([allGroups, employees]) => {
         setEmployees(employees);
+        const me = employees.find((e) => e.employeeNumber === sub);
+        if (!me) { setGroups(allGroups); return; }
+        // 본인이 리더인 그룹 + 하위 그룹 수집
+        const myGroups = allGroups.filter((g) => g.leaderId === me.id);
+        if (myGroups.length === 0) {
+          // 그룹장이 아님 = 진짜 ADMIN → 전체 표시
+          setGroups(allGroups);
+          return;
+        }
+        const visibleIds = new Set<number>();
+        const queue = [...myGroups];
+        const visited = new Set<number>();
+        while (queue.length > 0) {
+          const g = queue.shift()!;
+          if (visited.has(g.id)) continue;
+          visited.add(g.id);
+          visibleIds.add(g.id);
+          allGroups.filter((c) => c.parentGroupId === g.id).forEach((c) => queue.push(c));
+        }
+        setGroups(allGroups.filter((g) => visibleIds.has(g.id)));
       })
-      .finally(() => {
-        setLoading(false);
-      });
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => {
@@ -620,21 +581,25 @@ export default function GroupsPage() {
     return !groups.some((group) => group.memberIds.includes(employee.id));
   });
 
-  const technicalRoot = groups.find((group) => group.name === TECH_ROOT) ?? groups.find((group) => resolveTreeParent(group) === TECH_ROOT);
-  const technicalGroupIds = new Set<string | number>();
-  groups.forEach((group) => {
-    if (group.name === TECH_ROOT || resolveTreeParent(group)) {
-      technicalGroupIds.add(group.id);
+  const rootGroups = groups.filter(
+    (g) => !g.parentGroupId || !groups.find((p) => p.id === g.parentGroupId)
+  );
+
+  const collectSubtree = (rootId: number): GroupDto[] => {
+    const result: GroupDto[] = [];
+    const queue = [rootId];
+    const visited = new Set<number>();
+    while (queue.length > 0) {
+      const id = queue.shift()!;
+      if (visited.has(id)) continue;
+      visited.add(id);
+      const group = groups.find((g) => g.id === id);
+      if (!group) continue;
+      result.push(group);
+      groups.filter((g) => g.parentGroupId === id).forEach((g) => queue.push(g.id));
     }
-  });
-  const technicalGroups = groups.filter((group) => technicalGroupIds.has(group.id));
-  const managementGroups = groups.filter((group) => !resolveGroupParent(group) && group.name === "管理部");
-  const secondaryIndependentGroups = groups.filter((group) => {
-    if (group.name === "管理部" || group.name === TECH_ROOT) {
-      return false;
-    }
-    return resolveTreeParent(group) === null;
-  });
+    return result;
+  };
 
   const toggleGroup = (name: string) => {
     setExpanded((prev) => ({ ...prev, [name]: !prev[name] }));
@@ -730,27 +695,12 @@ export default function GroupsPage() {
           </div>
         ) : (
           <div className="space-y-6">
-            {managementGroups.length > 0 && (
-              <section className="space-y-4">
-                {managementGroups.map((group) => (
-                  <GroupCard
-                    key={group.id}
-                    group={group}
-                    employees={employees}
-                    canManage={isAdmin}
-                    onEdit={(nextGroup) => setModalGroup(nextGroup)}
-                    onDelete={handleDelete}
-                  />
-                ))}
-              </section>
-            )}
-
-            {technicalRoot && (
-              <section className="space-y-4">
+            {rootGroups.map((rootGroup) => (
+              <section key={rootGroup.id} className="space-y-4">
                 <TreeNode
-                  group={technicalRoot}
+                  group={rootGroup}
                   employees={employees}
-                  allGroups={technicalGroups}
+                  allGroups={collectSubtree(rootGroup.id)}
                   expanded={expanded}
                   canManage={isAdmin}
                   onToggle={toggleGroup}
@@ -758,26 +708,9 @@ export default function GroupsPage() {
                   onDelete={handleDelete}
                 />
               </section>
-            )}
+            ))}
 
-            {secondaryIndependentGroups.length > 0 && (
-              <section className="space-y-4">
-                <div className="grid gap-4">
-                  {secondaryIndependentGroups.map((group) => (
-                    <GroupCard
-                      key={group.id}
-                      group={group}
-                      employees={employees}
-                      canManage={isAdmin}
-                      onEdit={(nextGroup) => setModalGroup(nextGroup)}
-                      onDelete={handleDelete}
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {!technicalRoot && managementGroups.length === 0 && secondaryIndependentGroups.length === 0 && (
+            {rootGroups.length === 0 && (
               <div className="rounded-2xl border border-slate-100 bg-white p-12 text-center shadow-sm">
                 <p className="text-sm text-slate-400">登録されたグループがありません。</p>
               </div>

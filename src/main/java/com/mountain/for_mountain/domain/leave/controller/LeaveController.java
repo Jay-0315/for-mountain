@@ -29,9 +29,10 @@ public class LeaveController {
     @GetMapping
     public ResponseEntity<List<LeaveResponse>> getList(
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) String department
+            @RequestParam(required = false) String department,
+            Authentication authentication
     ) {
-        return ResponseEntity.ok(leaveService.getList(status, department));
+        return ResponseEntity.ok(leaveService.getList(status, department, authentication));
     }
 
     @Operation(summary = "Create leave", security = @SecurityRequirement(name = "bearerAuth"))
@@ -54,9 +55,10 @@ public class LeaveController {
     @PatchMapping("/{id}/status")
     public ResponseEntity<LeaveResponse> updateStatus(
             @PathVariable Long id,
-            @Valid @RequestBody LeaveStatusUpdateRequest request
+            @Valid @RequestBody LeaveStatusUpdateRequest request,
+            Authentication authentication
     ) {
-        return ResponseEntity.ok(leaveService.updateStatus(id, request.getStatus()));
+        return ResponseEntity.ok(leaveService.updateStatus(id, request.getStatus(), authentication));
     }
 
     @Operation(summary = "Cancel own pending leave", security = @SecurityRequirement(name = "bearerAuth"))

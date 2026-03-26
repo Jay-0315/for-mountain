@@ -19,4 +19,6 @@ public class GroupRequest {
 
     @NotNull
     private List<Long> memberIds;
+
+    private Long parentGroupId;
 }

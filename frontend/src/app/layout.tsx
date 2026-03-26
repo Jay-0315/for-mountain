@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import ScrollProgressBar from "@/components/layout/ScrollProgressBar";
-import PageIntro from "@/components/ui/PageIntro";
 import CustomCursor from "@/components/ui/CustomCursor";
 
 const BASE_URL = "http://13.239.33.235";
@@ -69,7 +68,6 @@ export default function RootLayout({
         />
       </head>
       <body suppressHydrationWarning className="antialiased">
-        <PageIntro />
         <ScrollProgressBar />
         <CustomCursor />
         {children}

@@ -1,0 +1,12 @@
+Options -Indexes
+RewriteEngine On
+
+# 실제 파일/디렉토리가 있으면 그대로 서빙
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# 나머지 모든 요청 → Node.js(3000)로 프록시
+RewriteRule ^(.*)$ http://127.0.0.1:3000/$1 [P,L,QSA]
+
+# 프록시 응답 URL 재작성
+ProxyPassReverse / http://127.0.0.1:3000/

@@ -15,14 +15,13 @@ import {
   fetchAnnouncements,
   fetchEmployees,
   createBoardPost,
-  createPresignedUpload,
+  uploadFileToBackend,
   createAnnouncement,
   createDeptNotice,
   createPartnerCard,
   createServiceCategory,
   createServiceItem,
   updateBoardPost,
-  uploadFileToPresignedUrl,
   updateAnnouncement,
   updateDeptNotice,
   updatePartnerCard,
@@ -217,13 +216,7 @@ function WebsitePostForm({
   const [error, setError] = useState("");
 
   const uploadFile = async (file: File, directory: string) => {
-    const contentType = file.type || "application/octet-stream";
-    const presigned = await createPresignedUpload(token, {
-      fileName: file.name,
-      contentType,
-      directory,
-    });
-    return uploadFileToPresignedUrl(presigned, file);
+    return uploadFileToBackend(token, file, directory);
   };
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1213,13 +1206,7 @@ function readFileAsDataUrl(file: File) {
 }
 
 async function uploadFileWithPresign(token: string, file: File, directory: string) {
-  const contentType = file.type || "application/octet-stream";
-  const presigned = await createPresignedUpload(token, {
-    fileName: file.name,
-    contentType,
-    directory,
-  });
-  return uploadFileToPresignedUrl(presigned, file);
+  return uploadFileToBackend(token, file, directory);
 }
 
 function PartnersTab() {

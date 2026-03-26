@@ -36,7 +36,8 @@ public class GroupService {
         Group group = groupRepository.save(Group.create(
                 request.getName(),
                 request.getDescription(),
-                request.getLeaderId()
+                request.getLeaderId(),
+                request.getParentGroupId()
         ));
         saveMembers(group.getId(), request.getLeaderId(), request.getMemberIds());
         return toResponse(group);
@@ -46,7 +47,7 @@ public class GroupService {
     public GroupResponse update(Long id, GroupRequest request) {
         Group group = groupRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.ACCESS_DENIED));
-        group.update(request.getName(), request.getDescription(), request.getLeaderId());
+        group.update(request.getName(), request.getDescription(), request.getLeaderId(), request.getParentGroupId());
         groupMemberRepository.deleteByGroupId(id);
         saveMembers(id, request.getLeaderId(), request.getMemberIds());
         return toResponse(group);
@@ -88,7 +89,8 @@ public class GroupService {
                 group.getDescription(),
                 group.getLeaderId(),
                 leaderName,
-                memberIds
+                memberIds,
+                group.getParentGroupId()
         );
     }
 }

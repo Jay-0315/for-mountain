@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import {
   fetchDeptNotices,
   fetchEmployees,
+  fetchGroups,
   fetchLeaves,
+  resolveLeaderMemberIds,
   type EmployeeDto,
   type LeaveDto,
 } from "@/lib/api";
@@ -349,9 +351,11 @@ export default function DashboardPage() {
   const [deptNotices, setDeptNotices] = useState<DeptNotice[]>([]);
   const [employees, setEmployees] = useState<EmployeeDto[]>([]);
   const [leaves, setLeaves] = useState<LeaveDto[]>([]);
+  const [leaderMemberIds, setLeaderMemberIds] = useState<number[] | null | undefined>(undefined);
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
   const [mobileWeekIndex, setMobileWeekIndex] = useState(0);
   const [calendarView, setCalendarView] = useState<"grid" | "week">("grid");
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [summaryModal, setSummaryModal] = useState<"birthdays" | "pendingLeaves" | "monthLeaves" | null>(null);
 
@@ -364,24 +368,32 @@ export default function DashboardPage() {
     Promise.all([
       fetchEmployees().catch(() => [] as EmployeeDto[]),
       fetchLeaves().catch(() => [] as LeaveDto[]),
+      fetchGroups().catch(() => []),
     ])
-      .then(([employees, leaves]) => {
+      .then(([employees, leaves, groups]) => {
         setEmployees(employees);
         setLeaves(leaves);
+        const token = typeof window !== "undefined" ? window.sessionStorage.getItem("admin_token") : null;
+        const payload = token ? parseJwtPayload(token) : null;
+        const sub = payload?.sub ?? null;
+        const currentEmp = employees.find((e) => e.employeeNumber === sub) ?? null;
+        setLeaderMemberIds(currentEmp ? resolveLeaderMemberIds(groups, currentEmp.id) : null);
       })
       .finally(() => setLoadingPeople(false));
   }, []);
   const viewer = useMemo(() => resolveViewer(employees), [employees]);
 
-  const pendingLeavesForViewer = leaves.filter((leave) => {
+  const pendingLeavesForViewer = leaderMemberIds === undefined ? [] : leaves.filter((leave) => {
     if (leave.status !== "待機中") return false;
+    if (leaderMemberIds !== null) return leaderMemberIds.includes(leave.employeeId);
     if (viewer.canViewAll) return true;
     return leave.employeeId === viewer.employee?.id;
   });
   const pendingLeave = pendingLeavesForViewer.length;
   const effectiveDepartment = viewer.canViewAll ? "全部門" : viewer.employee?.department ?? "全部門";
 
-  const visibleLeaves = leaves.filter((leave) => {
+  const visibleLeaves = leaderMemberIds === undefined ? [] : leaves.filter((leave) => {
+    if (leaderMemberIds !== null) return leaderMemberIds.includes(leave.employeeId);
     if (effectiveDepartment === "全部門") return true;
     return leave.department === effectiveDepartment;
   });
@@ -559,15 +571,33 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {!loadingPeople && pendingLeave > 0 && (
+        <button
+          type="button"
+          onClick={() => setSummaryModal("pendingLeaves")}
+          className="flex items-center gap-3 w-full rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-left shadow-sm transition-colors hover:bg-red-100"
+        >
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-500 text-white">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+            </svg>
+          </span>
+          <p className="text-sm font-semibold text-red-700">
+            未承認の休暇申請が <span className="text-base">{pendingLeave}</span> 件あります！
+          </p>
+          <span className="ml-auto text-xs text-red-400">確認する →</span>
+        </button>
+      )}
+
       <div className="grid grid-cols-2 gap-2 sm:hidden">
         <StatChip
           label="未承認の休暇申請"
           value={loadingPeople ? "-" : pendingLeave}
           sub="件"
-          color="bg-green-50"
+          color={pendingLeave > 0 ? "bg-red-50" : "bg-green-50"}
           onClick={() => !loadingPeople && setSummaryModal("pendingLeaves")}
           icon={
-            <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className={`w-6 h-6 ${pendingLeave > 0 ? "text-red-500" : "text-green-500"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                 d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
@@ -593,10 +623,10 @@ export default function DashboardPage() {
           label="未承認の休暇申請"
           value={loadingPeople ? "-" : pendingLeave}
           sub="件"
-          color="bg-green-50"
+          color={pendingLeave > 0 ? "bg-red-50" : "bg-green-50"}
           onClick={() => !loadingPeople && setSummaryModal("pendingLeaves")}
           icon={
-            <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className={`w-6 h-6 ${pendingLeave > 0 ? "text-red-500" : "text-green-500"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                 d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
@@ -620,7 +650,20 @@ export default function DashboardPage() {
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-100 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-4">
-            <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+            <button
+              type="button"
+              onClick={() => setCalendarOpen((v) => !v)}
+              className="flex items-center gap-2 rounded-xl bg-orange-500 hover:bg-orange-600 transition-colors shadow-sm shadow-orange-200 px-3 h-9"
+            >
+              <svg
+                className={`w-5 h-5 text-white transition-transform duration-200 ${calendarOpen ? "rotate-0" : "-rotate-90"}`}
+                fill="none" stroke="currentColor" viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+              {!calendarOpen && <span className="text-sm font-semibold text-white">カレンダー</span>}
+            </button>
+            <div className={`flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 ${calendarOpen ? "" : "hidden"}`}>
               <button
                 type="button"
                 onClick={() => setCalendarView("grid")}
@@ -689,7 +732,7 @@ export default function DashboardPage() {
         </div>
 
 
-        {calendarView === "grid" && (
+        {calendarOpen && calendarView === "grid" && (
           <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50">
             {WEEK_LABELS.map((label, index) => (
               <div key={label} className={`px-3 py-2 text-center text-sm font-semibold ${getWeekdayTextColor(index)}`}>
@@ -699,7 +742,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {calendarView === "week" && (
+        {calendarOpen && calendarView === "week" && (
           <div className="p-3">
             <div className="space-y-3">
               <div className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2">
@@ -817,7 +860,7 @@ export default function DashboardPage() {
         )}
 
 
-        {calendarView === "grid" && (
+        {calendarOpen && calendarView === "grid" && (
           <div className="grid grid-cols-7">
           {monthDays.map((day) => {
             const dayKey = formatDay(day);

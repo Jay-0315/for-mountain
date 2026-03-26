@@ -47,7 +47,7 @@ const GRID_SIZE = 44;
 const RUNNER_CELL_SIZE = 28;
 const RUNNER_CELL_OFFSET_X = 10;
 const RUNNER_CELL_OFFSET_Y = 8;
-const HERO_STAGE_DELAY_MS = 2600;
+const HERO_STAGE_DELAY_MS = 0;
 const HERO_STAGE_DELAY_S = HERO_STAGE_DELAY_MS / 1000;
 const HERO_STAGE_DELAY_FRAMES = Math.round((HERO_STAGE_DELAY_MS / 1000) * 60);
 const GRID_RUNNERS = [
@@ -65,8 +65,6 @@ const HERO_CODE_LINES = [
   "pipeline.stage('secure').attach(policy('zero-trust')).forward(packet);",
   "runtime.cache('/partners').revalidate({ burst: true, interval: 60 });",
   "orchestrator.link('services').fanOut({ replicas: 4, region: 'tokyo-edge' });",
-  "telemetry.capture(event).tag('hero').sample(0.25).flush('realtime');",
-  "gateway.handshake({ tls: '1.3', mode: 'strict', retry: exponential(3) });",
 ];
 const HERO_AMBIENT_CODE_LINES = [
   "edge.sync(packet => packet.latency < 12);",

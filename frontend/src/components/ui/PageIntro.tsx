@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { TextPlugin } from "gsap/TextPlugin";
@@ -14,14 +15,20 @@ const INTRO_CODE_LINES = [
 ];
 
 export default function PageIntro() {
+  const pathname = usePathname();
   const [done, setDone] = useState(false);
   const introRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // 어드민 경로 또는 불필요한 경우 즉시 종료
+    if (pathname.startsWith("/admin")) {
+      setDone(true);
+      return;
+    }
     // Never let the intro permanently cover the page if an animation step fails.
-    const fallback = window.setTimeout(() => setDone(true), 5000);
+    const fallback = window.setTimeout(() => setDone(true), 1500);
     return () => window.clearTimeout(fallback);
-  }, []);
+  }, [pathname]);
 
   useGSAP(
     () => {
@@ -51,13 +58,13 @@ export default function PageIntro() {
         onComplete: () => setDone(true),
       });
 
-      tl.to(".intro-grid", { opacity: 0.22, duration: 0.25, ease: "power2.out" })
+      tl.to(".intro-grid", { opacity: 0.22, duration: 0.08, ease: "power2.out" })
         .to(
           [".intro-glow-a", ".intro-glow-b", ".intro-halo"],
           {
             opacity: 1,
-            duration: 0.5,
-            stagger: 0.06,
+            duration: 0.12,
+            stagger: 0.02,
             ease: "power2.out",
           },
           "<"
@@ -66,16 +73,16 @@ export default function PageIntro() {
           ".intro-code",
           {
             opacity: 1,
-            duration: 0.2,
+            duration: 0.06,
             ease: "power2.out",
           },
-          "-=0.1"
+          "-=0.04"
         )
         .to(
           ".intro-progress",
           {
             opacity: 1,
-            duration: 0.2,
+            duration: 0.06,
             ease: "power2.out",
           },
           "<"
@@ -83,7 +90,7 @@ export default function PageIntro() {
         .to(
           ".intro-progress-value",
           {
-            duration: 1.6,
+            duration: 0.4,
             text: { value: "100", delimiter: "" },
             ease: "none",
           },
@@ -94,42 +101,42 @@ export default function PageIntro() {
         tl.to(
           `.intro-code-line-${index}`,
           {
-            duration: 0.32 + line.length * 0.012,
+            duration: 0.08,
             text: { value: line, delimiter: "" },
             ease: "none",
           },
-          index === 0 ? "<" : ">-0.04"
+          index === 0 ? "<" : ">-0.01"
         );
       });
 
-      tl.to(".intro-kicker", { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }, "-=0.25")
-        .to(".intro-logo", { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" }, "-=0.16")
-        .to(".intro-sub", { opacity: 0.86, y: 0, duration: 0.45, ease: "power2.out" }, "-=0.28")
+      tl.to(".intro-kicker", { opacity: 1, y: 0, duration: 0.1, ease: "power2.out" }, "-=0.08")
+        .to(".intro-logo", { opacity: 1, y: 0, duration: 0.14, ease: "power3.out" }, "-=0.04")
+        .to(".intro-sub", { opacity: 0.86, y: 0, duration: 0.1, ease: "power2.out" }, "-=0.06")
         .to(
           ".intro-block",
           {
             opacity: 0.9,
             scale: 1,
-            duration: 0.36,
-            stagger: 0.03,
+            duration: 0.08,
+            stagger: 0.01,
             ease: "power2.out",
           },
-          "-=0.32"
+          "-=0.08"
         )
         .to(
           ".intro-stage",
           {
             opacity: 0,
-            duration: 0.32,
+            duration: 0.16,
             ease: "power2.inOut",
           },
-          "+=0.45"
+          "+=0.12"
         )
         .to(
           introRef.current,
           {
             clipPath: "inset(0 0 100% 0)",
-            duration: 0.7,
+            duration: 0.28,
             ease: "power4.inOut",
           },
           "-=0.02"

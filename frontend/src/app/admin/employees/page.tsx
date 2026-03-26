@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { createEmployee, deleteEmployee, fetchEmployees, type EmployeeDto, updateEmployee } from "@/lib/api";
-import { getSessionRole } from "@/lib/session";
+import { createEmployee, deleteEmployee, fetchEmployees, fetchGroups, resolveLeaderMemberIds, type EmployeeDto, updateEmployee } from "@/lib/api";
+import { getSessionPayload, getSessionRole } from "@/lib/session";
 
 type Department =
   | "開発 Part1" | "開発 Part2"
@@ -198,18 +198,31 @@ function EmployeeModal({
 // ── 메인 페이지 ───────────────────────────────────────────────
 export default function EmployeesPage() {
   const [employees, setEmployees]   = useState<EmployeeDto[]>([]);
-  const [token]                     = useState(() => (typeof window === "undefined" ? "" : sessionStorage.getItem("admin_token") ?? ""));
+  const [token, setToken]           = useState("");
+  const [isAdmin, setIsAdmin]       = useState(false);
+  const [leaderMemberIds, setLeaderMemberIds] = useState<number[] | null>(null);
   const [loading, setLoading]       = useState(true);
   const [statusFilter, setStatusFilter] = useState<FilterStatus>("すべて");
   const [deptFilter, setDeptFilter] = useState<FilterDept>("すべて");
   const [search, setSearch]         = useState("");
   const [modalEmployee, setModalEmployee] = useState<EmployeeDto | null | undefined>(undefined);
-  const isAdmin = getSessionRole(token) === "ADMIN";
+
+  useEffect(() => {
+    const t = sessionStorage.getItem("admin_token") ?? "";
+    setToken(t);
+    setIsAdmin(getSessionRole(t) === "ADMIN");
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setEmployees(await fetchEmployees());
+      const t = sessionStorage.getItem("admin_token") ?? "";
+      const { sub } = getSessionPayload(t);
+      const [allEmployees, groups] = await Promise.all([fetchEmployees(), fetchGroups()]);
+      const me = allEmployees.find((e) => e.employeeNumber === sub) ?? null;
+      const memberIds = me ? resolveLeaderMemberIds(groups, me.id) : null;
+      setLeaderMemberIds(memberIds);
+      setEmployees(memberIds !== null ? allEmployees.filter((e) => memberIds.includes(e.id)) : allEmployees);
     } catch {
       setEmployees([]);
     } finally {
