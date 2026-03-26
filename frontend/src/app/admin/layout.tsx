@@ -144,7 +144,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           setPendingCount(pending.filter((l) => l.employeeId === emp.id).length);
         }
       })
-      .catch(() => setCurrentEmployee(null));
+      .catch(() => {
+        setCurrentEmployee(null);
+        setLeaderMemberIds(null);
+      });
   }, [pathname, role]);
 
   // 로그인 페이지는 레이아웃 없이 그냥 렌더링
@@ -204,8 +207,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 alt="株式会社マウンテン symbol"
                 width={34}
                 height={34}
-                className="object-contain"
-                style={{ width: "auto", height: "auto" }}
+                className="object-contain shrink-0 w-[34px] h-[34px]"
                 priority
             />
             <div>
