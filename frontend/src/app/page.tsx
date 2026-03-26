@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: { absolute: "株式会社MOUNTAIN" },
   description:
     "株式会社マウンテンの公式サイト。ITエンジニアリング・ネットワーク通信機器事業を通じ、お客様のビジネスを支えるIT総合カンパニーです。",
-  alternates: { canonical: "http://13.239.33.235" },
+  alternates: { canonical: "https://mountain-info.com" },
 };
 import Footer from "@/components/layout/Footer";
 import HeroSection from "@/components/sections/HeroSection";

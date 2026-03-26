@@ -3,7 +3,7 @@ import "./globals.css";
 import ScrollProgressBar from "@/components/layout/ScrollProgressBar";
 import CustomCursor from "@/components/ui/CustomCursor";
 
-const BASE_URL = "http://13.239.33.235";
+const BASE_URL = "https://mountain-info.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
