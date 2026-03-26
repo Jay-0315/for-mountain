@@ -1,12 +1,20 @@
 Options -Indexes
 RewriteEngine On
 
-# 실제 파일/디렉토리가 있으면 그대로 서빙
+# ── API → PHP 프록시 ────────────────────────────────────────
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^api/v1/(.*)$ /renewal/proxy.php [QSA,L]
+
+# ── 업로드 파일 → PHP 프록시 ─────────────────────────────────
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^uploads/(.*)$ /renewal/proxy.php [QSA,L]
+
+# ── 동적 라우트 → placeholder HTML 서빙 ────────────────────────
+# 직접 URL 접근 시 placeholder 페이지로 라우팅 (JS가 실제 ID 읽음)
+RewriteRule ^services/(?!_$)([^/]+)/?$ /renewal/services/_/index.html [L]
+RewriteRule ^news/(?!_$)([^/]+)/?$ /renewal/news/_/index.html [L]
+
+# ── SPA 폴백 (그 외 미매칭 경로) ──────────────────────────────
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-
-# 나머지 모든 요청 → Node.js(3000)로 프록시
-RewriteRule ^(.*)$ http://127.0.0.1:3000/$1 [P,L,QSA]
-
-# 프록시 응답 URL 재작성
-ProxyPassReverse / http://127.0.0.1:3000/
+RewriteRule ^ /renewal/index.html [L]

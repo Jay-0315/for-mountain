@@ -23,7 +23,7 @@ jobs:
       - name: Build Backend (JAR)
         run: chmod +x ./gradlew && ./gradlew bootJar
 
-      # ── 2. 프론트엔드 빌드 ──────────────────────────────────────
+      # ── 2. 프론트엔드 빌드 (Static Export) ─────────────────────
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -31,16 +31,8 @@ jobs:
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Build Frontend (Next.js standalone)
+      - name: Build Frontend (Static Export)
         run: cd frontend && npm ci && npm run build
-        env:
-          BACKEND_URL: http://localhost:8080
-
-      # standalone 빌드에 static/public 병합
-      - name: Merge static assets into standalone
-        run: |
-          cp -r frontend/.next/static frontend/.next/standalone/.next/static
-          cp -r frontend/public frontend/.next/standalone/public
 
       # ── 3. 파일 전송 ────────────────────────────────────────────
       - name: Copy JAR to Xserver
@@ -54,29 +46,29 @@ jobs:
           target: "/home/xs799946/mountain-info.com/backend"
           strip_components: 2
 
-      - name: Copy Frontend to Xserver
+      - name: Copy Static Frontend to Xserver
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.XSERVER_HOST }}
           username: ${{ secrets.XSERVER_USER }}
           key: ${{ secrets.XSERVER_SSH_KEY }}
           port: ${{ secrets.XSERVER_PORT }}
-          source: "frontend/.next/standalone/"
-          target: "/home/xs799946/mountain-info.com/frontend"
-          strip_components: 3
-
-      - name: Copy .htaccess to public_html
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.XSERVER_HOST }}
-          username: ${{ secrets.XSERVER_USER }}
-          key: ${{ secrets.XSERVER_SSH_KEY }}
-          port: ${{ secrets.XSERVER_PORT }}
-          source: "docker/xserver/.htaccess"
-          target: "/home/xs799946/mountain-info.com/public_html"
+          source: "frontend/out/"
+          target: "/home/xs799946/mountain-info.com/public_html/renewal"
           strip_components: 2
 
-      # ── 4. 재시작 ───────────────────────────────────────────────
+      - name: Copy proxy.php and .htaccess to public_html
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.XSERVER_HOST }}
+          username: ${{ secrets.XSERVER_USER }}
+          key: ${{ secrets.XSERVER_SSH_KEY }}
+          port: ${{ secrets.XSERVER_PORT }}
+          source: "docker/xserver/proxy.php,docker/xserver/.htaccess"
+          target: "/home/xs799946/mountain-info.com/public_html/renewal"
+          strip_components: 2
+
+      # ── 4. 백엔드 재시작 ─────────────────────────────────────────
       - name: Restart Backend
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -90,11 +82,12 @@ jobs:
             set +a
 
             cd /home/xs799946/mountain-info.com/backend
-            fuser -k 8080/tcp || true
+            fuser -k 8081/tcp || true
             sleep 1
 
             nohup /home/xs799946/jdk-17.0.10+7/bin/java -Xms128M -Xmx256M \
               -DSPRING_PROFILES_ACTIVE=prod \
+              -DSERVER_PORT=8081 \
               -DSPRING_DATASOURCE_URL="jdbc:mysql://${RDS_ENDPOINT}:3306/${MYSQL_DATABASE}?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&serverTimezone=Asia/Tokyo" \
               -DSPRING_DATASOURCE_USERNAME="${MYSQL_USER}" \
               -DSPRING_DATASOURCE_PASSWORD="${MYSQL_PASSWORD}" \
@@ -118,25 +111,4 @@ jobs:
               -DS3_PUBLIC_BASE_URL="${S3_PUBLIC_BASE_URL}" \
               -jar *.jar > nohup-backend.out 2>&1 &
 
-            echo "Backend started"
-
-      - name: Restart Frontend
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.XSERVER_HOST }}
-          username: ${{ secrets.XSERVER_USER }}
-          key: ${{ secrets.XSERVER_SSH_KEY }}
-          port: ${{ secrets.XSERVER_PORT }}
-          script: |
-            cd /home/xs799946/mountain-info.com/frontend
-
-            fuser -k 3000/tcp || true
-            sleep 1
-
-            BACKEND_URL=http://localhost:8080 \
-            PORT=3000 \
-            HOSTNAME=0.0.0.0 \
-            NODE_ENV=production \
-            nohup node server.js > nohup-frontend.out 2>&1 &
-
-            echo "Frontend started"
+            echo "Backend started on port 8081"

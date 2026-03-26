@@ -1,6 +1,5 @@
-// Next.js rewrites(/api/backend/*) 를 통해 백엔드로 프록시됨
-// next.config.ts: source "/api/backend/:path*" → destination "${BACKEND_URL}/api/:path*"
-const API_BASE = "/api/backend";
+// 정적 배포: /api/v1/... → .htaccess → proxy.php → localhost:8081
+const API_BASE = "";
 
 // ── Types ───────────────────────────────────────────────────
 export type BoardPost = {

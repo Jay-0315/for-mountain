@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   fetchServiceCategories,
   fetchServiceItemDetail,
@@ -15,7 +15,8 @@ import MarkdownContent from "@/components/ui/MarkdownContent";
 import { renderServiceCategoryIcon } from "@/components/ui/service-category-icons";
 
 export default function ServiceDetailClient() {
-  const { id } = useParams<{ id: string }>();
+  const pathname = usePathname();
+  const id = pathname.split("/").pop() ?? "";
   const router = useRouter();
   const [item, setItem] = useState<ServiceItemDto | null>(null);
   const [categories, setCategories] = useState<ServiceCategoryDto[]>([]);

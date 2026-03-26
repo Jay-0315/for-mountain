@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
 
-const BASE_URL = "http://13.239.33.235";
+export const dynamic = "force-static";
+
+const BASE_URL = "https://mountain-info.com";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: MetadataRoute.Sitemap = [
@@ -14,8 +16,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   try {
     const [newsRes, servicesRes] = await Promise.allSettled([
-      fetch(`${BASE_URL}/api/backend/api/v1/board?page=0&size=100`),
-      fetch(`${BASE_URL}/api/backend/api/v1/service-items`),
+      fetch(`${BASE_URL}/api/v1/board?page=0&size=100`),
+      fetch(`${BASE_URL}/api/v1/service-items`),
     ]);
 
     const dynamicRoutes: MetadataRoute.Sitemap = [];

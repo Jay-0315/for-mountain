@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { fetchBoardDetail, fetchBoardList, type BoardPost } from "@/lib/api";
 import GridRunnerBackdrop from "@/components/ui/GridRunnerBackdrop";
 
@@ -33,7 +33,8 @@ function ArticleBody({ content }: { content: string }) {
 }
 
 export default function NewsDetailClient() {
-  const { id } = useParams<{ id: string }>();
+  const pathname = usePathname();
+  const id = pathname.split("/").pop() ?? "";
   const router = useRouter();
 
   const [post, setPost] = useState<BoardPost | null>(null);

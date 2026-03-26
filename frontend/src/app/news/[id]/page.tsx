@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import NewsDetailClient from "./NewsDetailClient";
 
+export function generateStaticParams() {
+  return [{ id: "_" }];
+}
+
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "ニュース詳細",

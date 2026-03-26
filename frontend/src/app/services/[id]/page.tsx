@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import ServiceDetailClient from "./ServiceDetailClient";
 
+export function generateStaticParams() {
+  return [{ id: "_" }];
+}
+
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "事業詳細",
