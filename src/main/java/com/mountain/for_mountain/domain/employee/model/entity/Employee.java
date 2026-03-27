@@ -103,4 +103,9 @@ public class Employee {
         this.annualLeaveDays = annualLeaveDays;
         this.updatedAt = LocalDateTime.now();
     }
+
+    public void updateDepartment(String department) {
+        this.department = department;
+        this.updatedAt = LocalDateTime.now();
+    }
 }

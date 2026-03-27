@@ -3,6 +3,7 @@ package com.mountain.for_mountain.domain.group.service;
 import com.mountain.for_mountain.common.CustomException;
 import com.mountain.for_mountain.common.ErrorCode;
 import com.mountain.for_mountain.domain.employee.repository.EmployeeRepository;
+import com.mountain.for_mountain.domain.employee.model.entity.Employee;
 import com.mountain.for_mountain.domain.group.dto.GroupRequest;
 import com.mountain.for_mountain.domain.group.dto.GroupResponse;
 import com.mountain.for_mountain.domain.group.model.entity.Group;
@@ -42,7 +43,8 @@ public class GroupService {
                 request.getLeaderId(),
                 request.getParentGroupId()
         ));
-        saveMembers(group.getId(), request.getLeaderId(), request.getMemberIds());
+        List<Long> syncedMemberIds = saveMembers(group.getId(), request.getLeaderId(), request.getMemberIds());
+        syncEmployeeDepartments(syncedMemberIds, group.getName());
         return toResponse(group);
     }
 
@@ -51,9 +53,14 @@ public class GroupService {
         Group group = groupRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.GROUP_NOT_FOUND));
         validateGroupRequest(id, request);
+        List<Long> previousMemberIds = groupMemberRepository.findByGroupId(id).stream()
+                .map(GroupMember::getEmployeeId)
+                .toList();
         group.update(request.getName(), request.getDescription(), request.getLeaderId(), request.getParentGroupId());
         groupMemberRepository.deleteByGroupId(id);
-        saveMembers(id, request.getLeaderId(), request.getMemberIds());
+        List<Long> syncedMemberIds = saveMembers(id, request.getLeaderId(), request.getMemberIds());
+        syncEmployeeDepartments(syncedMemberIds, group.getName());
+        restoreEmployeeDepartmentsAfterGroupChange(previousMemberIds, syncedMemberIds, group.getParentGroupId());
         return toResponse(group);
     }
 
@@ -61,21 +68,29 @@ public class GroupService {
     public void delete(Long id) {
         Group group = groupRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.GROUP_NOT_FOUND));
+        List<Long> previousMemberIds = groupMemberRepository.findByGroupId(id).stream()
+                .map(GroupMember::getEmployeeId)
+                .toList();
         groupMemberRepository.deleteByGroupId(id);
         groupRepository.delete(group);
+        restoreEmployeeDepartmentsAfterGroupChange(previousMemberIds, List.of(), group.getParentGroupId());
     }
 
-    private void saveMembers(Long groupId, Long leaderId, List<Long> memberIds) {
+    private List<Long> saveMembers(Long groupId, Long leaderId, List<Long> memberIds) {
         List<Long> normalizedMemberIds = new ArrayList<>(memberIds);
         if (leaderId != null) {
             normalizedMemberIds.add(leaderId);
         }
 
-        List<GroupMember> members = normalizedMemberIds.stream()
+        List<Long> distinctMemberIds = normalizedMemberIds.stream()
                 .distinct()
+                .toList();
+
+        List<GroupMember> members = distinctMemberIds.stream()
                 .map(employeeId -> GroupMember.of(groupId, employeeId))
                 .toList();
         groupMemberRepository.saveAll(members);
+        return distinctMemberIds;
     }
 
     private GroupResponse toResponse(Group group) {
@@ -141,5 +156,48 @@ public class GroupService {
             }
             collectDescendants(child.getId(), allGroups, descendants);
         }
+    }
+
+    private void syncEmployeeDepartments(List<Long> employeeIds, String departmentName) {
+        if (employeeIds.isEmpty()) {
+            return;
+        }
+
+        employeeRepository.findAllById(employeeIds)
+                .forEach(employee -> employee.updateDepartment(departmentName));
+    }
+
+    private void restoreEmployeeDepartmentsAfterGroupChange(List<Long> previousMemberIds, List<Long> currentMemberIds, Long fallbackParentGroupId) {
+        Set<Long> removedMemberIds = new HashSet<>(previousMemberIds);
+        removedMemberIds.removeAll(currentMemberIds);
+        if (removedMemberIds.isEmpty()) {
+            return;
+        }
+
+        String fallbackDepartment = null;
+        if (fallbackParentGroupId != null) {
+            fallbackDepartment = groupRepository.findById(fallbackParentGroupId)
+                    .map(Group::getName)
+                    .orElse(null);
+        }
+
+        for (Employee employee : employeeRepository.findAllById(removedMemberIds)) {
+            String departmentToApply = resolveEmployeeDepartmentFromGroups(employee.getId());
+            if (departmentToApply == null) {
+                departmentToApply = fallbackDepartment;
+            }
+            if (departmentToApply != null && !departmentToApply.isBlank()) {
+                employee.updateDepartment(departmentToApply);
+            }
+        }
+    }
+
+    private String resolveEmployeeDepartmentFromGroups(Long employeeId) {
+        return groupRepository.findAllByOrderByCreatedAtAsc().stream()
+                .filter(group -> groupMemberRepository.findByGroupId(group.getId()).stream()
+                        .anyMatch(member -> member.getEmployeeId().equals(employeeId)))
+                .map(Group::getName)
+                .findFirst()
+                .orElse(null);
     }
 }

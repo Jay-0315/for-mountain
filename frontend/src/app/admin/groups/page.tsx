@@ -135,75 +135,43 @@ function GroupModal({
         </div>
 
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
-          {isEdit ? (
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">グループ名</label>
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400"
-              />
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">
+              {isEdit ? "グループ区分" : "追加方式"}
+            </label>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setCreateMode("independent")}
+                className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+                  createMode === "independent" ? "admin-pill-active" : "admin-pill"
+                }`}
+              >
+                独立部門
+              </button>
+              <button
+                type="button"
+                onClick={() => setCreateMode("subgroup")}
+                className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+                  createMode === "subgroup" ? "admin-pill-active" : "admin-pill"
+                }`}
+              >
+                傘下グループ
+              </button>
             </div>
-          ) : (
-            <>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">追加方式</label>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setCreateMode("independent")}
-                    className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
-                      createMode === "independent" ? "admin-pill-active" : "admin-pill"
-                    }`}
-                  >
-                    独立部門
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCreateMode("subgroup")}
-                    className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
-                      createMode === "subgroup" ? "admin-pill-active" : "admin-pill"
-                    }`}
-                  >
-                    傘下グループ
-                  </button>
-                </div>
-              </div>
+          </div>
 
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">グループ名</label>
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="新しいグループ名を入力してください。"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-400"
-                />
-              </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">グループ名</label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={isEdit ? "" : "新しいグループ名を入力してください。"}
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-400"
+            />
+          </div>
 
-              {createMode === "subgroup" && (
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-slate-700">親グループ</label>
-                  <select
-                    value={parentGroupId}
-                    onChange={(e) => setParentGroupId(e.target.value ? Number(e.target.value) : "")}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400"
-                  >
-                    {parentOptions.length === 0 ? (
-                      <option value="">選択できるグループがありません</option>
-                    ) : (
-                      parentOptions.map((parentGroup) => (
-                        <option key={parentGroup.id} value={parentGroup.id}>
-                          {parentGroup.name}
-                        </option>
-                      ))
-                    )}
-                  </select>
-                </div>
-              )}
-            </>
-          )}
-
-          {isEdit && createMode === "subgroup" && (
+          {createMode === "subgroup" && (
             <div>
               <label className="mb-1.5 block text-sm font-medium text-slate-700">親グループ</label>
               <select
@@ -211,11 +179,15 @@ function GroupModal({
                 onChange={(e) => setParentGroupId(e.target.value ? Number(e.target.value) : "")}
                 className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400"
               >
-                {parentOptions.map((parentGroup) => (
-                  <option key={parentGroup.id} value={parentGroup.id}>
-                    {parentGroup.name}
-                  </option>
-                ))}
+                {parentOptions.length === 0 ? (
+                  <option value="">選択できるグループがありません</option>
+                ) : (
+                  parentOptions.map((parentGroup) => (
+                    <option key={parentGroup.id} value={parentGroup.id}>
+                      {parentGroup.name}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
           )}

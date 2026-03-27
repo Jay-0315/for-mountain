@@ -1,13 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { createEmployee, deleteEmployee, fetchEmployees, fetchGroups, resolveLeaderMemberIds, type EmployeeDto, updateEmployee } from "@/lib/api";
+import { createEmployee, deleteEmployee, fetchEmployees, fetchGroups, resolveLeaderMemberIds, type EmployeeDto, type GroupDto, updateEmployee } from "@/lib/api";
 import { getSessionPayload, getSessionRole } from "@/lib/session";
-
-type Department =
-  | "開発 Part1" | "開発 Part2"
-  | "技術グループ1" | "技術グループ2" | "技術本部"
-  | "サービスグループ" | "営業１グループ" | "管理部";
 
 type EmployeeStatus = "在籍" | "休職" | "退職";
 type Position = "代表取締役" | "常務" | "部長" | "課長" | "課長代理" | "主任" | "社員";
@@ -33,38 +28,35 @@ const DEPT_COLOR: Record<string, string> = {
 function deptColorKey(value: string) {
   return value.replace(/\s+/g, "").trim();
 }
-
-const DEPARTMENTS: Department[] = [
-  "開発 Part1", "開発 Part2",
-  "技術グループ1", "技術グループ2", "技術本部",
-  "サービスグループ", "営業１グループ", "管理部",
-];
 const POSITIONS: Position[] = ["代表取締役", "常務", "部長", "課長", "課長代理", "主任", "社員"];
 const JOB_TITLES: JobTitle[] = ["役員", "管理職", "一般社員"];
 
 type FilterStatus = "すべて" | EmployeeStatus;
-type FilterDept   = "すべて" | Department;
+type FilterDept   = "すべて" | string;
 
 // ── 추가/수정 모달 ────────────────────────────────────────────
 function EmployeeModal({
   employee,
+  departments,
   token,
   onClose,
   onSaved,
 }: {
   employee: EmployeeDto | null;
+  departments: string[];
   token: string;
   onClose: () => void;
   onSaved: () => void;
 }) {
   const isEdit = employee !== null;
+  const defaultDepartment = employee?.department ?? departments[0] ?? "";
   const [form, setForm] = useState({
     employeeNumber: employee?.employeeNumber ?? "",
     name:           employee?.name ?? "",
     nameKana:       employee?.nameKana ?? "",
     nationality:    employee?.nationality ?? "韓国",
     birthDate:      employee?.birthDate ?? "",
-    department:     employee?.department ?? "開発 Part1",
+    department:     defaultDepartment,
     position:       employee?.position ?? "社員",
     jobTitle:       employee?.jobTitle ?? "一般社員",
     joinDate:       employee?.joinDate ?? "",
@@ -138,7 +130,7 @@ function EmployeeModal({
           ))}
 
           {[
-            { label: "部署",       key: "department", options: DEPARTMENTS },
+            { label: "部署",       key: "department", options: departments },
             { label: "職級",       key: "position",   options: POSITIONS },
             { label: "職責",       key: "jobTitle",   options: JOB_TITLES },
             { label: "ステータス", key: "status",     options: ["在籍", "休職", "退職"] },
@@ -198,6 +190,7 @@ function EmployeeModal({
 // ── 메인 페이지 ───────────────────────────────────────────────
 export default function EmployeesPage() {
   const [employees, setEmployees]   = useState<EmployeeDto[]>([]);
+  const [groups, setGroups]         = useState<GroupDto[]>([]);
   const [token, setToken]           = useState("");
   const [isAdmin, setIsAdmin]       = useState(false);
   const [leaderMemberIds, setLeaderMemberIds] = useState<number[] | null>(null);
@@ -219,6 +212,7 @@ export default function EmployeesPage() {
       const t = sessionStorage.getItem("admin_token") ?? "";
       const { sub } = getSessionPayload(t);
       const [allEmployees, groups] = await Promise.all([fetchEmployees(), fetchGroups()]);
+      setGroups(groups);
       const me = allEmployees.find((e) => e.employeeNumber === sub) ?? null;
       const memberIds = me ? resolveLeaderMemberIds(groups, me.id) : null;
       setLeaderMemberIds(memberIds);
@@ -231,6 +225,14 @@ export default function EmployeesPage() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  const departments = Array.from(
+    new Set(
+      [...groups.map((group) => group.name), ...employees.map((employee) => employee.department)]
+        .map((department) => department.trim())
+        .filter(Boolean)
+    )
+  );
 
   const filtered = employees.filter((e) => {
     if (statusFilter !== "すべて" && e.status !== statusFilter) return false;
@@ -257,6 +259,7 @@ export default function EmployeesPage() {
         <EmployeeModal
           token={token}
           employee={modalEmployee ?? null}
+          departments={departments}
           onClose={() => setModalEmployee(undefined)}
           onSaved={() => { setModalEmployee(undefined); load(); }}
         />
@@ -306,7 +309,7 @@ export default function EmployeesPage() {
                        focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white"
           >
             <option value="すべて">すべての部署</option>
-            {DEPARTMENTS.map((d) => <option key={d} value={d}>{d}</option>)}
+            {departments.map((d) => <option key={d} value={d}>{d}</option>)}
           </select>
           <select
             value={statusFilter}
