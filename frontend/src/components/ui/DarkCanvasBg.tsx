@@ -90,6 +90,7 @@ export default function DarkCanvasBg() {
   const ambientRef     = useRef<HTMLDivElement>(null);
   const blob1Ref       = useRef<HTMLDivElement>(null);
   const blob2Ref       = useRef<HTMLDivElement>(null);
+  const lastPointerRef = useRef<{ clientX: number; clientY: number } | null>(null);
 
   /* canvas animation */
   useEffect(() => {
@@ -138,12 +139,23 @@ export default function DarkCanvasBg() {
     };
     addAmbient(); addAmbient();
 
-    const onMove = (e: MouseEvent) => {
+    const syncPointer = (clientX: number, clientY: number) => {
       const rect = wrap.getBoundingClientRect();
-      pointer.tx = e.clientX - rect.left;
-      pointer.ty = e.clientY - rect.top;
+      pointer.tx = clientX - rect.left;
+      pointer.ty = clientY - rect.top;
     };
-    wrap.addEventListener("mousemove", onMove);
+    const onMove = (e: MouseEvent) => {
+      lastPointerRef.current = { clientX: e.clientX, clientY: e.clientY };
+      syncPointer(e.clientX, e.clientY);
+    };
+    const onViewportChange = () => {
+      const lastPointer = lastPointerRef.current;
+      if (!lastPointer) return;
+      syncPointer(lastPointer.clientX, lastPointer.clientY);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("scroll", onViewportChange, { passive: true });
+    window.addEventListener("resize", onViewportChange);
 
     let rafId: number;
     const draw = () => {
@@ -197,7 +209,19 @@ export default function DarkCanvasBg() {
           const ti = Math.floor(snakeProgress[si]) - ci;
           if (ti < 0 || ti >= trail.length) continue;
           const pt = trail[ti];
-          ctx.fillStyle = `rgba(253,186,116,${0.055+(runner.length-ci)*0.028})`;
+          const yRatio = pt.y / Math.max(canvas.height, 1);
+          const sectionFade =
+            yRatio < 0.38
+              ? 1
+              : yRatio < 0.62
+                ? 0.78
+                : yRatio < 0.82
+                  ? 0.56
+                  : 0.38;
+          const pointerDist = Math.hypot(pt.x - pointer.x, pt.y - pointer.y);
+          const pointerBoost = 1 + Math.max(0, 1 - pointerDist / 260) * 0.32;
+          const runnerAlpha = (0.055 + (runner.length - ci) * 0.028) * sectionFade * pointerBoost;
+          ctx.fillStyle = `rgba(253,186,116,${runnerAlpha})`;
           ctx.fillRect(Math.round(pt.x+RUNNER_CELL_OFFSET.x), Math.round(pt.y+RUNNER_CELL_OFFSET.y), RUNNER_CELL_SIZE, RUNNER_CELL_SIZE);
         }
       });
@@ -236,7 +260,9 @@ export default function DarkCanvasBg() {
     return () => {
       cancelAnimationFrame(rafId);
       ro.disconnect();
-      wrap.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("scroll", onViewportChange);
+      window.removeEventListener("resize", onViewportChange);
     };
   }, []);
 
@@ -281,15 +307,30 @@ export default function DarkCanvasBg() {
   /* blob mouse parallax */
   useEffect(() => {
     const wrap = wrapRef.current; if (!wrap) return;
-    const onMove = (e: MouseEvent) => {
+    const syncBlobPosition = (clientX: number, clientY: number) => {
       const rect = wrap.getBoundingClientRect();
-      const xR = ((e.clientX-rect.left)/rect.width  - 0.5) * 2;
-      const yR = ((e.clientY-rect.top) /rect.height - 0.5) * 2;
+      const xR = ((clientX - rect.left) / rect.width - 0.5) * 2;
+      const yR = ((clientY - rect.top) / rect.height - 0.5) * 2;
       gsap.to(blob1Ref.current, { x:xR*40, y:yR*28, duration:1.4, ease:"power2.out" });
       gsap.to(blob2Ref.current, { x:xR*-28, y:yR*-20, duration:1.8, ease:"power2.out" });
     };
-    wrap.addEventListener("mousemove", onMove);
-    return () => wrap.removeEventListener("mousemove", onMove);
+    const onMove = (e: MouseEvent) => {
+      lastPointerRef.current = { clientX: e.clientX, clientY: e.clientY };
+      syncBlobPosition(e.clientX, e.clientY);
+    };
+    const onViewportChange = () => {
+      const lastPointer = lastPointerRef.current;
+      if (!lastPointer) return;
+      syncBlobPosition(lastPointer.clientX, lastPointer.clientY);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("scroll", onViewportChange, { passive: true });
+    window.addEventListener("resize", onViewportChange);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("scroll", onViewportChange);
+      window.removeEventListener("resize", onViewportChange);
+    };
   }, []);
 
   return (

@@ -651,7 +651,7 @@ export default function HeroSection() {
     <section
       ref={containerRef}
       id="top"
-      className="relative z-10 min-h-screen flex items-center justify-center overflow-hidden"
+      className="relative z-10 -mb-px min-h-screen flex items-center justify-center overflow-hidden"
     >
       {/* Canvas Particle 배경 */}
       <canvas
@@ -707,9 +707,8 @@ export default function HeroSection() {
 
       <div ref={glowRef1} className="absolute left-1/2 top-[16%] h-[44vh] w-[22vw] -translate-x-[115%] rounded-full bg-gradient-to-br from-orange-400/8 via-orange-300/4 to-transparent blur-3xl pointer-events-none" />
       <div ref={glowRef2} className="absolute left-1/2 bottom-[22%] h-[38vh] w-[16vw] translate-x-[12%] rounded-full bg-gradient-to-tr from-amber-300/7 via-orange-300/4 to-transparent blur-3xl pointer-events-none" />
-
       {/* 메인 콘텐츠 */}
-      <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
+      <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
         {/* 배지 */}
         <div className="hero-badge inline-flex items-center gap-2 px-4 py-2 bg-orange-600/10 border border-orange-500/20 rounded-full text-orange-400 text-sm font-medium mb-8 shadow-[0_10px_24px_rgba(249,115,22,0.08)] backdrop-blur-sm">
           <span className="w-2 h-2 bg-orange-400 rounded-full animate-pulse" />
