@@ -1,8 +1,6 @@
 import type { MetadataRoute } from "next";
-
 export const dynamic = "force-static";
-
-const BASE_URL = "https://mountain-info.com";
+import { BASE_URL } from "@/lib/site";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: MetadataRoute.Sitemap = [

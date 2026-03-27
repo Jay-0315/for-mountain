@@ -1,20 +1,27 @@
 Options -Indexes
 RewriteEngine On
 
-# ── API → PHP 프록시 ────────────────────────────────────────
+# HTTP → HTTPS 강제 전환
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+# 403/404 에러 방어막
+ErrorDocument 403 /index.html
+ErrorDocument 404 /index.html
+
+# API → PHP 프록시
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^api/v1/(.*)$ /proxy.php [QSA,L]
 
-# ── 업로드 파일 → PHP 프록시 ─────────────────────────────────
+# 업로드 파일 → PHP 프록시
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^uploads/(.*)$ /proxy.php [QSA,L]
 
-# ── 동적 라우트 → placeholder HTML 서빙 ────────────────────────
-# 직접 URL 접근 시 placeholder 페이지로 라우팅 (JS가 실제 ID 읽음)
+# 동적 라우트 → placeholder HTML
 RewriteRule ^services/(?!_$)([^/]+)/?$ /services/_/index.html [L]
 RewriteRule ^news/(?!_$)([^/]+)/?$ /news/_/index.html [L]
 
-# ── SPA 폴백 (그 외 미매칭 경로) ──────────────────────────────
+# SPA 폴백
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ /index.html [L]
