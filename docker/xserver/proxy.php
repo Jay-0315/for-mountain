@@ -32,6 +32,15 @@ foreach (getallheaders() as $k => $v) {
     if (strtolower($k) === 'host') continue;
     $headers[] = "$k: $v";
 }
+
+// xserver/FastCGI 환경에서는 Authorization 헤더가 getallheaders()에
+// 누락될 수 있어 서버 변수에서 한 번 더 보정한다.
+if (!empty($_SERVER['HTTP_AUTHORIZATION'])) {
+    $headers[] = 'Authorization: ' . $_SERVER['HTTP_AUTHORIZATION'];
+} elseif (!empty($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+    $headers[] = 'Authorization: ' . $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+}
+
 curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 curl_setopt($ch, CURLOPT_HEADER, true);
 
