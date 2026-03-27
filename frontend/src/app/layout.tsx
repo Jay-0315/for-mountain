@@ -2,7 +2,18 @@ import type { Metadata } from "next";
 import "./globals.css";
 import ScrollProgressBar from "@/components/layout/ScrollProgressBar";
 import CustomCursor from "@/components/ui/CustomCursor";
-import { BASE_URL, DEFAULT_OG_IMAGE, GOOGLE_SITE_VERIFICATION } from "@/lib/site";
+import {
+  BASE_URL,
+  COMPANY_ADDRESS_LOCALITY,
+  COMPANY_ADDRESS_REGION,
+  COMPANY_NAME_EN,
+  COMPANY_NAME_JA,
+  COMPANY_PHONE,
+  COMPANY_POSTAL_CODE,
+  COMPANY_STREET_ADDRESS,
+  DEFAULT_OG_IMAGE,
+  GOOGLE_SITE_VERIFICATION,
+} from "@/lib/site";
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
@@ -11,29 +22,33 @@ export const metadata: Metadata = {
     template: "%s | 株式会社マウンテン",
   },
   description:
-    "株式会社マウンテンはITエンジニアのアウトソーシング、自社開発とネットワーク通信機器の製品開発と販売を両立する、IT総合カンパニーです。",
+    "株式会社マウンテンは東京都千代田区岩本町を拠点に、ITエンジニアのアウトソーシング、自社開発、ネットワーク通信機器の製品開発と販売を行うIT総合カンパニーです。",
   keywords: [
-    "株式会社マウンテン",
+    COMPANY_NAME_JA,
+    COMPANY_NAME_EN,
     "ITエンジニア",
     "アウトソーシング",
     "ネットワーク通信機器",
     "システム開発",
+    "SES",
+    "岩本町",
+    "千代田区",
     "IT総合カンパニー",
   ],
   openGraph: {
     type: "website",
     locale: "ja_JP",
     url: BASE_URL,
-    siteName: "株式会社マウンテン",
+    siteName: COMPANY_NAME_JA,
     title: "株式会社マウンテン | ITエンジニアリング・ネットワーク通信機器",
     description:
-      "株式会社マウンテンはITエンジニアのアウトソーシング、自社開発とネットワーク通信機器の製品開発と販売を両立する、IT総合カンパニーです。",
+      "株式会社マウンテンは東京都千代田区岩本町を拠点に、ITエンジニアのアウトソーシング、自社開発、ネットワーク通信機器の製品開発と販売を行うIT総合カンパニーです。",
     images: [
       {
         url: DEFAULT_OG_IMAGE,
         width: 1200,
         height: 630,
-        alt: "株式会社マウンテン",
+        alt: COMPANY_NAME_JA,
       },
     ],
   },
@@ -41,7 +56,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "株式会社マウンテン | ITエンジニアリング・ネットワーク通信機器",
     description:
-      "株式会社マウンテンはITエンジニアのアウトソーシング、自社開発とネットワーク通信機器の製品開発と販売を両立する、IT総合カンパニーです。",
+      "株式会社マウンテンは東京都千代田区岩本町を拠点に、ITエンジニアのアウトソーシング、自社開発、ネットワーク通信機器の製品開発と販売を行うIT総合カンパニーです。",
     images: [DEFAULT_OG_IMAGE],
   },
   robots: { index: true, follow: true },
@@ -54,12 +69,19 @@ export const metadata: Metadata = {
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
-  name: "株式会社マウンテン",
+  name: COMPANY_NAME_JA,
+  alternateName: [COMPANY_NAME_EN, "マウンテン"],
   url: BASE_URL,
+  logo: DEFAULT_OG_IMAGE,
   description:
-    "ITエンジニアのアウトソーシング、自社開発とネットワーク通信機器の製品開発・販売を行うIT総合カンパニー。",
+    "東京都千代田区岩本町を拠点に、ITエンジニアのアウトソーシング、自社開発とネットワーク通信機器の製品開発・販売を行うIT総合カンパニー。",
+  telephone: COMPANY_PHONE,
   address: {
     "@type": "PostalAddress",
+    postalCode: COMPANY_POSTAL_CODE,
+    addressRegion: COMPANY_ADDRESS_REGION,
+    addressLocality: COMPANY_ADDRESS_LOCALITY,
+    streetAddress: COMPANY_STREET_ADDRESS,
     addressCountry: "JP",
   },
   sameAs: [],

@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import Header from "@/components/layout/Header";
+import { BASE_URL, COMPANY_NAME_EN, COMPANY_NAME_JA } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: { absolute: "株式会社MOUNTAIN" },
+  title: {
+    absolute: `${COMPANY_NAME_JA} | ${COMPANY_NAME_EN} | ITエンジニアリング・ネットワーク通信機器`,
+  },
   description:
-    "株式会社マウンテンの公式サイト。ITエンジニアリング・ネットワーク通信機器事業を通じ、お客様のビジネスを支えるIT総合カンパニーです。",
-  alternates: { canonical: "https://mountain-info.com" },
+    "株式会社マウンテンの公式サイト。東京都千代田区岩本町を拠点に、ITエンジニアリング・ネットワーク通信機器事業を通じ、お客様のビジネスを支えるIT総合カンパニーです。",
+  alternates: { canonical: BASE_URL },
 };
 import Footer from "@/components/layout/Footer";
 import HeroSection from "@/components/sections/HeroSection";

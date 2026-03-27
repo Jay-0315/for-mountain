@@ -2,6 +2,12 @@
 
 import Link from "next/link";
 import GridRunnerBackdrop from "@/components/ui/GridRunnerBackdrop";
+import {
+  BASE_URL,
+  COMPANY_NAME_EN,
+  COMPANY_NAME_JA,
+  COMPANY_PHONE,
+} from "@/lib/site";
 
 export default function Footer() {
   return (
@@ -19,6 +25,20 @@ export default function Footer() {
               ネットワーク通信機器の製品開発・販売を両立する<br />
               IT総合カンパニーです。
             </p>
+            <dl className="mt-5 space-y-2 text-sm text-slate-400">
+              <div>
+                <dt className="sr-only">別表記</dt>
+                <dd>{COMPANY_NAME_EN}</dd>
+              </div>
+              <div>
+                <dt className="sr-only">電話番号</dt>
+                <dd>TEL: {COMPANY_PHONE}</dd>
+              </div>
+              <div>
+                <dt className="sr-only">URL</dt>
+                <dd>{BASE_URL.replace("https://", "")}</dd>
+              </div>
+            </dl>
           </div>
 
           <div className="flex gap-12">
@@ -45,7 +65,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-10 pt-6 border-t border-slate-800 text-xs text-slate-500">
-          © {new Date().getFullYear()} 株式会社マウンテン. All rights reserved.
+          © {new Date().getFullYear()} {COMPANY_NAME_JA}. All rights reserved.
         </div>
       </div>
     </footer>
