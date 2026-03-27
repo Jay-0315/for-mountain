@@ -103,6 +103,8 @@ function PAGE_LABEL(pathname: string): string {
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const normalizedPathname = pathname !== "/" ? pathname.replace(/\/+$/, "") : pathname;
+  const isLoginPage = normalizedPathname === "/admin";
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentEmployee, setCurrentEmployee] = useState<EmployeeDto | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
@@ -116,14 +118,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     const token = sessionStorage.getItem("admin_token");
-    if (!token && pathname !== "/admin") {
-      router.replace(`/admin?redirect=${encodeURIComponent(pathname)}`);
+    if (!token && !isLoginPage) {
+      router.replace(`/admin?redirect=${encodeURIComponent(normalizedPathname)}`);
       return;
     }
-  }, [pathname, router]);
+  }, [isLoginPage, normalizedPathname, router]);
 
   useEffect(() => {
-    if (pathname === "/admin") return;
+    if (isLoginPage) return;
     const token = sessionStorage.getItem("admin_token");
     const { sub } = getSessionPayload(token);
     if (!sub) return;
@@ -148,10 +150,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         setCurrentEmployee(null);
         setLeaderMemberIds(null);
       });
-  }, [pathname, role]);
+  }, [isLoginPage, role]);
 
   // 로그인 페이지는 레이아웃 없이 그냥 렌더링
-  if (pathname === "/admin") {
+  if (isLoginPage) {
     return <div className="min-h-screen bg-slate-50">{children}</div>;
   }
 
@@ -220,7 +222,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* 네비 */}
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
           {visibleNavItems.map((item) => {
-            const active = pathname.startsWith(item.href);
+            const active = normalizedPathname.startsWith(item.href);
             return (
               <Link
                 key={item.href}

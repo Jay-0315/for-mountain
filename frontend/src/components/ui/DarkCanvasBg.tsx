@@ -308,11 +308,14 @@ export default function DarkCanvasBg() {
   useEffect(() => {
     const wrap = wrapRef.current; if (!wrap) return;
     const syncBlobPosition = (clientX: number, clientY: number) => {
+      const blob1 = blob1Ref.current;
+      const blob2 = blob2Ref.current;
+      if (!blob1 || !blob2) return;
       const rect = wrap.getBoundingClientRect();
       const xR = ((clientX - rect.left) / rect.width - 0.5) * 2;
       const yR = ((clientY - rect.top) / rect.height - 0.5) * 2;
-      gsap.to(blob1Ref.current, { x:xR*40, y:yR*28, duration:1.4, ease:"power2.out" });
-      gsap.to(blob2Ref.current, { x:xR*-28, y:yR*-20, duration:1.8, ease:"power2.out" });
+      gsap.to(blob1, { x:xR*40, y:yR*28, duration:1.4, ease:"power2.out" });
+      gsap.to(blob2, { x:xR*-28, y:yR*-20, duration:1.8, ease:"power2.out" });
     };
     const onMove = (e: MouseEvent) => {
       lastPointerRef.current = { clientX: e.clientX, clientY: e.clientY };

@@ -21,15 +21,39 @@ curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
 curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 
 // 요청 바디 전달 (POST/PUT/PATCH)
+$contentType = $_SERVER['CONTENT_TYPE'] ?? $_SERVER['HTTP_CONTENT_TYPE'] ?? '';
+$isMultipart = stripos($contentType, 'multipart/form-data') === 0;
+
 if (in_array($method, ['POST', 'PUT', 'PATCH'])) {
-    $body = file_get_contents('php://input');
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
+    if ($isMultipart) {
+        $postFields = [];
+
+        foreach ($_POST as $key => $value) {
+            $postFields[$key] = $value;
+        }
+
+        foreach ($_FILES as $key => $file) {
+            if (!isset($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
+                continue;
+            }
+
+            $mimeType = $file['type'] ?? 'application/octet-stream';
+            $originalName = $file['name'] ?? 'upload.bin';
+            $postFields[$key] = new CURLFile($file['tmp_name'], $mimeType, $originalName);
+        }
+
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
+    } else {
+        $body = file_get_contents('php://input');
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
+    }
 }
 
 // 헤더 전달 (Host 제외)
 $headers = [];
 foreach (getallheaders() as $k => $v) {
     if (strtolower($k) === 'host') continue;
+    if ($isMultipart && in_array(strtolower($k), ['content-length', 'content-type'])) continue;
     $headers[] = "$k: $v";
 }
 

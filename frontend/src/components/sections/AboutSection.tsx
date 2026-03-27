@@ -16,7 +16,7 @@ const companyInfo = [
   { label: "主な取引銀行", value: "朝日信用金庫、ハナ銀行" },
   { label: "事業内容",     value: "製品開発、ITソリューション、コンサル事業等" },
   { label: "適格請求書",   value: "T3010001224503" },
-  { label: "加入団体",     value: "日本商工会議所\n東京中小企業家同友会\n韓国企業連合会（KOBA）" },
+  { label: "加入団体",     value: "東京商工会議所\n東京中小企業家同友会\n韓国企業連合会（KOBA）" },
 ];
 
 const tabs = [

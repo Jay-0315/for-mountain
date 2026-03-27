@@ -84,7 +84,7 @@ function AdminPageContent() {
               autoComplete="username"
               className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-slate-900
                          focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent
-                         placeholder:text-slate-300 text-sm"
+                         placeholder:text-slate-300 text-base md:text-sm"
             />
           </div>
 
@@ -101,7 +101,7 @@ function AdminPageContent() {
               autoComplete="current-password"
               className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-slate-900
                          focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent
-                         placeholder:text-slate-300 text-sm"
+                         placeholder:text-slate-300 text-base md:text-sm"
             />
           </div>
 

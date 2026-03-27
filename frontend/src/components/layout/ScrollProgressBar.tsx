@@ -9,9 +9,11 @@ export default function ScrollProgressBar() {
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
+    const bar = barRef.current;
+    if (!bar) return;
 
     const ctx = gsap.context(() => {
-      gsap.to(barRef.current, {
+      gsap.to(bar, {
         scaleX: 1,
         ease: "none",
         transformOrigin: "left center",

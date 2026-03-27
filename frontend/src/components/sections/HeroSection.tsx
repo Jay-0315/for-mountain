@@ -484,15 +484,18 @@ export default function HeroSection() {
   // ── 마우스 패럴랙스 (Blob) ─────────────────────────────────────
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
+      const blob1 = blobRef1.current;
+      const blob2 = blobRef2.current;
+      if (!blob1 || !blob2) return;
       const xR = (e.clientX / window.innerWidth - 0.5) * 2;
       const yR = (e.clientY / window.innerHeight - 0.5) * 2;
-      gsap.to(blobRef1.current, {
+      gsap.to(blob1, {
         x: xR * 50,
         y: yR * 35,
         duration: 1.4,
         ease: "power2.out",
       });
-      gsap.to(blobRef2.current, {
+      gsap.to(blob2, {
         x: xR * -35,
         y: yR * -25,
         duration: 1.8,
@@ -506,6 +509,12 @@ export default function HeroSection() {
   // ── GSAP 타임라인 + TextPlugin ────────────────────────────────
   useGSAP(
     () => {
+      const halo = haloRef.current;
+      const codeRain = codeRainRef.current;
+      const glow1 = glowRef1.current;
+      const glow2 = glowRef2.current;
+      if (!halo || !codeRain || !glow1 || !glow2) return;
+
       // 초기 상태
       gsap.set(
         [".hero-badge", ".hero-title-line1", ".hero-cta-1", ".hero-scroll"],
@@ -513,11 +522,11 @@ export default function HeroSection() {
       );
       gsap.set(".hero-sub", { opacity: 0, y: 20 });
       gsap.set(".hero-typing", { opacity: 0 });
-      gsap.set([haloRef.current, codeRainRef.current], {
+      gsap.set([halo, codeRain], {
         opacity: 0,
         scale: 0.92,
       });
-      gsap.set([glowRef1.current, glowRef2.current], {
+      gsap.set([glow1, glow2], {
         opacity: 0.22,
         scale: 1,
       });
@@ -536,9 +545,9 @@ export default function HeroSection() {
       });
       const codeLines = gsap.utils.toArray<HTMLElement>(".hero-code-line");
 
-      tl.to(haloRef.current, { opacity: 1, scale: 1, duration: 1.2, ease: "power2.out" })
+      tl.to(halo, { opacity: 1, scale: 1, duration: 1.2, ease: "power2.out" })
         .to(
-          codeRainRef.current,
+          codeRain,
           {
             opacity: 1,
             scale: 1,
@@ -589,7 +598,7 @@ export default function HeroSection() {
         ">-0.05"
       )
         .to(".hero-code-mask", { opacity: 0, yPercent: 10, duration: 0.34 }, "<")
-        .to(codeRainRef.current, { opacity: 0, duration: 0.24 }, "<")
+        .to(codeRain, { opacity: 0, duration: 0.24 }, "<")
         .to(".hero-badge", { opacity: 1, y: 0, duration: 0.7 }, "-=0.3")
         .to(".hero-title-line1", { opacity: 1, y: 0, duration: 0.8 }, "-=0.3")
         .to(
@@ -613,7 +622,7 @@ export default function HeroSection() {
         .to(".hero-cta-1", { opacity: 1, y: 0, duration: 0.6 }, "-=0.4")
         .to(".hero-scroll", { opacity: 1, y: 0, duration: 0.5 }, "-=0.2");
 
-      gsap.to(haloRef.current, {
+      gsap.to(halo, {
         scale: 1.04,
         opacity: 0.62,
         duration: 4.6,
@@ -622,7 +631,7 @@ export default function HeroSection() {
         ease: "sine.inOut",
       });
 
-      gsap.to(glowRef1.current, {
+      gsap.to(glow1, {
         opacity: 0.12,
         scale: 1.1,
         x: 42,
@@ -633,7 +642,7 @@ export default function HeroSection() {
         ease: "sine.inOut",
       });
 
-      gsap.to(glowRef2.current, {
+      gsap.to(glow2, {
         opacity: 0.1,
         scale: 1.12,
         x: -56,
