@@ -14,6 +14,7 @@ public enum ErrorCode {
     INVALID_CURRENCY(HttpStatus.BAD_REQUEST, "Unknown currency."),
     EXCHANGE_RATE_FETCH_FAILED(HttpStatus.BAD_GATEWAY, "Cannot fetch exchange rates."),
     INVALID_UPLOAD_REQUEST(HttpStatus.BAD_REQUEST, "Invalid upload request."),
+    INSUFFICIENT_LEAVE_BALANCE(HttpStatus.BAD_REQUEST, "Requested leave days exceed remaining balance."),
     WEAK_PASSWORD(HttpStatus.BAD_REQUEST, "Password must be at least 4 characters."),
     INVALID_SETUP_TOKEN(HttpStatus.BAD_REQUEST, "Invalid setup token."),
     SETUP_TOKEN_EXPIRED(HttpStatus.BAD_REQUEST, "Setup token has expired."),

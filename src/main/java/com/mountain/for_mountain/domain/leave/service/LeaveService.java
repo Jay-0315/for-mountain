@@ -77,6 +77,7 @@ public class LeaveService {
     public LeaveResponse create(LeaveCreateRequest request) {
         Employee employee = employeeRepository.findById(request.getEmployeeId())
                 .orElseThrow(() -> new CustomException(ErrorCode.ACCOUNT_NOT_FOUND));
+        validateLeaveDaysWithinBalance(employee, request.getDays());
         Leave leave = Leave.create(
                 employee.getId(),
                 request.getLeaveType(),
@@ -103,6 +104,7 @@ public class LeaveService {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
 
+        validateLeaveDaysWithinBalance(currentEmployee, request.getDays());
         leave.updateDetails(
                 request.getLeaveType(),
                 LocalDate.parse(request.getStartDate()),
@@ -247,5 +249,13 @@ public class LeaveService {
                 ? frontendBaseUrl.substring(0, frontendBaseUrl.length() - 1)
                 : frontendBaseUrl;
         return normalizedBaseUrl + "/admin/leave/" + leaveId;
+    }
+
+    private void validateLeaveDaysWithinBalance(Employee employee, Integer requestedDays) {
+        int remainingDays = employee.getAnnualLeaveDays() == null ? 0 : employee.getAnnualLeaveDays();
+        int days = requestedDays == null ? 0 : requestedDays;
+        if (days > remainingDays) {
+            throw new CustomException(ErrorCode.INSUFFICIENT_LEAVE_BALANCE);
+        }
     }
 }

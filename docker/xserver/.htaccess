@@ -31,7 +31,7 @@ RewriteRule ^(.+?)/?$ /$1.html [L]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_URI} !^/admin/leave/__next\.
-RewriteRule ^admin/leave/([^/]+)/?$ /admin/leave/[id].html [L]
+RewriteRule ^admin/leave/([^/]+)/?$ /admin/leave/_.html [L]
 
 # 서비스/뉴스 상세 placeholder
 RewriteRule ^services/(?!_$)([^/]+)/?$ /services/_/index.html [L]
