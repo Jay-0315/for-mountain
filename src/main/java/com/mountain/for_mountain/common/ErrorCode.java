@@ -15,6 +15,8 @@ public enum ErrorCode {
     EXCHANGE_RATE_FETCH_FAILED(HttpStatus.BAD_GATEWAY, "Cannot fetch exchange rates."),
     INVALID_UPLOAD_REQUEST(HttpStatus.BAD_REQUEST, "Invalid upload request."),
     INSUFFICIENT_LEAVE_BALANCE(HttpStatus.BAD_REQUEST, "Requested leave days exceed remaining balance."),
+    INVALID_GROUP_PARENT(HttpStatus.BAD_REQUEST, "Invalid parent group."),
+    INVALID_GROUP_MEMBER(HttpStatus.BAD_REQUEST, "Invalid group member."),
     WEAK_PASSWORD(HttpStatus.BAD_REQUEST, "Password must be at least 4 characters."),
     INVALID_SETUP_TOKEN(HttpStatus.BAD_REQUEST, "Invalid setup token."),
     SETUP_TOKEN_EXPIRED(HttpStatus.BAD_REQUEST, "Setup token has expired."),
@@ -36,6 +38,7 @@ public enum ErrorCode {
     SERVICE_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "Service item not found."),
     DEPT_NOTICE_NOT_FOUND(HttpStatus.NOT_FOUND, "Department notice not found."),
     LEAVE_NOT_FOUND(HttpStatus.NOT_FOUND, "Leave request not found."),
+    GROUP_NOT_FOUND(HttpStatus.NOT_FOUND, "Group not found."),
     ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, "Account not found."),
 
     // 409

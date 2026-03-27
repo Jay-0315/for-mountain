@@ -14,7 +14,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +35,7 @@ public class GroupService {
 
     @Transactional
     public GroupResponse create(GroupRequest request) {
+        validateGroupRequest(null, request);
         Group group = groupRepository.save(Group.create(
                 request.getName(),
                 request.getDescription(),
@@ -46,7 +49,8 @@ public class GroupService {
     @Transactional
     public GroupResponse update(Long id, GroupRequest request) {
         Group group = groupRepository.findById(id)
-                .orElseThrow(() -> new CustomException(ErrorCode.ACCESS_DENIED));
+                .orElseThrow(() -> new CustomException(ErrorCode.GROUP_NOT_FOUND));
+        validateGroupRequest(id, request);
         group.update(request.getName(), request.getDescription(), request.getLeaderId(), request.getParentGroupId());
         groupMemberRepository.deleteByGroupId(id);
         saveMembers(id, request.getLeaderId(), request.getMemberIds());
@@ -56,7 +60,7 @@ public class GroupService {
     @Transactional
     public void delete(Long id) {
         Group group = groupRepository.findById(id)
-                .orElseThrow(() -> new CustomException(ErrorCode.ACCESS_DENIED));
+                .orElseThrow(() -> new CustomException(ErrorCode.GROUP_NOT_FOUND));
         groupMemberRepository.deleteByGroupId(id);
         groupRepository.delete(group);
     }
@@ -92,5 +96,50 @@ public class GroupService {
                 memberIds,
                 group.getParentGroupId()
         );
+    }
+
+    private void validateGroupRequest(Long groupId, GroupRequest request) {
+        if (!employeeRepository.existsById(request.getLeaderId())) {
+            throw new CustomException(ErrorCode.ACCOUNT_NOT_FOUND);
+        }
+
+        for (Long memberId : request.getMemberIds()) {
+            if (memberId == null || !employeeRepository.existsById(memberId)) {
+                throw new CustomException(ErrorCode.INVALID_GROUP_MEMBER);
+            }
+        }
+
+        Long parentGroupId = request.getParentGroupId();
+        if (parentGroupId == null) {
+            return;
+        }
+
+        if (groupId != null && groupId.equals(parentGroupId)) {
+            throw new CustomException(ErrorCode.INVALID_GROUP_PARENT);
+        }
+
+        if (!groupRepository.existsById(parentGroupId)) {
+            throw new CustomException(ErrorCode.INVALID_GROUP_PARENT);
+        }
+
+        if (groupId != null && isDescendant(groupId, parentGroupId)) {
+            throw new CustomException(ErrorCode.INVALID_GROUP_PARENT);
+        }
+    }
+
+    private boolean isDescendant(Long groupId, Long candidateParentId) {
+        List<Group> allGroups = groupRepository.findAllByOrderByCreatedAtAsc();
+        Set<Long> descendants = new HashSet<>();
+        collectDescendants(groupId, allGroups, descendants);
+        return descendants.contains(candidateParentId);
+    }
+
+    private void collectDescendants(Long groupId, List<Group> allGroups, Set<Long> descendants) {
+        for (Group child : allGroups) {
+            if (!groupId.equals(child.getParentGroupId()) || !descendants.add(child.getId())) {
+                continue;
+            }
+            collectDescendants(child.getId(), allGroups, descendants);
+        }
     }
 }
