@@ -27,7 +27,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String uri = request.getRequestURI();
-        return HttpMethod.GET.matches(request.getMethod()) && uri.startsWith("/api/v1/");
+        if (!(HttpMethod.GET.matches(request.getMethod()) && uri.startsWith("/api/v1/"))) {
+            return false;
+        }
+
+        String bearer = request.getHeader("Authorization");
+        return !StringUtils.hasText(bearer) || !bearer.startsWith("Bearer ");
     }
 
     @Override

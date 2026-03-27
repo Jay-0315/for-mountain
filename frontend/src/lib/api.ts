@@ -79,6 +79,10 @@ function authHeaders(token: string) {
   };
 }
 
+function authRequestHeaders(token?: string) {
+  return token ? { Authorization: `Bearer ${token}` } : undefined;
+}
+
 export async function createBoardPost(
   token: string,
   data: {
@@ -384,11 +388,13 @@ function normalizeLeave(leave: LeaveDto): LeaveDto {
 export async function fetchLeaves(params?: {
   status?: string;
   department?: string;
-}): Promise<LeaveDto[]> {
+}, token?: string): Promise<LeaveDto[]> {
   const q = new URLSearchParams();
   if (params?.status)     q.set("status", params.status);
   if (params?.department) q.set("department", params.department);
-  const res = await fetch(`${API_BASE}/api/v1/leaves?${q}`);
+  const res = await fetch(`${API_BASE}/api/v1/leaves?${q}`, {
+    headers: authRequestHeaders(token),
+  });
   if (!res.ok) throw new Error("Failed to fetch leaves");
   const leaves = (await res.json()) as LeaveDto[];
   return leaves.map(normalizeLeave);

@@ -25,7 +25,7 @@ export default function MyPage() {
     const token   = typeof window === "undefined" ? null : window.sessionStorage.getItem("admin_token");
     const subject = getSessionPayload(token).sub;
 
-    Promise.all([fetchEmployees(), fetchLeaves()])
+    Promise.all([fetchEmployees(), fetchLeaves(undefined, token ?? "")])
       .then(([employees, leaveRecords]) => {
         const currentEmployee = employees.find((e) => e.employeeNumber === subject) ?? null;
         setEmployee(currentEmployee);

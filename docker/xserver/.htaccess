@@ -17,6 +17,18 @@ RewriteRule ^api/v1/(.*)$ /proxy.php [QSA,L]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^uploads/(.*)$ /proxy.php [QSA,L]
 
+# 정적 export 페이지(.html) pretty URL 지원
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{DOCUMENT_ROOT}/$1.html -f
+RewriteRule ^(.+?)/?$ /$1.html [L]
+
+# 정적 export 디렉터리(index.html) pretty URL 지원
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{DOCUMENT_ROOT}/$1/index.html -f
+RewriteRule ^(.+?)/?$ /$1/index.html [L]
+
 # 동적 라우트 → placeholder HTML
 RewriteRule ^services/(?!_$)([^/]+)/?$ /services/_/index.html [L]
 RewriteRule ^news/(?!_$)([^/]+)/?$ /news/_/index.html [L]

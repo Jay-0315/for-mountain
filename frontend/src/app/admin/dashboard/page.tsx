@@ -367,7 +367,7 @@ export default function DashboardPage() {
   useEffect(() => {
     Promise.all([
       fetchEmployees().catch(() => [] as EmployeeDto[]),
-      fetchLeaves().catch(() => [] as LeaveDto[]),
+      fetchLeaves(undefined, typeof window !== "undefined" ? window.sessionStorage.getItem("admin_token") ?? "" : "").catch(() => [] as LeaveDto[]),
       fetchGroups().catch(() => []),
     ])
       .then(([employees, leaves, groups]) => {

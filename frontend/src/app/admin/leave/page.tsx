@@ -222,7 +222,8 @@ function LeavePageContent() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [leaves, employees, groups] = await Promise.all([fetchLeaves(), fetchEmployees(), fetchGroups()]);
+      const token = sessionStorage.getItem("admin_token") ?? "";
+      const [leaves, employees, groups] = await Promise.all([fetchLeaves(undefined, token), fetchEmployees(), fetchGroups()]);
       setRecords(leaves);
       setEmployees(employees);
       const sub = getSessionPayload(sessionStorage.getItem("admin_token")).sub;
