@@ -48,6 +48,10 @@ public class LeaveService {
     private String frontendBaseUrl;
 
     public List<LeaveResponse> getList(String status, String department, Authentication authentication) {
+        if (authentication == null || authentication.getName() == null || authentication.getName().isBlank()) {
+            return List.of();
+        }
+
         boolean isAdmin = authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
 
