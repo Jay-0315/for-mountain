@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import NewsDetailClient from "./NewsDetailClient";
 import { BASE_URL } from "@/lib/site";
+import { fetchNewsStaticParams } from "@/lib/static-params";
 
-export function generateStaticParams() {
-  return [{ id: "_" }];
+export async function generateStaticParams() {
+  return fetchNewsStaticParams();
 }
 
 type Props = {

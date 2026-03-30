@@ -54,6 +54,8 @@ function GroupModal({
   const [name, setName] = useState(group?.name ?? "");
   const [parentGroupId, setParentGroupId] = useState<number | "">(group?.parentGroupId ?? "");
   const [leaderId, setLeaderId] = useState<number | "">(group?.leaderId ?? "");
+  const [memberIds, setMemberIds] = useState<number[]>(group?.memberIds ?? []);
+  const [selectedMemberId, setSelectedMemberId] = useState<number | "">("");
   const [description, setDescription] = useState(group?.description ?? "");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -61,7 +63,18 @@ function GroupModal({
     return groups.filter((item) => item.id !== group?.id);
   }, [group?.id, groups]);
   const leaderOptions = employees.filter((employee) => employee.status === "在籍");
-  const memberIds = group?.memberIds ?? [];
+  const memberOptions = leaderOptions.filter((employee) => !memberIds.includes(employee.id));
+  const otherGroupByEmployeeId = useMemo(() => {
+    const entries = groups
+      .filter((item) => item.id !== group?.id)
+      .flatMap((item) => item.memberIds.map((employeeId) => [employeeId, item.name] as const));
+    return new Map<number, string>(entries);
+  }, [group?.id, groups]);
+
+  useEffect(() => {
+    if (!leaderId) return;
+    setMemberIds((prev) => (prev.includes(Number(leaderId)) ? prev : [...prev, Number(leaderId)]));
+  }, [leaderId]);
 
   useEffect(() => {
     if (createMode === "independent") {
@@ -92,6 +105,11 @@ function GroupModal({
       return;
     }
 
+    if (memberIds.length === 0) {
+      setError("所属メンバーを1名以上選択してください。");
+      return;
+    }
+
     setSaving(true);
     try {
       const payload = {
@@ -113,6 +131,19 @@ function GroupModal({
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleAddMember = () => {
+    if (!selectedMemberId) return;
+    setMemberIds((prev) => (prev.includes(Number(selectedMemberId)) ? prev : [...prev, Number(selectedMemberId)]));
+    setSelectedMemberId("");
+  };
+
+  const handleRemoveMember = (employeeId: number) => {
+    if (employeeId === leaderId) {
+      return;
+    }
+    setMemberIds((prev) => prev.filter((id) => id !== employeeId));
   };
 
   return (
@@ -227,6 +258,31 @@ function GroupModal({
               <p className="text-sm font-semibold text-slate-900">所属メンバー</p>
               <span className="text-xs text-slate-400">{memberIds.length}名</span>
             </div>
+            <div className="mt-3 flex gap-2">
+              <select
+                value={selectedMemberId}
+                onChange={(e) => setSelectedMemberId(e.target.value ? Number(e.target.value) : "")}
+                className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400"
+              >
+                <option value="">社員を選択してください</option>
+                {memberOptions.map((employee) => {
+                  const currentGroupName = otherGroupByEmployeeId.get(employee.id);
+                  return (
+                    <option key={employee.id} value={employee.id}>
+                      {employee.name}
+                      {currentGroupName ? ` (${currentGroupName} から移動)` : ""}
+                    </option>
+                  );
+                })}
+              </select>
+              <button
+                type="button"
+                onClick={handleAddMember}
+                className="rounded-xl border border-orange-200 bg-white px-4 py-3 text-sm font-semibold text-orange-500 transition-colors hover:bg-orange-50"
+              >
+                追加
+              </button>
+            </div>
             <div className="mt-3 flex flex-wrap gap-2">
               {memberIds.length === 0 ? (
                 <p className="text-xs text-slate-400">メンバーは別途設定してください。</p>
@@ -236,13 +292,31 @@ function GroupModal({
                   .map((employee) => (
                   <span
                     key={employee.id}
-                    className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-200"
+                    className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-200"
                   >
                     {employee.name}
+                    {employee.id === leaderId && (
+                      <span className="rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-semibold text-orange-500">
+                        リーダー
+                      </span>
+                    )}
+                    {employee.id !== leaderId && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveMember(employee.id)}
+                        className="text-slate-400 transition-colors hover:text-red-500"
+                        aria-label={`${employee.name}を削除`}
+                      >
+                        ×
+                      </button>
+                    )}
                   </span>
                   ))
               )}
             </div>
+            <p className="mt-3 text-xs text-slate-400">
+              他グループ所属の社員を追加すると、既存グループから自動で移動します。
+            </p>
           </div>
 
           {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-500">{error}</p>}

@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import ServiceDetailClient from "./ServiceDetailClient";
 import { BASE_URL } from "@/lib/site";
+import { fetchServiceStaticParams } from "@/lib/static-params";
 
-export function generateStaticParams() {
-  return [{ id: "_" }];
+export async function generateStaticParams() {
+  return fetchServiceStaticParams();
 }
 
 type Props = {

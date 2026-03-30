@@ -24,6 +24,8 @@ import java.util.Set;
 @Transactional(readOnly = true)
 public class GroupService {
 
+    private static final String PENDING_ASSIGNMENT_GROUP_NAME = "발령예정";
+
     private final GroupRepository groupRepository;
     private final GroupMemberRepository groupMemberRepository;
     private final EmployeeRepository employeeRepository;
@@ -86,6 +88,13 @@ public class GroupService {
         List<Long> distinctMemberIds = normalizedMemberIds.stream()
                 .distinct()
                 .toList();
+
+        // An employee can belong to only one group at a time.
+        for (Long employeeId : distinctMemberIds) {
+            groupMemberRepository.deleteByEmployeeId(employeeId);
+            clearLeaderFromOtherGroups(employeeId, groupId);
+        }
+        groupMemberRepository.flush();
 
         List<GroupMember> members = distinctMemberIds.stream()
                 .map(employeeId -> GroupMember.of(groupId, employeeId))
@@ -168,6 +177,12 @@ public class GroupService {
                 .forEach(employee -> employee.updateDepartment(departmentName));
     }
 
+    private void clearLeaderFromOtherGroups(Long employeeId, Long currentGroupId) {
+        groupRepository.findByLeaderId(employeeId).stream()
+                .filter(group -> !group.getId().equals(currentGroupId))
+                .forEach(Group::clearLeader);
+    }
+
     private void restoreEmployeeDepartmentsAfterGroupChange(List<Long> previousMemberIds, List<Long> currentMemberIds, Long fallbackParentGroupId) {
         Set<Long> removedMemberIds = new HashSet<>(previousMemberIds);
         removedMemberIds.removeAll(currentMemberIds);
@@ -182,14 +197,21 @@ public class GroupService {
                     .orElse(null);
         }
 
+        List<Long> pendingAssignmentEmployeeIds = new ArrayList<>();
         for (Employee employee : employeeRepository.findAllById(removedMemberIds)) {
             String departmentToApply = resolveEmployeeDepartmentFromGroups(employee.getId());
             if (departmentToApply == null) {
                 departmentToApply = fallbackDepartment;
             }
-            if (departmentToApply != null && !departmentToApply.isBlank()) {
-                employee.updateDepartment(departmentToApply);
+            if (departmentToApply == null || departmentToApply.isBlank()) {
+                pendingAssignmentEmployeeIds.add(employee.getId());
+                continue;
             }
+            employee.updateDepartment(departmentToApply);
+        }
+
+        if (!pendingAssignmentEmployeeIds.isEmpty()) {
+            assignEmployeesToPendingGroup(pendingAssignmentEmployeeIds);
         }
     }
 
@@ -200,5 +222,33 @@ public class GroupService {
                 .map(Group::getName)
                 .findFirst()
                 .orElse(null);
+    }
+
+    private void assignEmployeesToPendingGroup(List<Long> employeeIds) {
+        Group pendingGroup = ensurePendingAssignmentGroup();
+        List<Long> pendingMemberIds = new ArrayList<>(groupMemberRepository.findByGroupId(pendingGroup.getId()).stream()
+                .map(GroupMember::getEmployeeId)
+                .toList());
+
+        for (Long employeeId : employeeIds) {
+            if (!pendingMemberIds.contains(employeeId)) {
+                pendingMemberIds.add(employeeId);
+            }
+        }
+
+        groupMemberRepository.deleteByGroupId(pendingGroup.getId());
+        groupMemberRepository.flush();
+        saveMembers(pendingGroup.getId(), pendingGroup.getLeaderId(), pendingMemberIds);
+        syncEmployeeDepartments(employeeIds, pendingGroup.getName());
+    }
+
+    private Group ensurePendingAssignmentGroup() {
+        return groupRepository.findByName(PENDING_ASSIGNMENT_GROUP_NAME)
+                .orElseGet(() -> groupRepository.save(Group.create(
+                        PENDING_ASSIGNMENT_GROUP_NAME,
+                        "임시 소속 그룹",
+                        null,
+                        null
+                )));
     }
 }
