@@ -344,7 +344,10 @@ export async function updateGroup(
     headers: authHeaders(token),
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error("Failed to update group");
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    throw new Error((json as { message?: string }).message ?? "Failed to update group");
+  }
   return res.json();
 }
 

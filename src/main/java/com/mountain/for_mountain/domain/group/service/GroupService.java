@@ -58,6 +58,7 @@ public class GroupService {
                 .toList();
         group.update(request.getName(), request.getDescription(), request.getLeaderId(), request.getParentGroupId());
         groupMemberRepository.deleteByGroupId(id);
+        groupMemberRepository.flush();
         List<Long> syncedMemberIds = saveMembers(id, request.getLeaderId(), request.getMemberIds());
         syncEmployeeDepartments(syncedMemberIds, group.getName());
         restoreEmployeeDepartmentsAfterGroupChange(previousMemberIds, syncedMemberIds, group.getParentGroupId());
