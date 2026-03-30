@@ -109,12 +109,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [currentEmployee, setCurrentEmployee] = useState<EmployeeDto | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
   const [leaderMemberIds, setLeaderMemberIds] = useState<number[] | null | undefined>(undefined);
-  const [role, setRole] = useState<string | null>(null);
-
-  useEffect(() => {
-    const token = sessionStorage.getItem("admin_token");
-    setRole(getSessionRole(token));
-  }, []);
+  const token = typeof window === "undefined" ? null : window.sessionStorage.getItem("admin_token");
+  const role = getSessionRole(token);
 
   useEffect(() => {
     const token = sessionStorage.getItem("admin_token");
@@ -168,9 +164,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // 일반 USER만: 그룹(mygroup)
   const USER_ONLY_MENUS = ["/admin/mygroup"];
 
-  const loading = role === null || leaderMemberIds === undefined;
   const visibleNavItems = NAV_ITEMS.filter((item) => {
-    if (loading) return !SUPER_ADMIN_ONLY.includes(item.href) && !ADMIN_OR_LEADER.includes(item.href) && !USER_ONLY_MENUS.includes(item.href);
+    if (role === null) {
+      return !SUPER_ADMIN_ONLY.includes(item.href) && !ADMIN_OR_LEADER.includes(item.href) && !USER_ONLY_MENUS.includes(item.href);
+    }
+    if (leaderMemberIds === undefined && SUPER_ADMIN_ONLY.includes(item.href)) {
+      return false;
+    }
     if (SUPER_ADMIN_ONLY.includes(item.href)) return isTrueAdmin;
     if (ADMIN_OR_LEADER.includes(item.href)) return role === "ADMIN";
     if (USER_ONLY_MENUS.includes(item.href)) return role !== "ADMIN";
