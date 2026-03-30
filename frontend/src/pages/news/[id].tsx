@@ -264,7 +264,6 @@ export const getStaticProps: GetStaticProps<{
 
     return {
       props: { post, relatedPosts },
-      revalidate: 300,
     };
   } catch {
     return { notFound: true };

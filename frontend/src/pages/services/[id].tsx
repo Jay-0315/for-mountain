@@ -203,7 +203,6 @@ export const getStaticProps: GetStaticProps<{
 
     return {
       props: { item, categories },
-      revalidate: 300,
     };
   } catch {
     return { notFound: true };
