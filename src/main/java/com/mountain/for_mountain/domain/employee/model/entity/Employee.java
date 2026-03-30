@@ -37,7 +37,7 @@ public class Employee {
     @Column(nullable = false, length = 50)
     private String department;
 
-    // 代表取締役 / 常務 / 部長 / 課長 / 課長代理 / 主任 / 社員
+    // 代表取締役 / 常務 / 部長 / 次長 / 課長 / 課長代理 / 主任 / 社員
     @Column(nullable = false, length = 30)
     private String position;
 

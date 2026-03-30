@@ -5,7 +5,7 @@ import { createEmployee, deleteEmployee, fetchEmployees, fetchGroups, resolveLea
 import { getSessionPayload, getSessionRole } from "@/lib/session";
 
 type EmployeeStatus = "在籍" | "休職" | "退職";
-type Position = "代表取締役" | "常務" | "部長" | "課長" | "課長代理" | "主任" | "社員";
+type Position = "代表取締役" | "常務" | "部長" | "次長" | "課長" | "課長代理" | "主任" | "社員";
 type JobTitle = "役員" | "管理職" | "一般社員";
 
 const STATUS_COLOR: Record<string, string> = {
@@ -28,7 +28,7 @@ const DEPT_COLOR: Record<string, string> = {
 function deptColorKey(value: string) {
   return value.replace(/\s+/g, "").trim();
 }
-const POSITIONS: Position[] = ["代表取締役", "常務", "部長", "課長", "課長代理", "主任", "社員"];
+const POSITIONS: Position[] = ["代表取締役", "常務", "部長", "次長", "課長", "課長代理", "主任", "社員"];
 const JOB_TITLES: JobTitle[] = ["役員", "管理職", "一般社員"];
 
 type FilterStatus = "すべて" | EmployeeStatus;
