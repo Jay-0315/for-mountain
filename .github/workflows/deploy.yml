@@ -87,7 +87,7 @@ jobs:
             mkdir -p "${{ env.FRONTEND_TMP_DIR }}"
 
             find "${{ env.PUBLIC_DIR }}" -mindepth 1 -maxdepth 1 ! -name ".well-known" -exec rm -rf {} +
-            cp -R "${{ env.FRONTEND_TMP_DIR }}/out/"* "${{ env.PUBLIC_DIR }}/"
+            cp -R "${{ env.FRONTEND_TMP_DIR }}/"* "${{ env.PUBLIC_DIR }}/"
             cp "${{ env.FRONTEND_TMP_DIR }}/proxy.php" "${{ env.PUBLIC_DIR }}/proxy.php"
             cp "${{ env.FRONTEND_TMP_DIR }}/.htaccess" "${{ env.PUBLIC_DIR }}/.htaccess"
 
