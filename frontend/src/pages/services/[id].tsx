@@ -56,7 +56,7 @@ export default function ServiceDetailPage({ item, categories }: Props) {
                 <span>MOUNTAIN</span>
               </Link>
               <Link
-                href="/#services"
+                href="/services/"
                 className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-slate-200 transition-all hover:-translate-y-0.5 hover:border-orange-300/40 hover:bg-white/10 hover:text-white"
               >
                 一覧へ戻る

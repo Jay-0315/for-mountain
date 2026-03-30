@@ -138,7 +138,7 @@ export default function NewsDetailPage({ post, relatedPosts }: Props) {
 
               <div className="border-t border-slate-100 bg-slate-50/70 px-6 py-5 sm:px-8">
                 <Link
-                  href="/#news"
+                  href="/news/"
                   className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition-all hover:-translate-y-0.5 hover:border-orange-300 hover:text-orange-500 hover:shadow-sm hover:shadow-orange-100"
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -155,7 +155,7 @@ export default function NewsDetailPage({ post, relatedPosts }: Props) {
                       <p className="text-xs font-semibold uppercase tracking-[0.24em] text-orange-500">More News</p>
                       <h2 className="mt-2 text-xl font-bold text-slate-900">その他のお知らせ</h2>
                     </div>
-                    <Link href="/#news" className="text-sm font-semibold text-slate-500 hover:text-orange-500">
+                    <Link href="/news/" className="text-sm font-semibold text-slate-500 hover:text-orange-500">
                       一覧を見る
                     </Link>
                   </div>
