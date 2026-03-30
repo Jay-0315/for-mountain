@@ -38,7 +38,7 @@ function WebsiteManageTabBar({
 
 function WebsiteManagementPageContent() {
   const searchParams = useSearchParams();
-  const initialTab = searchParams.get("tab");
+  const initialTab = searchParams?.get("tab");
   const [activeTab, setActiveTab] = useState<WebsiteManageTab>(
     initialTab === "partners" || initialTab === "services" ? initialTab : "website"
   );

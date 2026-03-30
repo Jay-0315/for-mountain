@@ -2258,8 +2258,8 @@ function ServiceItemsTab() {
 
 function NoticePageContent() {
   const searchParams = useSearchParams();
-  const initialNoticeId = Number(searchParams.get("noticeId"));
-  const initialTab = searchParams.get("tab");
+  const initialNoticeId = Number(searchParams?.get("noticeId"));
+  const initialTab = searchParams?.get("tab");
   const [activeTab, setActiveTab] = useState<"internal" | "department">(
     initialTab === "department" ? "department" : "internal"
   );

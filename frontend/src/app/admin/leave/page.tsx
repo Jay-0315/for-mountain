@@ -215,9 +215,9 @@ function LeavePageContent() {
   const [leaderMemberIds, setLeaderMemberIds] = useState<number[] | null | undefined>(undefined);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("すべて");
   const [view, setView]                 = useState<PageView>("list");
-  const requestedView = searchParams.get("view");
-  const prefilledStartDate = searchParams.get("startDate") ?? "";
-  const prefilledEndDate = searchParams.get("endDate") ?? prefilledStartDate;
+  const requestedView = searchParams?.get("view");
+  const prefilledStartDate = searchParams?.get("startDate") ?? "";
+  const prefilledEndDate = searchParams?.get("endDate") ?? prefilledStartDate;
 
   const load = useCallback(async () => {
     setLoading(true);

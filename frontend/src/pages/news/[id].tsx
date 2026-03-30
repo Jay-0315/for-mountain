@@ -1,11 +1,11 @@
-"use client";
-
+import Head from "next/head";
 import Image from "next/image";
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { fetchBoardDetail, fetchBoardList, type BoardPost } from "@/lib/api";
+import type { GetStaticPaths, GetStaticProps, InferGetStaticPropsType } from "next";
 import GridRunnerBackdrop from "@/components/ui/GridRunnerBackdrop";
+import { stripMarkdown } from "@/components/ui/MarkdownContent";
+import { BASE_URL } from "@/lib/site";
+import type { BoardListResponse, BoardPost } from "@/lib/api";
 
 const categoryColors: Record<string, string> = {
   "お知らせ": "bg-blue-50 text-blue-600 ring-blue-100",
@@ -32,112 +32,70 @@ function ArticleBody({ content }: { content: string }) {
   );
 }
 
-export default function NewsDetailClient() {
-  const pathname = usePathname() ?? "";
-  const id = pathname.split("/").pop() ?? "";
-  const router = useRouter();
+type Props = InferGetStaticPropsType<typeof getStaticProps>;
 
-  const [post, setPost] = useState<BoardPost | null>(null);
-  const [relatedPosts, setRelatedPosts] = useState<BoardPost[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  useEffect(() => {
-    if (!id) return;
-
-    (async () => {
-      try {
-        const data = await fetchBoardDetail(Number(id));
-        setPost(data);
-        const list = await fetchBoardList(0, 8);
-        setRelatedPosts(
-          list.posts
-            .filter((item) => item.id !== Number(id))
-            .sort((a, b) => {
-              const aScore = a.category === data.category ? 1 : 0;
-              const bScore = b.category === data.category ? 1 : 0;
-              return bScore - aScore;
-            })
-            .slice(0, 4)
-        );
-      } catch {
-        setError(true);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [id]);
+export default function NewsDetailPage({ post, relatedPosts }: Props) {
+  const description =
+    stripMarkdown(post.content).slice(0, 120) ||
+    "株式会社マウンテンからのお知らせ・最新情報の詳細ページです。";
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#fff7ed_0%,#ffffff_28%,#f8fafc_100%)]">
-      <section className="relative overflow-hidden border-b border-orange-100/70 bg-slate-950 text-white">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(251,146,60,0.28),transparent_34%),radial-gradient(circle_at_80%_20%,rgba(148,163,184,0.22),transparent_30%)]" />
-        <GridRunnerBackdrop />
-        <div className="relative mx-auto max-w-5xl px-6 pb-18 pt-10 sm:pb-24 sm:pt-14">
-          <div className="flex items-center justify-between gap-4">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 text-sm font-medium text-slate-300 transition-colors hover:text-white"
-            >
-              <span className="text-orange-300">株式会社</span>
-              <span>MOUNTAIN</span>
-            </Link>
-          </div>
+    <>
+      <Head>
+        <title>{post.title}</title>
+        <meta name="description" content={description} />
+        <link rel="canonical" href={`${BASE_URL}/news/${post.id}`} />
+        <meta property="og:title" content={post.title} />
+        <meta property="og:description" content={description} />
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content={`${BASE_URL}/news/${post.id}`} />
+      </Head>
 
-          <div className="mt-10 max-w-3xl">
-            <div className="mb-5 flex flex-wrap items-center gap-3 text-sm text-slate-300">
-              <span>HOME</span>
-              <span className="text-slate-500">/</span>
-              <span>NEWS</span>
-              {!loading && post && (
-                <>
-                  <span className="text-slate-500">/</span>
-                  <span className="truncate text-slate-400">{post.category}</span>
-                </>
-              )}
+      <div className="min-h-screen bg-[linear-gradient(180deg,#fff7ed_0%,#ffffff_28%,#f8fafc_100%)]">
+        <section className="relative overflow-hidden border-b border-orange-100/70 bg-slate-950 text-white">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(251,146,60,0.28),transparent_34%),radial-gradient(circle_at_80%_20%,rgba(148,163,184,0.22),transparent_30%)]" />
+          <GridRunnerBackdrop />
+          <div className="relative mx-auto max-w-5xl px-6 pb-18 pt-10 sm:pb-24 sm:pt-14">
+            <div className="flex items-center justify-between gap-4">
+              <Link
+                href="/"
+                className="inline-flex items-center gap-2 text-sm font-medium text-slate-300 transition-colors hover:text-white"
+              >
+                <span className="text-orange-300">株式会社</span>
+                <span>MOUNTAIN</span>
+              </Link>
             </div>
 
-            {loading && (
-              <div className="animate-pulse space-y-5">
-                <div className="h-7 w-28 rounded-full bg-white/10" />
-                <div className="h-12 w-full max-w-2xl rounded-2xl bg-white/10" />
-                <div className="h-12 w-3/4 rounded-2xl bg-white/10" />
-                <div className="h-5 w-40 rounded-full bg-white/10" />
+            <div className="mt-10 max-w-3xl">
+              <div className="mb-5 flex flex-wrap items-center gap-3 text-sm text-slate-300">
+                <span>HOME</span>
+                <span className="text-slate-500">/</span>
+                <span>NEWS</span>
+                <span className="text-slate-500">/</span>
+                <span className="truncate text-slate-400">{post.category}</span>
               </div>
-            )}
 
-            {!loading && error && (
-              <div className="rounded-3xl border border-white/10 bg-white/5 px-6 py-8 text-slate-300">
-                記事が見つかりませんでした。
+              <div className="flex flex-wrap items-center gap-3">
+                <span
+                  className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
+                    categoryColors[post.category] ?? "bg-white/10 text-slate-200 ring-white/10"
+                  }`}
+                >
+                  {post.category}
+                </span>
+                <time className="font-mono text-sm text-slate-400">{formatDate(post.createdAt)}</time>
               </div>
-            )}
-
-            {!loading && post && (
-              <>
-                <div className="flex flex-wrap items-center gap-3">
-                  <span
-                    className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
-                      categoryColors[post.category] ?? "bg-white/10 text-slate-200 ring-white/10"
-                    }`}
-                  >
-                    {post.category}
-                  </span>
-                  <time className="font-mono text-sm text-slate-400">{formatDate(post.createdAt)}</time>
-                </div>
-                <h1 className="mt-6 text-3xl font-bold leading-tight text-white sm:text-5xl sm:leading-tight">
-                  {post.title}
-                </h1>
-                <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
-                  株式会社マウンテンからのお知らせを掲載しています。本文をご確認ください。
-                </p>
-              </>
-            )}
+              <h1 className="mt-6 text-3xl font-bold leading-tight text-white sm:text-5xl sm:leading-tight">
+                {post.title}
+              </h1>
+              <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
+                株式会社マウンテンからのお知らせを掲載しています。本文をご確認ください。
+              </p>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="mx-auto max-w-5xl px-6 py-10 sm:py-14">
-        {!loading && post && (
+        <section className="mx-auto max-w-5xl px-6 py-10 sm:py-14">
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_240px] lg:items-start">
             <article className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
               <div className="px-6 py-8 sm:px-8 sm:py-10">
@@ -179,15 +137,15 @@ export default function NewsDetailClient() {
               </div>
 
               <div className="border-t border-slate-100 bg-slate-50/70 px-6 py-5 sm:px-8">
-                <button
-                  onClick={() => router.push("/#news")}
+                <Link
+                  href="/#news"
                   className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition-all hover:-translate-y-0.5 hover:border-orange-300 hover:text-orange-500 hover:shadow-sm hover:shadow-orange-100"
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
                   お知らせ一覧に戻る
-                </button>
+                </Link>
               </div>
 
               {relatedPosts.length > 0 && (
@@ -203,9 +161,9 @@ export default function NewsDetailClient() {
                   </div>
                   <div className="grid gap-3">
                     {relatedPosts.map((item) => (
-                      <button
+                      <Link
                         key={item.id}
-                        onClick={() => router.push(`/news/${item.id}`)}
+                        href={`/news/${item.id}`}
                         className="flex items-start justify-between gap-4 rounded-2xl border border-slate-100 bg-slate-50/70 px-4 py-4 text-left transition-colors hover:border-orange-200 hover:bg-orange-50/60"
                       >
                         <div className="min-w-0">
@@ -224,7 +182,7 @@ export default function NewsDetailClient() {
                         <svg className="mt-1 h-4 w-4 shrink-0 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
-                      </button>
+                      </Link>
                     ))}
                   </div>
                 </div>
@@ -253,8 +211,62 @@ export default function NewsDetailClient() {
               </div>
             </aside>
           </div>
-        )}
-      </section>
-    </div>
+        </section>
+      </div>
+    </>
   );
 }
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  try {
+    const res = await fetch(`${BASE_URL}/api/v1/board?page=0&size=1000`);
+    if (!res.ok) {
+      throw new Error("Failed to fetch news paths");
+    }
+
+    const data = (await res.json()) as BoardListResponse;
+
+    return {
+      paths: (data.posts ?? []).map((post) => ({ params: { id: String(post.id) } })),
+      fallback: false,
+    };
+  } catch {
+    return { paths: [], fallback: false };
+  }
+};
+
+export const getStaticProps: GetStaticProps<{
+  post: BoardPost;
+  relatedPosts: BoardPost[];
+}> = async ({ params }) => {
+  const id = String(params?.id ?? "");
+
+  try {
+    const [postRes, listRes] = await Promise.all([
+      fetch(`${BASE_URL}/api/v1/board/${id}`),
+      fetch(`${BASE_URL}/api/v1/board?page=0&size=8`),
+    ]);
+
+    if (!postRes.ok || !listRes.ok) {
+      return { notFound: true };
+    }
+
+    const post = (await postRes.json()) as BoardPost;
+    const list = (await listRes.json()) as BoardListResponse;
+    const relatedPosts = (list.posts ?? [])
+      .filter((item) => item.id !== Number(id))
+      .sort((a, b) => {
+        const aScore = a.category === post.category ? 1 : 0;
+        const bScore = b.category === post.category ? 1 : 0;
+        return bScore - aScore;
+      })
+      .slice(0, 4);
+
+    return {
+      props: { post, relatedPosts },
+      revalidate: 300,
+    };
+  } catch {
+    return { notFound: true };
+  }
+};

@@ -15,11 +15,11 @@ function AdminPageContent() {
   const [rememberUsername, setRememberUsername] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const redirectPath = searchParams.get("redirect");
+  const redirectPath = searchParams?.get("redirect");
 
   useEffect(() => {
     const saved = sessionStorage.getItem("admin_token");
-    if (saved) router.replace(isSafeRedirectPath(redirectPath) ? redirectPath : "/admin/dashboard");
+    if (saved) router.replace(isSafeRedirectPath(redirectPath ?? null) ? redirectPath ?? "/admin/dashboard" : "/admin/dashboard");
 
     const remembered = localStorage.getItem(REMEMBERED_USERNAME_KEY);
     if (remembered) {
@@ -45,7 +45,7 @@ function AdminPageContent() {
         const { token } = await adminLogin(username, password);
         sessionStorage.setItem("admin_token", token);
       }
-      router.replace(isSafeRedirectPath(redirectPath) ? redirectPath : "/admin/dashboard");
+      router.replace(isSafeRedirectPath(redirectPath ?? null) ? redirectPath ?? "/admin/dashboard" : "/admin/dashboard");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "コードが正しくありません。");
     } finally {

@@ -23,7 +23,7 @@ const CANCELLABLE_STATUSES = new Set<LeaveDto["status"]>(["待機中", "拒否"]
 export default function LeaveDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const leaveId = Number(params.id);
+  const leaveId = Number(params?.id);
   const [token, setToken] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);

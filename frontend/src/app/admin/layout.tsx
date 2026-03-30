@@ -102,7 +102,7 @@ function PAGE_LABEL(pathname: string): string {
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const normalizedPathname = pathname !== "/" ? pathname.replace(/\/+$/, "") : pathname;
   const isLoginPage = normalizedPathname === "/admin";
   const [sidebarOpen, setSidebarOpen] = useState(false);

@@ -15,7 +15,7 @@ import MarkdownContent from "@/components/ui/MarkdownContent";
 import { renderServiceCategoryIcon } from "@/components/ui/service-category-icons";
 
 export default function ServiceDetailClient() {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const id = pathname.split("/").pop() ?? "";
   const router = useRouter();
   const [item, setItem] = useState<ServiceItemDto | null>(null);

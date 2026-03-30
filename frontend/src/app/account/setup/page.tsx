@@ -8,8 +8,8 @@ function AccountSetupPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const [username, setUsername] = useState(searchParams.get("username") ?? "");
-  const [setupToken, setSetupToken] = useState(searchParams.get("token") ?? "");
+  const [username, setUsername] = useState(searchParams?.get("username") ?? "");
+  const [setupToken, setSetupToken] = useState(searchParams?.get("token") ?? "");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [saving, setSaving] = useState(false);

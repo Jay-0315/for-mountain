@@ -15,7 +15,7 @@ const INTRO_CODE_LINES = [
 ];
 
 export default function PageIntro() {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const [done, setDone] = useState(false);
   const introRef = useRef<HTMLDivElement>(null);
 
