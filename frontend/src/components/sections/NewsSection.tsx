@@ -235,7 +235,7 @@ export default function NewsSection() {
             {!loading && items.map((item, i) => (
               <div
                 key={item.id}
-                onClick={() => router.push(`/news/${item.id}`)}
+                onClick={() => router.push(`/news/${item.id}/`)}
                 className={`news-item flex flex-col sm:flex-row sm:items-center gap-3 px-7 py-5 group
                   hover:bg-slate-50 transition-colors cursor-pointer
                   ${i !== items.length - 1 ? "border-b border-slate-100" : ""}`}

@@ -205,7 +205,7 @@ export default function NewsDetailClient() {
                     {relatedPosts.map((item) => (
                       <button
                         key={item.id}
-                        onClick={() => router.push(`/news/${item.id}`)}
+                        onClick={() => router.push(`/news/${item.id}/`)}
                         className="flex items-start justify-between gap-4 rounded-2xl border border-slate-100 bg-slate-50/70 px-4 py-4 text-left transition-colors hover:border-orange-200 hover:bg-orange-50/60"
                       >
                         <div className="min-w-0">

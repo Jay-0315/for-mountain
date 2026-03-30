@@ -163,7 +163,7 @@ export default function NewsDetailPage({ post, relatedPosts }: Props) {
                     {relatedPosts.map((item) => (
                       <Link
                         key={item.id}
-                        href={`/news/${item.id}`}
+                        href={`/news/${item.id}/`}
                         className="flex items-start justify-between gap-4 rounded-2xl border border-slate-100 bg-slate-50/70 px-4 py-4 text-left transition-colors hover:border-orange-200 hover:bg-orange-50/60"
                       >
                         <div className="min-w-0">
