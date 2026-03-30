@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import NewsDetailClient from "./NewsDetailClient";
 import { BASE_URL } from "@/lib/site";
 
+export const dynamic = "force-static";
+export const dynamicParams = false;
+
 export async function generateStaticParams() {
   try {
     const res = await fetch(`${BASE_URL}/api/v1/board?page=0&size=1000`, {
