@@ -1,10 +1,21 @@
 import type { Metadata } from "next";
 import ServiceDetailClient from "./ServiceDetailClient";
 import { BASE_URL } from "@/lib/site";
-import { fetchServiceStaticParams } from "@/lib/static-params";
 
 export async function generateStaticParams() {
-  return fetchServiceStaticParams();
+  try {
+    const res = await fetch(`${BASE_URL}/api/v1/service-items`, {
+      next: { revalidate: 300 },
+    });
+    if (!res.ok) {
+      throw new Error("Failed to fetch service static params");
+    }
+
+    const items = (await res.json()) as Array<{ id: number }>;
+    return items.map((item) => ({ id: String(item.id) }));
+  } catch {
+    return [];
+  }
 }
 
 type Props = {
