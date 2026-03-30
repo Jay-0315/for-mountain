@@ -4,6 +4,12 @@ on:
   push:
     branches: ["main"]
 
+env:
+  ROOT_DIR: /home/xs799946/mountain-info.com
+  BACKEND_DIR: /home/xs799946/mountain-info.com/backend
+  PUBLIC_DIR: /home/xs799946/mountain-info.com/public_html
+  FRONTEND_TMP_DIR: /home/xs799946/mountain-info.com/.deploy_frontend
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -43,10 +49,10 @@ jobs:
           key: ${{ secrets.XSERVER_SSH_KEY }}
           port: ${{ secrets.XSERVER_PORT }}
           source: "build/libs/*.jar"
-          target: "/home/xs799946/mountain-info.com/backend"
+          target: ${{ env.BACKEND_DIR }}
           strip_components: 2
 
-      - name: Copy Static Frontend to Xserver
+      - name: Copy Static Frontend to Xserver temp directory
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.XSERVER_HOST }}
@@ -54,10 +60,10 @@ jobs:
           key: ${{ secrets.XSERVER_SSH_KEY }}
           port: ${{ secrets.XSERVER_PORT }}
           source: "frontend/out/"
-          target: "/home/xs799946/mountain-info.com/public_html"
+          target: ${{ env.FRONTEND_TMP_DIR }}
           strip_components: 2
 
-      - name: Copy proxy.php and .htaccess to public_html
+      - name: Copy proxy.php and .htaccess to Xserver temp directory
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.XSERVER_HOST }}
@@ -65,8 +71,27 @@ jobs:
           key: ${{ secrets.XSERVER_SSH_KEY }}
           port: ${{ secrets.XSERVER_PORT }}
           source: "docker/xserver/proxy.php,docker/xserver/.htaccess"
-          target: "/home/xs799946/mountain-info.com/public_html"
+          target: ${{ env.FRONTEND_TMP_DIR }}
           strip_components: 2
+
+      - name: Publish Frontend
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.XSERVER_HOST }}
+          username: ${{ secrets.XSERVER_USER }}
+          key: ${{ secrets.XSERVER_SSH_KEY }}
+          port: ${{ secrets.XSERVER_PORT }}
+          script: |
+            set -eu
+            mkdir -p "${{ env.PUBLIC_DIR }}"
+            mkdir -p "${{ env.FRONTEND_TMP_DIR }}"
+
+            find "${{ env.PUBLIC_DIR }}" -mindepth 1 -maxdepth 1 ! -name ".well-known" -exec rm -rf {} +
+            cp -R "${{ env.FRONTEND_TMP_DIR }}/out/"* "${{ env.PUBLIC_DIR }}/"
+            cp "${{ env.FRONTEND_TMP_DIR }}/proxy.php" "${{ env.PUBLIC_DIR }}/proxy.php"
+            cp "${{ env.FRONTEND_TMP_DIR }}/.htaccess" "${{ env.PUBLIC_DIR }}/.htaccess"
+
+            ls -la "${{ env.PUBLIC_DIR }}" | head
 
       # ── 4. 백엔드 재시작 ─────────────────────────────────────────
       - name: Restart Backend
@@ -77,38 +102,27 @@ jobs:
           key: ${{ secrets.XSERVER_SSH_KEY }}
           port: ${{ secrets.XSERVER_PORT }}
           script: |
+            set -eu
             set -a
-            source /home/xs799946/mountain-info.com/.env
+            . "${{ env.ROOT_DIR }}/.env"
             set +a
 
-            cd /home/xs799946/mountain-info.com/backend
-            fuser -k 8081/tcp || true
-            sleep 1
+            OLD_PID="$(ps -ef | grep 'for-mountain-0.0.1-SNAPSHOT.jar' | grep -v grep | awk '{print $2}' || true)"
+            if [ -n "${OLD_PID:-}" ]; then
+              kill "${OLD_PID}" || true
+              sleep 3
+              if kill -0 "${OLD_PID}" 2>/dev/null; then
+                kill -9 "${OLD_PID}" || true
+                sleep 1
+              fi
+            fi
 
-            nohup /home/xs799946/jdk-17.0.10+7/bin/java -Xms128M -Xmx256M \
-              -DSPRING_PROFILES_ACTIVE=prod \
-              -DSERVER_PORT=8081 \
-              -DSPRING_DATASOURCE_URL="jdbc:mysql://${RDS_ENDPOINT}:3306/${MYSQL_DATABASE}?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&serverTimezone=Asia/Tokyo" \
-              -DSPRING_DATASOURCE_USERNAME="${MYSQL_USER}" \
-              -DSPRING_DATASOURCE_PASSWORD="${MYSQL_PASSWORD}" \
-              -DSPRING_DATA_REDIS_HOST="${SPRING_DATA_REDIS_HOST}" \
-              -DSPRING_DATA_REDIS_PORT="${SPRING_DATA_REDIS_PORT}" \
-              -DSPRING_DATA_REDIS_PASSWORD="${SPRING_DATA_REDIS_PASSWORD}" \
-              -DSPRING_DATA_REDIS_SSL="${SPRING_DATA_REDIS_SSL}" \
-              -DMAIL_HOST="${MAIL_HOST}" \
-              -DMAIL_PORT="${MAIL_PORT}" \
-              -DMAIL_USERNAME="${MAIL_USERNAME}" \
-              -DMAIL_PASSWORD="${MAIL_PASSWORD}" \
-              -DMAIL_TO="${MAIL_TO}" \
-              -DJWT_SECRET="${JWT_SECRET}" \
-              -DADMIN_INIT_USERNAME="${ADMIN_INIT_USERNAME}" \
-              -DADMIN_INIT_PASSWORD="${ADMIN_INIT_PASSWORD}" \
-              -DAPP_FRONTEND_BASE_URL="${APP_FRONTEND_BASE_URL}" \
-              -DAWS_REGION="${AWS_REGION}" \
-              -DAWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}" \
-              -DAWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}" \
-              -DS3_BUCKET="${S3_BUCKET}" \
-              -DS3_PUBLIC_BASE_URL="${S3_PUBLIC_BASE_URL}" \
-              -jar *.jar > nohup-backend.out 2>&1 &
+            cd "${{ env.BACKEND_DIR }}"
+            nohup /home/xs799946/jdk-17.0.10+7/bin/java \
+              -Dspring.profiles.active=prod \
+              -Xms128M -Xmx256M \
+              -jar for-mountain-0.0.1-SNAPSHOT.jar > nohup.out 2>&1 &
 
-            echo "Backend started on port 8081"
+            sleep 5
+            ps -ef | grep 'for-mountain-0.0.1-SNAPSHOT.jar' | grep -v grep || true
+            tail -n 30 nohup.out
