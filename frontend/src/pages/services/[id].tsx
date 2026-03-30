@@ -6,7 +6,7 @@ import GridRunnerBackdrop from "@/components/ui/GridRunnerBackdrop";
 import MarkdownContent, { stripMarkdown } from "@/components/ui/MarkdownContent";
 import { renderServiceCategoryIcon } from "@/components/ui/service-category-icons";
 import type { ServiceCategoryDto, ServiceItemDto } from "@/lib/api";
-import { BASE_URL } from "@/lib/site";
+import { BASE_URL, withTrailingSlash } from "@/lib/site";
 
 type Props = InferGetStaticPropsType<typeof getStaticProps>;
 
@@ -38,11 +38,11 @@ export default function ServiceDetailPage({ item, categories }: Props) {
       <Head>
         <title>{item.title}</title>
         <meta name="description" content={description} />
-        <link rel="canonical" href={`${BASE_URL}/services/${item.id}`} />
+        <link rel="canonical" href={withTrailingSlash(`/services/${item.id}`)} />
         <meta property="og:title" content={item.title} />
         <meta property="og:description" content={description} />
         <meta property="og:type" content="article" />
-        <meta property="og:url" content={`${BASE_URL}/services/${item.id}`} />
+        <meta property="og:url" content={withTrailingSlash(`/services/${item.id}`)} />
       </Head>
 
       <div className="min-h-screen bg-[linear-gradient(180deg,#fff7ed_0%,#ffffff_28%,#f8fafc_100%)]">

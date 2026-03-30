@@ -1,16 +1,11 @@
 "use client";
 
-import { useRef, useState, useCallback, useEffect, type ReactNode } from "react";
+import { useRef, useState, useCallback, type ReactNode } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  fetchServiceCategories,
-  fetchServiceItems,
-  type ServiceCategoryDto,
-  type ServiceItemDto,
-} from "@/lib/api";
+import { type ServiceCategoryDto, type ServiceItemDto } from "@/lib/api";
 import { stripMarkdown } from "@/components/ui/MarkdownContent";
 import { renderServiceCategoryIcon } from "@/components/ui/service-category-icons";
 
@@ -109,13 +104,22 @@ function getActiveCategory(categories: ServiceCategoryDto[], activeSlug: string 
   return categories[0]?.slug ?? null;
 }
 
-export default function ServicesSection() {
+type ServicesSectionProps = {
+  initialCategories?: ServiceCategoryDto[];
+  initialItems?: ServiceItemDto[];
+};
+
+export default function ServicesSection({
+  initialCategories = [],
+  initialItems = [],
+}: ServicesSectionProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const [activeTab, setActiveTab] = useState<string | null>(null);
-  const [items, setItems] = useState<ServiceItemDto[]>([]);
-  const [categories, setCategories] = useState<ServiceCategoryDto[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<string | null>(() =>
+    getActiveCategory(initialCategories, null)
+  );
+  const [items] = useState<ServiceItemDto[]>(initialItems);
+  const [categories] = useState<ServiceCategoryDto[]>(initialCategories);
 
   const switchTab = useCallback(
     (id: string) => {
@@ -167,21 +171,6 @@ export default function ServicesSection() {
     { scope: sectionRef }
   );
 
-  useEffect(() => {
-    Promise.all([fetchServiceCategories(), fetchServiceItems()])
-      .then(([fetchedCategories, fetchedItems]) => {
-        setCategories(fetchedCategories);
-        setItems(fetchedItems);
-        setActiveTab((prev) => getActiveCategory(fetchedCategories, prev));
-      })
-      .catch(() => {
-        setCategories([]);
-        setItems([]);
-      })
-      .finally(() => setLoading(false));
-  }, []);
-
-
   const activeCategory = categories.find((category) => category.slug === activeTab) ?? categories[0] ?? null;
   const activeItems = activeCategory
     ? items.filter((item) => item.category === activeCategory.slug)
@@ -232,11 +221,7 @@ export default function ServicesSection() {
             </div>
           )}
 
-          {loading ? (
-            <div className="rounded-2xl border border-slate-100 bg-white p-12 text-center shadow-sm">
-              <div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-orange-400 border-t-transparent" />
-            </div>
-          ) : categories.length === 0 ? (
+          {categories.length === 0 ? (
             <div className="rounded-2xl border border-slate-100 bg-white p-12 text-center text-sm text-slate-400 shadow-sm">
               登録されたカテゴリがありません。
             </div>

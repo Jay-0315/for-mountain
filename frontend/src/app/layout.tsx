@@ -13,6 +13,7 @@ import {
   COMPANY_STREET_ADDRESS,
   DEFAULT_OG_IMAGE,
   GOOGLE_SITE_VERIFICATION,
+  withTrailingSlash,
 } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -60,7 +61,7 @@ export const metadata: Metadata = {
     images: [DEFAULT_OG_IMAGE],
   },
   robots: { index: true, follow: true },
-  alternates: { canonical: BASE_URL },
+  alternates: { canonical: withTrailingSlash("/") },
   verification: {
     google: GOOGLE_SITE_VERIFICATION,
   },

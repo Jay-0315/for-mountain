@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { GetStaticPaths, GetStaticProps, InferGetStaticPropsType } from "next";
 import GridRunnerBackdrop from "@/components/ui/GridRunnerBackdrop";
 import { stripMarkdown } from "@/components/ui/MarkdownContent";
-import { BASE_URL } from "@/lib/site";
+import { BASE_URL, withTrailingSlash } from "@/lib/site";
 import type { BoardListResponse, BoardPost } from "@/lib/api";
 
 const categoryColors: Record<string, string> = {
@@ -44,11 +44,11 @@ export default function NewsDetailPage({ post, relatedPosts }: Props) {
       <Head>
         <title>{post.title}</title>
         <meta name="description" content={description} />
-        <link rel="canonical" href={`${BASE_URL}/news/${post.id}`} />
+        <link rel="canonical" href={withTrailingSlash(`/news/${post.id}`)} />
         <meta property="og:title" content={post.title} />
         <meta property="og:description" content={description} />
         <meta property="og:type" content="article" />
-        <meta property="og:url" content={`${BASE_URL}/news/${post.id}`} />
+        <meta property="og:url" content={withTrailingSlash(`/news/${post.id}`)} />
       </Head>
 
       <div className="min-h-screen bg-[linear-gradient(180deg,#fff7ed_0%,#ffffff_28%,#f8fafc_100%)]">

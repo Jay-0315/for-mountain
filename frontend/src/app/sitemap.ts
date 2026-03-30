@@ -1,15 +1,15 @@
 import type { MetadataRoute } from "next";
 export const dynamic = "force-static";
-import { BASE_URL } from "@/lib/site";
+import { BASE_URL, withTrailingSlash } from "@/lib/site";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: MetadataRoute.Sitemap = [
-    { url: BASE_URL, lastModified: new Date(), changeFrequency: "weekly", priority: 1.0 },
-    { url: `${BASE_URL}/about`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.8 },
-    { url: `${BASE_URL}/services`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.9 },
-    { url: `${BASE_URL}/news`, lastModified: new Date(), changeFrequency: "daily", priority: 0.9 },
-    { url: `${BASE_URL}/recruit`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.7 },
-    { url: `${BASE_URL}/contact`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
+    { url: withTrailingSlash("/"), lastModified: new Date(), changeFrequency: "weekly", priority: 1.0 },
+    { url: withTrailingSlash("/about"), lastModified: new Date(), changeFrequency: "monthly", priority: 0.8 },
+    { url: withTrailingSlash("/services"), lastModified: new Date(), changeFrequency: "weekly", priority: 0.9 },
+    { url: withTrailingSlash("/news"), lastModified: new Date(), changeFrequency: "daily", priority: 0.9 },
+    { url: withTrailingSlash("/recruit"), lastModified: new Date(), changeFrequency: "weekly", priority: 0.7 },
+    { url: withTrailingSlash("/contact"), lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
   ];
 
   try {
@@ -25,7 +25,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       const posts: { id: number; createdAt: string }[] = data.posts ?? data.content ?? [];
       posts.forEach((post) => {
         dynamicRoutes.push({
-          url: `${BASE_URL}/news/${post.id}`,
+          url: withTrailingSlash(`/news/${post.id}`),
           lastModified: new Date(post.createdAt),
           changeFrequency: "monthly",
           priority: 0.7,
@@ -37,7 +37,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       const items: { id: number; updatedAt?: string; createdAt: string }[] = await servicesRes.value.json();
       items.forEach((item) => {
         dynamicRoutes.push({
-          url: `${BASE_URL}/services/${item.id}`,
+          url: withTrailingSlash(`/services/${item.id}`),
           lastModified: new Date(item.updatedAt ?? item.createdAt),
           changeFrequency: "monthly",
           priority: 0.7,

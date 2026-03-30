@@ -1,5 +1,11 @@
 export const BASE_URL = "https://mountain-info.com";
 
+export function withTrailingSlash(path = ""): string {
+  if (!path || path === "/") return `${BASE_URL}/`;
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return `${BASE_URL}${normalizedPath.replace(/\/?$/, "/")}`;
+}
+
 export const DEFAULT_OG_IMAGE = `${BASE_URL}/mountain-logo.png`;
 
 export const GOOGLE_SITE_VERIFICATION = "google0088ddcc385ab3de";

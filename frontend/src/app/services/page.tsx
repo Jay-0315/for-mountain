@@ -1,22 +1,48 @@
 import type { Metadata } from "next";
 import Header from "@/components/layout/Header";
-import { BASE_URL } from "@/lib/site";
+import Footer from "@/components/layout/Footer";
+import ServicesSection from "@/components/sections/ServicesSection";
+import type { ServiceCategoryDto, ServiceItemDto } from "@/lib/api";
+import { BASE_URL, withTrailingSlash } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "事業内容",
   description:
     "株式会社マウンテンの事業内容。ITエンジニアリング・アウトソーシング・ネットワーク通信機器の製品開発・販売など幅広い事業をご紹介します。",
-  alternates: { canonical: `${BASE_URL}/services` },
+  alternates: { canonical: withTrailingSlash("/services") },
 };
-import Footer from "@/components/layout/Footer";
-import ServicesSection from "@/components/sections/ServicesSection";
 
-export default function ServicesPage() {
+async function fetchJson<T>(path: string): Promise<T> {
+  const response = await fetch(`${BASE_URL}${path}`, {
+    next: { revalidate: 3600 },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ${path}`);
+  }
+
+  return response.json() as Promise<T>;
+}
+
+export default async function ServicesPage() {
+  let categories: ServiceCategoryDto[] = [];
+  let items: ServiceItemDto[] = [];
+
+  try {
+    [categories, items] = await Promise.all([
+      fetchJson<ServiceCategoryDto[]>("/api/v1/service-categories"),
+      fetchJson<ServiceItemDto[]>("/api/v1/service-items"),
+    ]);
+  } catch {
+    categories = [];
+    items = [];
+  }
+
   return (
     <>
       <Header />
       <main className="pt-20">
-        <ServicesSection />
+        <ServicesSection initialCategories={categories} initialItems={items} />
       </main>
       <Footer />
     </>
