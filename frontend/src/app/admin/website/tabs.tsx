@@ -497,6 +497,18 @@ function moveItem<T extends { id: number }>(items: T[], activeId: number, target
   return nextItems;
 }
 
+function mergeOrderedSubset<T>(items: T[], predicate: (item: T) => boolean, orderedSubset: T[]) {
+  let subsetIndex = 0;
+  return items.map((item) => {
+    if (!predicate(item)) {
+      return item;
+    }
+    const nextItem = orderedSubset[subsetIndex];
+    subsetIndex += 1;
+    return nextItem ?? item;
+  });
+}
+
 export function WebsiteTab() {
   const [token] = useState(() => (typeof window === "undefined" ? "" : sessionStorage.getItem("admin_token") ?? ""));
   const isAdmin = hasAdminAccess(token);
@@ -1094,6 +1106,7 @@ export function ServiceItemsTab() {
   const [items, setItems] = useState<ServiceItemDto[]>([]);
   const [selectedItem, setSelectedItem] = useState<ServiceItemDto | null>(null);
   const [editItem, setEditItem] = useState<ServiceItemDto | null>(null);
+  const [listCategoryFilter, setListCategoryFilter] = useState("all");
   const [category, setCategory] = useState("");
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
@@ -1355,7 +1368,13 @@ export function ServiceItemsTab() {
 
   const handleReorder = async (activeId: number, targetId: number) => {
     if (!isAdmin || activeId === targetId) return;
-    const nextItems = moveItem(items, activeId, targetId);
+    const filterPredicate =
+      listCategoryFilter === "all"
+        ? () => true
+        : (item: ServiceItemDto) => item.category === listCategoryFilter;
+    const visibleItems = items.filter(filterPredicate);
+    const reorderedVisibleItems = moveItem(visibleItems, activeId, targetId);
+    const nextItems = mergeOrderedSubset(items, filterPredicate, reorderedVisibleItems);
     setItems(nextItems);
     setReordering(true);
     try {
@@ -1369,6 +1388,11 @@ export function ServiceItemsTab() {
       setDraggingId(null);
     }
   };
+
+  const visibleItems =
+    listCategoryFilter === "all"
+      ? items
+      : items.filter((item) => item.category === listCategoryFilter);
 
   if (view === "form") {
     return (
@@ -1506,6 +1530,7 @@ export function ServiceItemsTab() {
                 {contentBlocks.map((block, index) => (
                   <div
                     key={`${block.type}-${block.url ?? "text"}-${index}`}
+                    data-block-drag-root="true"
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={() => {
                       if (draggingBlockIndex === null || draggingBlockIndex === index) return;
@@ -1521,12 +1546,19 @@ export function ServiceItemsTab() {
                       <div className="flex items-center gap-2">
                         <span
                           draggable={isAdmin}
-                          onDragStart={() => setDraggingBlockIndex(index)}
+                          onDragStart={(e) => {
+                            setDraggingBlockIndex(index);
+                            const blockRoot = e.currentTarget.closest('[data-block-drag-root="true"]');
+                            if (blockRoot instanceof HTMLElement && e.dataTransfer) {
+                              e.dataTransfer.effectAllowed = "move";
+                              e.dataTransfer.setDragImage(blockRoot, 24, 20);
+                            }
+                          }}
                           onDragEnd={() => setDraggingBlockIndex(null)}
                           className={`inline-flex cursor-grab items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold active:cursor-grabbing ${
                             draggingBlockIndex === index
                               ? "border border-orange-400 bg-orange-500 text-white shadow-sm"
-                              : "border border-orange-200 bg-orange-50 text-orange-600"
+                              : "border border-orange-200 bg-orange-50 text-orange-600 hover:border-orange-300 hover:bg-orange-100"
                           }`}
                         >
                           <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
@@ -1848,19 +1880,33 @@ export function ServiceItemsTab() {
                 <th className="hidden px-5 py-3 text-left text-xs font-semibold text-slate-500 md:table-cell">이미지/첨부</th>
                 <th className="hidden px-5 py-3 text-left text-xs font-semibold text-slate-500 md:table-cell">日付</th>
                 <th className="px-5 py-3 text-right">
-                  {isAdmin && (
-                    <button onClick={openNew} className="admin-btn-primary inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs">
-                      <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                      </svg>
-                      新規作成
-                    </button>
-                  )}
+                  <div className="flex items-center justify-end gap-2">
+                    <select
+                      value={listCategoryFilter}
+                      onChange={(e) => setListCategoryFilter(e.target.value)}
+                      className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                    >
+                      <option value="all">すべてのカテゴリ</option>
+                      {categories.map((option) => (
+                        <option key={option.slug} value={option.slug}>
+                          {option.name}
+                        </option>
+                      ))}
+                    </select>
+                    {isAdmin && (
+                      <button onClick={openNew} className="admin-btn-primary inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs">
+                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        新規作成
+                      </button>
+                    )}
+                  </div>
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {items.map((item) => (
+              {visibleItems.map((item) => (
                 <tr
                   key={item.id}
                   draggable={isAdmin}
