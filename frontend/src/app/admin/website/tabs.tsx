@@ -29,6 +29,7 @@ import {
   reorderServiceItems,
   type MediaAsset,
   type ServiceCategoryDto,
+  type ServiceContentBlock,
   type ServiceItemDto,
   fetchPartnerCards,
   fetchServiceCategories,
@@ -55,6 +56,66 @@ function isImageAttachment(attachmentName: string | null, attachmentData: string
   return /\.(png|jpe?g|gif|webp|svg|bmp|ico)$/i.test(attachmentName);
 }
 
+function createTextBlock(content = ""): ServiceContentBlock {
+  return { type: "text", content, name: null, url: null };
+}
+
+function createAssetBlock(type: "image" | "video" | "attachment", asset: MediaAsset): ServiceContentBlock {
+  return { type, content: null, name: asset.name, url: asset.url };
+}
+
+function moveBlock(blocks: ServiceContentBlock[], fromIndex: number, toIndex: number) {
+  if (toIndex < 0 || toIndex >= blocks.length) return blocks;
+  const next = [...blocks];
+  const [target] = next.splice(fromIndex, 1);
+  next.splice(toIndex, 0, target);
+  return next;
+}
+
+function removeBlockAt(blocks: ServiceContentBlock[], index: number) {
+  return blocks.filter((_, currentIndex) => currentIndex !== index);
+}
+
+function buildServiceContentBlocksFromLegacy(item: ServiceItemDto): ServiceContentBlock[] {
+  const blocks: ServiceContentBlock[] = [];
+  if (item.content.trim()) {
+    blocks.push(createTextBlock(item.content));
+  }
+
+  const imageAssets = item.imageAssets?.length
+    ? item.imageAssets.slice(1)
+    : [];
+  imageAssets.forEach((asset) => blocks.push(createAssetBlock("image", asset)));
+
+  const videoAssets = item.videoAssets?.length
+    ? item.videoAssets
+    : item.videoData
+      ? [{ name: item.videoName, url: item.videoData }]
+      : [];
+  videoAssets.forEach((asset) => blocks.push(createAssetBlock("video", asset)));
+
+  const attachmentAssets = item.attachmentAssets?.length
+    ? item.attachmentAssets
+    : item.attachmentData
+      ? [{ name: item.attachmentName, url: item.attachmentData }]
+      : [];
+  attachmentAssets.forEach((asset) => blocks.push(createAssetBlock("attachment", asset)));
+
+  return blocks;
+}
+
+function getServiceContentBlocks(item: ServiceItemDto): ServiceContentBlock[] {
+  return item.contentBlocks?.length ? item.contentBlocks : buildServiceContentBlocksFromLegacy(item);
+}
+
+function extractTextSummary(blocks: ServiceContentBlock[]) {
+  return blocks
+    .filter((block) => block.type === "text" && block.content?.trim())
+    .map((block) => block.content?.trim())
+    .filter(Boolean)
+    .join("\n\n");
+}
+
 function NoticeDetail({
   badge,
   title,
@@ -63,7 +124,6 @@ function NoticeDetail({
   createdAt,
   imageName,
   imageUrl,
-  videoName,
   videoUrl,
   attachmentName,
   attachmentUrl,
@@ -77,7 +137,6 @@ function NoticeDetail({
   createdAt: string;
   imageName?: string | null;
   imageUrl?: string | null;
-  videoName?: string | null;
   videoUrl?: string | null;
   attachmentName?: string | null;
   attachmentUrl?: string | null;
@@ -421,27 +480,8 @@ function WebsitePostForm({
   );
 }
 
-function readFileAsDataUrl(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        resolve(reader.result);
-      } else {
-        reject(new Error("ファイルの読み込みに失敗しました。"));
-      }
-    };
-    reader.onerror = () => reject(new Error("ファイルの読み込みに失敗しました。"));
-    reader.readAsDataURL(file);
-  });
-}
-
 async function uploadFileWithPresign(token: string, file: File, directory: string) {
   return uploadFileToBackend(token, file, directory);
-}
-
-function removeAssetAt(assets: MediaAsset[], index: number) {
-  return assets.filter((_, currentIndex) => currentIndex !== index);
 }
 
 function moveItem<T extends { id: number }>(items: T[], activeId: number, targetId: number) {
@@ -1057,12 +1097,9 @@ export function ServiceItemsTab() {
   const [editItem, setEditItem] = useState<ServiceItemDto | null>(null);
   const [category, setCategory] = useState("");
   const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [videoAssets, setVideoAssets] = useState<MediaAsset[]>([]);
+  const [contentBlocks, setContentBlocks] = useState<ServiceContentBlock[]>([]);
   const [linkUrl, setLinkUrl] = useState("");
   const [thumbnailAsset, setThumbnailAsset] = useState<MediaAsset | null>(null);
-  const [imageAssets, setImageAssets] = useState<MediaAsset[]>([]);
-  const [attachmentAssets, setAttachmentAssets] = useState<MediaAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -1105,12 +1142,9 @@ export function ServiceItemsTab() {
     setEditItem(null);
     setCategory(categories[0]?.slug ?? "");
     setTitle("");
-    setContent("");
-    setVideoAssets([]);
+    setContentBlocks([createTextBlock()]);
     setLinkUrl("");
     setThumbnailAsset(null);
-    setImageAssets([]);
-    setAttachmentAssets([]);
     setError("");
     setView("form");
   };
@@ -1119,13 +1153,10 @@ export function ServiceItemsTab() {
     setEditItem(item);
     setCategory(item.category);
     setTitle(item.title);
-    setContent(item.content);
-    setVideoAssets(item.videoAssets?.length ? item.videoAssets : item.videoData ? [{ name: item.videoName, url: item.videoData }] : []);
+    setContentBlocks(getServiceContentBlocks(item));
     setLinkUrl(item.linkUrl ?? "");
     const allImages = item.imageAssets?.length ? item.imageAssets : item.imageData ? [{ name: item.imageName, url: item.imageData }] : [];
     setThumbnailAsset(allImages[0] ?? null);
-    setImageAssets(allImages.slice(1));
-    setAttachmentAssets(item.attachmentAssets?.length ? item.attachmentAssets : item.attachmentData ? [{ name: item.attachmentName, url: item.attachmentData }] : []);
     setError("");
     setView("form");
   };
@@ -1194,7 +1225,7 @@ export function ServiceItemsTab() {
     setError("");
     try {
       const data = await uploadFileWithPresign(token, file, "services/attachments");
-      setAttachmentAssets((current) => [...current, { name: file.name, url: data }]);
+      setContentBlocks((current) => [...current, createAssetBlock("attachment", { name: file.name, url: data })]);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "添付ファイルのアップロードに失敗しました。");
     } finally {
@@ -1228,7 +1259,7 @@ export function ServiceItemsTab() {
     setError("");
     try {
       const data = await uploadFileWithPresign(token, file, "services/images");
-      setImageAssets((current) => [...current, { name: file.name, url: data }]);
+      setContentBlocks((current) => [...current, createAssetBlock("image", { name: file.name, url: data })]);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "画像のアップロードに失敗しました。");
     } finally {
@@ -1245,7 +1276,7 @@ export function ServiceItemsTab() {
     setError("");
     try {
       const data = await uploadFileWithPresign(token, file, "services/videos");
-      setVideoAssets((current) => [...current, { name: file.name, url: data }]);
+      setContentBlocks((current) => [...current, createAssetBlock("video", { name: file.name, url: data })]);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "動画のアップロードに失敗しました。");
     } finally {
@@ -1259,14 +1290,25 @@ export function ServiceItemsTab() {
     setSaving(true);
     setError("");
     try {
+      const textSummary = extractTextSummary(contentBlocks);
+      const detailImageAssets = contentBlocks
+        .filter((block) => block.type === "image" && block.url)
+        .map((block) => ({ name: block.name, url: block.url as string }));
+      const videoAssets = contentBlocks
+        .filter((block) => block.type === "video" && block.url)
+        .map((block) => ({ name: block.name, url: block.url as string }));
+      const attachmentAssets = contentBlocks
+        .filter((block) => block.type === "attachment" && block.url)
+        .map((block) => ({ name: block.name, url: block.url as string }));
       const primaryVideo = videoAssets[0] ?? null;
       const primaryAttachment = attachmentAssets[0] ?? null;
-      const mergedImageAssets = thumbnailAsset ? [thumbnailAsset, ...imageAssets] : imageAssets;
+      const mergedImageAssets = thumbnailAsset ? [thumbnailAsset, ...detailImageAssets] : detailImageAssets;
       const primaryImage = mergedImageAssets[0] ?? null;
       const payload = {
         category,
         title,
-        content,
+        content: textSummary || " ",
+        contentBlocks,
         videoName: primaryVideo?.name ?? null,
         videoData: primaryVideo?.url ?? null,
         videoAssets,
@@ -1368,19 +1410,128 @@ export function ServiceItemsTab() {
             />
           </div>
 
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">内容</label>
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              required
-              rows={8}
-              placeholder="事業内容を入力してください。"
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm leading-relaxed text-slate-900 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
-            />
-            <p className="mt-2 text-xs leading-6 text-slate-400">
-              Markdown が使えます。`#` 見出し、`-` 箇条書き、`**太字**`、`[リンク](URL)` などに対応します。
-            </p>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">詳細コンテンツ</label>
+                <p className="text-xs leading-6 text-slate-400">
+                  テキスト・画像・動画・添付ファイルを自由な順序で並べられます。
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setContentBlocks((current) => [...current, createTextBlock()])}
+                className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+              >
+                テキスト追加
+              </button>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 transition-colors hover:border-orange-300 hover:bg-orange-50/40">
+                <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+                <div>
+                  <p className="text-sm font-medium text-slate-700">画像ブロック</p>
+                  <p className="mt-1 text-xs text-slate-400">{uploading ? "読み込み中..." : "PNG / JPG / WebP"}</p>
+                </div>
+                <span className="text-sm font-semibold text-orange-500">追加</span>
+              </label>
+              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 transition-colors hover:border-orange-300 hover:bg-orange-50/40">
+                <input type="file" accept="video/*" className="hidden" onChange={handleVideoChange} />
+                <div>
+                  <p className="text-sm font-medium text-slate-700">動画ブロック</p>
+                  <p className="mt-1 text-xs text-slate-400">{uploading ? "読み込み中..." : "MP4 / WebM / MOV"}</p>
+                </div>
+                <span className="text-sm font-semibold text-orange-500">追加</span>
+              </label>
+              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 transition-colors hover:border-orange-300 hover:bg-orange-50/40">
+                <input type="file" className="hidden" onChange={handleAttachmentChange} />
+                <div>
+                  <p className="text-sm font-medium text-slate-700">添付ブロック</p>
+                  <p className="mt-1 text-xs text-slate-400">{uploading ? "読み込み中..." : "PDF / image / document"}</p>
+                </div>
+                <span className="text-sm font-semibold text-orange-500">追加</span>
+              </label>
+            </div>
+
+            {contentBlocks.length > 0 ? (
+              <div className="space-y-3">
+                {contentBlocks.map((block, index) => (
+                  <div key={`${block.type}-${block.url ?? "text"}-${index}`} className="rounded-2xl border border-slate-100 bg-white p-4">
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                        {block.type === "text" ? "テキスト" : block.type === "image" ? "画像" : block.type === "video" ? "動画" : "添付ファイル"}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setContentBlocks((current) => moveBlock(current, index, index - 1))}
+                          className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-500 hover:bg-slate-50"
+                        >
+                          ↑
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setContentBlocks((current) => moveBlock(current, index, index + 1))}
+                          className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-500 hover:bg-slate-50"
+                        >
+                          ↓
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setContentBlocks((current) => removeBlockAt(current, index))}
+                          className="rounded-lg border border-red-200 px-2.5 py-1 text-xs font-semibold text-red-500 hover:bg-red-50"
+                        >
+                          削除
+                        </button>
+                      </div>
+                    </div>
+
+                    {block.type === "text" ? (
+                      <>
+                        <textarea
+                          value={block.content ?? ""}
+                          onChange={(e) =>
+                            setContentBlocks((current) =>
+                              current.map((item, currentIndex) =>
+                                currentIndex === index ? { ...item, content: e.target.value } : item
+                              )
+                            )
+                          }
+                          rows={8}
+                          placeholder="事業内容を入力してください。"
+                          className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm leading-relaxed text-slate-900 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
+                        />
+                        <p className="mt-2 text-xs leading-6 text-slate-400">
+                          Markdown が使えます。`#` 見出し、`-` 箇条書き、`**太字**`、`[リンク](URL)` などに対応します。
+                        </p>
+                      </>
+                    ) : block.type === "image" && block.url ? (
+                      <div className="overflow-hidden rounded-xl border border-slate-100 bg-slate-50 p-3">
+                        <Image src={block.url} alt={block.name ?? "Image preview"} width={1200} height={800} unoptimized className="h-auto max-h-72 w-full rounded-lg object-contain" />
+                        <p className="mt-2 truncate text-xs text-slate-500">{block.name ?? "画像"}</p>
+                      </div>
+                    ) : block.type === "video" && block.url ? (
+                      <div className="overflow-hidden rounded-xl border border-slate-100 bg-slate-950 p-3">
+                        <video src={block.url} controls playsInline className="max-h-72 w-full rounded-lg bg-black" />
+                        <p className="mt-2 truncate text-xs text-slate-300">{block.name ?? "動画"}</p>
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                        {isImageAttachment(block.name, block.url) && block.url ? (
+                          <Image src={block.url} alt={block.name ?? "Attachment preview"} width={1200} height={800} unoptimized className="h-auto max-h-56 w-full rounded-lg object-contain" />
+                        ) : null}
+                        <p className="truncate text-xs text-slate-500">{block.name ?? "添付ファイル"}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-400">
+                まだコンテンツブロックがありません。
+              </p>
+            )}
           </div>
 
           <div>
@@ -1421,93 +1572,6 @@ export function ServiceItemsTab() {
             )}
           </div>
 
-          {/* 詳細画像（ギャラリー） */}
-          <div>
-            <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-slate-700">
-              詳細画像
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">詳細ページに表示・複数可</span>
-            </label>
-            <label className="flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 transition-colors hover:border-orange-300 hover:bg-orange-50/40">
-              <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
-              <div>
-                <p className="text-sm font-medium text-slate-700">画像を追加</p>
-                <p className="mt-1 text-xs text-slate-400">{uploading ? "読み込み中..." : "PNG / JPG / WebP など・複数追加可"}</p>
-              </div>
-              <span className="text-sm font-semibold text-orange-500">選択</span>
-            </label>
-            {imageAssets.length > 0 && (
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                {imageAssets.map((asset, index) => (
-                  <div key={`${asset.url}-${index}`} className="overflow-hidden rounded-xl border border-slate-100 bg-white p-3">
-                    <Image src={asset.url} alt={asset.name ?? "Image preview"} width={1200} height={800} unoptimized className="h-auto max-h-56 w-full rounded-lg object-contain" />
-                    <div className="mt-2 flex items-center justify-between gap-3">
-                      <p className="truncate text-xs text-slate-500">{asset.name ?? "画像"}</p>
-                      <button type="button" onClick={() => setImageAssets((current) => removeAssetAt(current, index))} className="text-xs font-semibold text-red-500 hover:text-red-600">
-                        削除
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">動画ファイル</label>
-            <label className="flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 transition-colors hover:border-orange-300 hover:bg-orange-50/40">
-              <input type="file" accept="video/*" className="hidden" onChange={handleVideoChange} />
-              <div>
-                <p className="text-sm font-medium text-slate-700">動画をアップロード</p>
-                <p className="mt-1 text-xs text-slate-400">{uploading ? "読み込み中..." : "MP4 / WebM / MOV など"}</p>
-              </div>
-              <span className="text-sm font-semibold text-orange-500">選択</span>
-            </label>
-            {videoAssets.length > 0 && (
-              <div className="mt-3 grid gap-3">
-                {videoAssets.map((asset, index) => (
-                  <div key={`${asset.url}-${index}`} className="overflow-hidden rounded-xl border border-slate-100 bg-slate-950 p-3">
-                    <video src={asset.url} controls playsInline className="max-h-72 w-full rounded-lg bg-black" />
-                    <div className="mt-2 flex items-center justify-between gap-3">
-                      <p className="truncate text-xs text-slate-300">{asset.name ?? "動画"}</p>
-                      <button type="button" onClick={() => setVideoAssets((current) => removeAssetAt(current, index))} className="text-xs font-semibold text-red-400 hover:text-red-500">
-                        削除
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">添付ファイル</label>
-            <label className="flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 transition-colors hover:border-orange-300 hover:bg-orange-50/40">
-              <input type="file" className="hidden" onChange={handleAttachmentChange} />
-              <div>
-                <p className="text-sm font-medium text-slate-700">ファイルをアップロード</p>
-                <p className="mt-1 text-xs text-slate-400">{uploading ? "読み込み中..." : "PDF, image, document など"}</p>
-              </div>
-              <span className="text-sm font-semibold text-orange-500">選択</span>
-            </label>
-            {attachmentAssets.length > 0 && (
-              <div className="mt-3 grid gap-3">
-                {attachmentAssets.map((asset, index) => (
-                  <div key={`${asset.url}-${index}`} className="overflow-hidden rounded-xl border border-slate-100 bg-white p-3">
-                    {isImageAttachment(asset.name, asset.url) && (
-                      <Image src={asset.url} alt={asset.name ?? "Attachment preview"} width={1200} height={800} unoptimized className="h-auto max-h-56 w-full rounded-lg object-contain" />
-                    )}
-                    <div className="mt-2 flex items-center justify-between gap-3">
-                      <p className="truncate text-xs text-slate-500">{asset.name ?? "添付ファイル"}</p>
-                      <button type="button" onClick={() => setAttachmentAssets((current) => removeAssetAt(current, index))} className="text-xs font-semibold text-red-500 hover:text-red-600">
-                        削除
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
           {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-500">{error}</p>}
 
           <div className="flex justify-end gap-3">
@@ -1528,9 +1592,7 @@ export function ServiceItemsTab() {
     const categoryLabel = categoryInfo ? categoryInfo.name : selectedItem.category;
     const allImageAssetsToShow = selectedItem.imageAssets?.length ? selectedItem.imageAssets : selectedItem.imageData ? [{ name: selectedItem.imageName, url: selectedItem.imageData }] : [];
     const thumbnailToShow = allImageAssetsToShow[0] ?? null;
-    const imageAssetsToShow = allImageAssetsToShow.slice(1);
-    const videoAssetsToShow = selectedItem.videoAssets?.length ? selectedItem.videoAssets : selectedItem.videoData ? [{ name: selectedItem.videoName, url: selectedItem.videoData }] : [];
-    const attachmentAssetsToShow = selectedItem.attachmentAssets?.length ? selectedItem.attachmentAssets : selectedItem.attachmentData ? [{ name: selectedItem.attachmentName, url: selectedItem.attachmentData }] : [];
+    const contentBlocksToShow = getServiceContentBlocks(selectedItem);
 
     return (
       <div className="max-w-4xl space-y-6">
@@ -1564,32 +1626,33 @@ export function ServiceItemsTab() {
                 </div>
               </div>
             )}
-            <MarkdownContent content={selectedItem.content} className="space-y-4" />
-            {imageAssetsToShow.length > 0 && (
-              <div>
-                <p className="mb-2 text-xs font-semibold text-slate-500">詳細画像</p>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {imageAssetsToShow.map((asset, index) => (
-                    <div key={`${asset.url}-${index}`} className="overflow-hidden rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                      <Image src={asset.url} alt={asset.name ?? "Service image"} width={1200} height={800} unoptimized className="h-auto w-full rounded-xl object-contain" />
+            <div className="space-y-5">
+              {contentBlocksToShow.map((block, index) => (
+                <div key={`${block.type}-${block.url ?? "text"}-${index}`}>
+                  {block.type === "text" && block.content ? (
+                    <MarkdownContent content={block.content} className="space-y-4" />
+                  ) : null}
+                  {block.type === "image" && block.url ? (
+                    <div className="overflow-hidden rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                      <Image src={block.url} alt={block.name ?? "Service image"} width={1200} height={800} unoptimized className="h-auto w-full rounded-xl object-contain" />
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            <div>
-              <p className="text-xs font-medium text-slate-400">動画</p>
-              {videoAssetsToShow.length > 0 ? (
-                <div className="mt-2 grid gap-3">
-                  {videoAssetsToShow.map((asset, index) => (
-                    <div key={`${asset.url}-${index}`} className="overflow-hidden rounded-xl border border-slate-100 bg-slate-950">
-                      <video src={asset.url} controls playsInline className="w-full bg-black" />
+                  ) : null}
+                  {block.type === "video" && block.url ? (
+                    <div className="overflow-hidden rounded-xl border border-slate-100 bg-slate-950">
+                      <video src={block.url} controls playsInline className="w-full bg-black" />
                     </div>
-                  ))}
+                  ) : null}
+                  {block.type === "attachment" && block.url ? (
+                    <a
+                      href={block.url}
+                      download={block.name ?? "attachment"}
+                      className="inline-flex text-sm font-semibold text-orange-600 hover:underline"
+                    >
+                      {block.name ?? "添付ファイルをダウンロード"}
+                    </a>
+                  ) : null}
                 </div>
-              ) : (
-                <p className="mt-1 text-sm text-slate-500">未設定</p>
-              )}
+              ))}
             </div>
             <div>
               <p className="text-xs font-medium text-slate-400">詳細サイト</p>
@@ -1599,25 +1662,6 @@ export function ServiceItemsTab() {
                 </a>
               ) : (
                 <p className="mt-1 text-sm text-slate-500">未設定</p>
-              )}
-            </div>
-            <div>
-              <p className="text-xs font-medium text-slate-400">詳細資料</p>
-              {attachmentAssetsToShow.length > 0 ? (
-                <div className="mt-1 flex flex-col gap-2">
-                  {attachmentAssetsToShow.map((asset, index) => (
-                    <a
-                      key={`${asset.url}-${index}`}
-                      href={asset.url}
-                      download={asset.name ?? "attachment"}
-                      className="inline-flex text-sm font-semibold text-orange-600 hover:underline"
-                    >
-                      {asset.name ?? "添付ファイルをダウンロード"}
-                    </a>
-                  ))}
-                </div>
-              ) : (
-                <p className="mt-1 text-sm text-slate-500">添付なし</p>
               )}
             </div>
           </div>

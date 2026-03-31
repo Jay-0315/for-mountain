@@ -7,7 +7,7 @@ import type { GetStaticPaths, GetStaticProps, InferGetStaticPropsType } from "ne
 import GridRunnerBackdrop from "@/components/ui/GridRunnerBackdrop";
 import MarkdownContent, { stripMarkdown } from "@/components/ui/MarkdownContent";
 import { renderServiceCategoryIcon } from "@/components/ui/service-category-icons";
-import { fetchServiceCategories, fetchServiceItemDetail, type ServiceCategoryDto, type ServiceItemDto } from "@/lib/api";
+import { fetchServiceCategories, fetchServiceItemDetail, type ServiceCategoryDto, type ServiceContentBlock, type ServiceItemDto } from "@/lib/api";
 import { BASE_URL, withTrailingSlash } from "@/lib/site";
 
 type Props = InferGetStaticPropsType<typeof getStaticProps>;
@@ -41,22 +41,7 @@ export default function ServiceDetailPage({ item, categories }: Props) {
 
   const categoryInfo = currentCategories.find((category) => category.slug === currentItem.category) ?? null;
   const categoryLabel = categoryInfo ? categoryInfo.name : currentItem.category;
-  const allImageAssets = currentItem.imageAssets?.length
-    ? currentItem.imageAssets
-    : currentItem.imageData
-      ? [{ name: currentItem.imageName, url: currentItem.imageData }]
-      : [];
-  const imageAssets = allImageAssets.slice(1);
-  const videoAssets = currentItem.videoAssets?.length
-    ? currentItem.videoAssets
-    : currentItem.videoData
-      ? [{ name: currentItem.videoName, url: currentItem.videoData }]
-      : [];
-  const attachmentAssets = currentItem.attachmentAssets?.length
-    ? currentItem.attachmentAssets
-    : currentItem.attachmentData
-      ? [{ name: currentItem.attachmentName, url: currentItem.attachmentData }]
-      : [];
+  const contentBlocks = currentItem.contentBlocks ?? [];
   const description =
     stripMarkdown(currentItem.content).slice(0, 120) ||
     "株式会社マウンテンの事業紹介詳細です。画像・動画・関連資料をご確認いただけます。";
@@ -83,6 +68,57 @@ export default function ServiceDetailPage({ item, categories }: Props) {
     } finally {
       setDownloadingUrl((current) => (current === asset.url ? null : current));
     }
+  };
+
+  const renderContentBlock = (block: ServiceContentBlock, index: number) => {
+    if (block.type === "text" && block.content) {
+      return <MarkdownContent key={`block-${index}`} content={block.content} className="space-y-4" />;
+    }
+
+    if ((block.type === "image" || block.type === "video" || block.type === "attachment") && !block.url) {
+      return null;
+    }
+
+    if (block.type === "image") {
+      return (
+        <div key={`block-${index}`} className="overflow-hidden rounded-2xl border border-slate-100 bg-slate-50 p-4">
+          <Image
+            src={block.url as string}
+            alt={block.name ?? currentItem.title}
+            width={1400}
+            height={900}
+            unoptimized
+            className="h-auto w-full rounded-xl object-contain"
+          />
+        </div>
+      );
+    }
+
+    if (block.type === "video") {
+      return (
+        <div key={`block-${index}`} className="overflow-hidden rounded-2xl border border-slate-100 bg-slate-950">
+          <video src={block.url as string} controls playsInline className="w-full bg-black" />
+        </div>
+      );
+    }
+
+    if (block.type === "attachment") {
+      return (
+        <div key={`block-${index}`} className="flex">
+          <button
+            type="button"
+            onClick={() => {
+              void handleAttachmentDownload({ name: block.name, url: block.url as string });
+            }}
+            className="inline-flex items-center justify-center rounded-2xl border border-orange-200 bg-orange-50 px-5 py-4 text-sm font-semibold text-orange-600 transition-all hover:-translate-y-0.5 hover:border-orange-500 hover:bg-orange-500 hover:text-white"
+          >
+            {downloadingUrl === block.url ? "ダウンロード中..." : "添付ファイルをダウンロード"}
+          </button>
+        </div>
+      );
+    }
+
+    return null;
   };
 
   return (
@@ -126,37 +162,7 @@ export default function ServiceDetailPage({ item, categories }: Props) {
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px] lg:items-start">
             <article className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
               <div className="space-y-8 px-6 py-8 sm:px-8 sm:py-10">
-                {imageAssets.length > 0 && (
-                  <div className="flex gap-4 overflow-x-auto pb-2">
-                    {imageAssets.map((asset, index) => (
-                      <div
-                        key={`${asset.url}-${index}`}
-                        className="min-w-[280px] flex-[0_0_280px] overflow-hidden rounded-2xl border border-slate-100 bg-slate-50 p-4 sm:min-w-[340px] sm:flex-[0_0_340px]"
-                      >
-                        <Image
-                          src={asset.url}
-                          alt={asset.name ?? currentItem.title}
-                          width={1400}
-                          height={900}
-                          unoptimized
-                          className="h-auto w-full rounded-xl object-contain"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {videoAssets.length > 0 && (
-                  <div className="grid gap-4">
-                    {videoAssets.map((asset, index) => (
-                      <div key={`${asset.url}-${index}`} className="overflow-hidden rounded-2xl border border-slate-100 bg-slate-950">
-                        <video src={asset.url} controls playsInline className="w-full bg-black" />
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <MarkdownContent content={currentItem.content} className="space-y-4" />
+                {contentBlocks.map(renderContentBlock)}
               </div>
             </article>
 
@@ -187,23 +193,6 @@ export default function ServiceDetailPage({ item, categories }: Props) {
                 >
                   詳細サイト
                 </a>
-              )}
-
-              {attachmentAssets.length > 0 && (
-                <div className="space-y-3">
-                  {attachmentAssets.map((asset, index) => (
-                    <button
-                      key={`${asset.url}-${index}`}
-                      type="button"
-                      onClick={() => {
-                        void handleAttachmentDownload(asset);
-                      }}
-                      className="inline-flex w-full items-center justify-center rounded-2xl border border-orange-200 bg-orange-50 px-5 py-4 text-sm font-semibold text-orange-600 transition-all hover:-translate-y-0.5 hover:border-orange-500 hover:bg-orange-500 hover:text-white"
-                    >
-                      {downloadingUrl === asset.url ? "ダウンロード中..." : "添付ファイルをダウンロード"}
-                    </button>
-                  ))}
-                </div>
               )}
 
               <Link

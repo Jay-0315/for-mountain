@@ -524,11 +524,19 @@ export type MediaAsset = {
   url: string;
 };
 
+export type ServiceContentBlock = {
+  type: "text" | "image" | "video" | "attachment";
+  content: string | null;
+  name: string | null;
+  url: string | null;
+};
+
 export type ServiceItemDto = {
   id: number;
   category: string;
   title: string;
   content: string;
+  contentBlocks: ServiceContentBlock[];
   videoName: string | null;
   videoData: string | null;
   videoAssets: MediaAsset[];
@@ -699,6 +707,7 @@ export async function createServiceItem(
     category: string;
     title: string;
     content: string;
+    contentBlocks: ServiceContentBlock[];
     videoName: string | null;
     videoData: string | null;
     videoAssets: MediaAsset[];
@@ -727,6 +736,7 @@ export async function updateServiceItem(
     category: string;
     title: string;
     content: string;
+    contentBlocks: ServiceContentBlock[];
     videoName: string | null;
     videoData: string | null;
     videoAssets: MediaAsset[];

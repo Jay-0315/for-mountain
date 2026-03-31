@@ -7,6 +7,7 @@ import com.mountain.for_mountain.common.CustomException;
 import com.mountain.for_mountain.common.ErrorCode;
 import com.mountain.for_mountain.domain.servicecategory.service.ServiceCategoryService;
 import com.mountain.for_mountain.domain.serviceitem.dto.MediaAssetDto;
+import com.mountain.for_mountain.domain.serviceitem.dto.ServiceContentBlockDto;
 import com.mountain.for_mountain.domain.serviceitem.dto.ServiceItemOrderRequest;
 import com.mountain.for_mountain.domain.serviceitem.dto.ServiceItemRequest;
 import com.mountain.for_mountain.domain.serviceitem.dto.ServiceItemResponse;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -53,11 +55,19 @@ public class ServiceItemService {
         List<MediaAssetDto> videoAssets = normalizeAssets(request.getVideoAssets(), request.getVideoName(), request.getVideoData());
         List<MediaAssetDto> imageAssets = normalizeAssets(request.getImageAssets(), request.getImageName(), request.getImageData());
         List<MediaAssetDto> attachmentAssets = normalizeAssets(request.getAttachmentAssets(), request.getAttachmentName(), request.getAttachmentData());
+        List<ServiceContentBlockDto> contentBlocks = normalizeContentBlocks(
+                request.getContentBlocks(),
+                request.getContent(),
+                imageAssets,
+                videoAssets,
+                attachmentAssets
+        );
 
         ServiceItem item = ServiceItem.create(
                 category,
                 request.getTitle().trim(),
-                request.getContent().trim(),
+                summarizeTextContent(contentBlocks, request.getContent()),
+                writeContentBlocks(contentBlocks),
                 firstAssetName(videoAssets),
                 firstAssetUrl(videoAssets),
                 writeAssets(videoAssets),
@@ -82,10 +92,18 @@ public class ServiceItemService {
         List<MediaAssetDto> videoAssets = normalizeAssets(request.getVideoAssets(), request.getVideoName(), request.getVideoData());
         List<MediaAssetDto> imageAssets = normalizeAssets(request.getImageAssets(), request.getImageName(), request.getImageData());
         List<MediaAssetDto> attachmentAssets = normalizeAssets(request.getAttachmentAssets(), request.getAttachmentName(), request.getAttachmentData());
+        List<ServiceContentBlockDto> contentBlocks = normalizeContentBlocks(
+                request.getContentBlocks(),
+                request.getContent(),
+                imageAssets,
+                videoAssets,
+                attachmentAssets
+        );
         item.update(
                 category,
                 request.getTitle().trim(),
-                request.getContent().trim(),
+                summarizeTextContent(contentBlocks, request.getContent()),
+                writeContentBlocks(contentBlocks),
                 firstAssetName(videoAssets),
                 firstAssetUrl(videoAssets),
                 writeAssets(videoAssets),
@@ -131,12 +149,20 @@ public class ServiceItemService {
         List<MediaAssetDto> videoAssets = readAssets(item.getVideoAssetsJson(), item.getVideoName(), item.getVideoData());
         List<MediaAssetDto> imageAssets = readAssets(item.getImageAssetsJson(), item.getImageName(), item.getImageData());
         List<MediaAssetDto> attachmentAssets = readAssets(item.getAttachmentAssetsJson(), item.getAttachmentName(), item.getAttachmentData());
+        List<ServiceContentBlockDto> contentBlocks = readContentBlocks(
+                item.getContentBlocksJson(),
+                item.getContent(),
+                imageAssets,
+                videoAssets,
+                attachmentAssets
+        );
 
         return new ServiceItemResponse(
                 item.getId(),
                 item.getCategory(),
                 item.getTitle(),
                 item.getContent(),
+                contentBlocks,
                 item.getVideoName(),
                 item.getVideoData(),
                 videoAssets,
@@ -181,6 +207,94 @@ public class ServiceItemService {
             }
         }
         return normalizeAssets(null, legacyName, legacyUrl);
+    }
+
+    private List<ServiceContentBlockDto> normalizeContentBlocks(
+            List<ServiceContentBlockDto> blocks,
+            String legacyContent,
+            List<MediaAssetDto> imageAssets,
+            List<MediaAssetDto> videoAssets,
+            List<MediaAssetDto> attachmentAssets
+    ) {
+        List<ServiceContentBlockDto> normalized = (blocks == null ? List.<ServiceContentBlockDto>of() : blocks).stream()
+                .filter(block -> block != null && normalizeNullable(block.getType()) != null)
+                .map(block -> {
+                    String type = normalizeNullable(block.getType());
+                    String content = normalizeNullable(block.getContent());
+                    String name = normalizeNullable(block.getName());
+                    String url = normalizeNullable(block.getUrl());
+                    return new ServiceContentBlockDto(type, content, name, url);
+                })
+                .filter(block -> {
+                    if ("text".equals(block.getType())) {
+                        return block.getContent() != null;
+                    }
+                    return block.getUrl() != null;
+                })
+                .toList();
+
+        if (!normalized.isEmpty()) {
+            return normalized;
+        }
+
+        return buildLegacyContentBlocks(legacyContent, imageAssets, videoAssets, attachmentAssets);
+    }
+
+    private List<ServiceContentBlockDto> readContentBlocks(
+            String json,
+            String legacyContent,
+            List<MediaAssetDto> imageAssets,
+            List<MediaAssetDto> videoAssets,
+            List<MediaAssetDto> attachmentAssets
+    ) {
+        if (json != null && !json.isBlank()) {
+            try {
+                return objectMapper.readValue(json, new TypeReference<List<ServiceContentBlockDto>>() {});
+            } catch (JsonProcessingException ignored) {
+            }
+        }
+
+        return buildLegacyContentBlocks(legacyContent, imageAssets, videoAssets, attachmentAssets);
+    }
+
+    private String writeContentBlocks(List<ServiceContentBlockDto> blocks) {
+        if (blocks == null || blocks.isEmpty()) {
+            return null;
+        }
+        try {
+            return objectMapper.writeValueAsString(blocks);
+        } catch (JsonProcessingException e) {
+            throw new CustomException(ErrorCode.INVALID_UPLOAD_REQUEST);
+        }
+    }
+
+    private List<ServiceContentBlockDto> buildLegacyContentBlocks(
+            String legacyContent,
+            List<MediaAssetDto> imageAssets,
+            List<MediaAssetDto> videoAssets,
+            List<MediaAssetDto> attachmentAssets
+    ) {
+        List<ServiceContentBlockDto> blocks = new ArrayList<>();
+        String content = normalizeNullable(legacyContent);
+        if (content != null) {
+            blocks.add(new ServiceContentBlockDto("text", content, null, null));
+        }
+
+        List<MediaAssetDto> detailImages = imageAssets.size() > 1 ? imageAssets.subList(1, imageAssets.size()) : List.of();
+        detailImages.forEach(asset -> blocks.add(new ServiceContentBlockDto("image", null, asset.getName(), asset.getUrl())));
+        videoAssets.forEach(asset -> blocks.add(new ServiceContentBlockDto("video", null, asset.getName(), asset.getUrl())));
+        attachmentAssets.forEach(asset -> blocks.add(new ServiceContentBlockDto("attachment", null, asset.getName(), asset.getUrl())));
+        return blocks;
+    }
+
+    private String summarizeTextContent(List<ServiceContentBlockDto> blocks, String legacyContent) {
+        String text = blocks.stream()
+                .filter(block -> "text".equals(block.getType()) && block.getContent() != null)
+                .map(ServiceContentBlockDto::getContent)
+                .reduce((left, right) -> left + "\n\n" + right)
+                .orElse(null);
+
+        return text != null ? text : normalizeNullable(legacyContent);
     }
 
     private String writeAssets(List<MediaAssetDto> assets) {

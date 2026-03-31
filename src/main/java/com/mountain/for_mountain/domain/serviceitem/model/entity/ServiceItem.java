@@ -26,6 +26,10 @@ public class ServiceItem {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
+    private String contentBlocksJson;
+
     @Column(length = 255)
     private String videoName;
 
@@ -75,6 +79,7 @@ public class ServiceItem {
             String category,
             String title,
             String content,
+            String contentBlocksJson,
             String videoName,
             String videoData,
             String videoAssetsJson,
@@ -91,6 +96,7 @@ public class ServiceItem {
         item.category = category;
         item.title = title;
         item.content = content;
+        item.contentBlocksJson = contentBlocksJson;
         item.videoName = videoName;
         item.videoData = videoData;
         item.videoAssetsJson = videoAssetsJson;
@@ -111,6 +117,7 @@ public class ServiceItem {
             String category,
             String title,
             String content,
+            String contentBlocksJson,
             String videoName,
             String videoData,
             String videoAssetsJson,
@@ -125,6 +132,7 @@ public class ServiceItem {
         this.category = category;
         this.title = title;
         this.content = content;
+        this.contentBlocksJson = contentBlocksJson;
         this.videoName = videoName;
         this.videoData = videoData;
         this.videoAssetsJson = videoAssetsJson;

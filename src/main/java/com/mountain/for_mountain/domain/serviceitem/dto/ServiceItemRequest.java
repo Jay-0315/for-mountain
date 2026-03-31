@@ -19,6 +19,8 @@ public class ServiceItemRequest {
     @NotBlank
     private String content;
 
+    private List<ServiceContentBlockDto> contentBlocks;
+
     private String videoName;
 
     private String videoData;
