@@ -214,7 +214,7 @@ export default function NewsSection() {
         </div>
 
         {/* 뉴스 목록 */}
-        <div className="max-w-3xl mx-auto">
+        <div className="mx-auto max-w-5xl">
           <div ref={listRef} className="news-list bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
 
             {/* 로딩 스켈레톤 */}
@@ -237,7 +237,7 @@ export default function NewsSection() {
               <div
                 key={item.id}
                 onClick={() => router.push(`/news/${item.id}/`)}
-                className={`news-item flex flex-col sm:flex-row sm:items-center gap-3 px-7 py-5 group
+                className={`news-item flex flex-col gap-4 px-10 py-7 group sm:flex-row sm:items-center
                   hover:bg-slate-50 transition-colors cursor-pointer
                   ${i !== items.length - 1 ? "border-b border-slate-100" : ""}`}
               >
