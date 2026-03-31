@@ -253,10 +253,9 @@ function LeavePageContent() {
     }
   }, [requestedView]);
 
+  const currentEmployeeNumber = token ? getSessionPayload(token).sub : "";
   const currentEmployee = employees.find((employee) => {
-    if (typeof window === "undefined") return false;
-    const token = window.sessionStorage.getItem("admin_token");
-    return employee.employeeNumber === getSessionPayload(token).sub;
+    return employee.employeeNumber === currentEmployeeNumber;
   }) ?? null;
 
   const isLeader = leaderMemberIds !== null && leaderMemberIds !== undefined;
