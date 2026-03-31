@@ -35,6 +35,7 @@ import {
   deleteServiceItem,
   type BoardPost,
   type MediaAsset,
+  type ServiceContentBlock,
   type AnnouncementDto,
   type DeptNoticeDto,
   type EmployeeDto,
@@ -70,6 +71,22 @@ function isImageAttachment(attachmentName: string | null, attachmentData: string
 
 function removeAssetAt(assets: MediaAsset[], index: number) {
   return assets.filter((_, assetIndex) => assetIndex !== index);
+}
+
+function buildServiceContentBlocks(
+  content: string,
+  imageAssets: MediaAsset[],
+  videoAssets: MediaAsset[],
+  attachmentAssets: MediaAsset[]
+): ServiceContentBlock[] {
+  const blocks: ServiceContentBlock[] = [];
+  if (content.trim()) {
+    blocks.push({ type: "text", content, name: null, url: null });
+  }
+  imageAssets.forEach((asset) => blocks.push({ type: "image", content: null, name: asset.name, url: asset.url }));
+  videoAssets.forEach((asset) => blocks.push({ type: "video", content: null, name: asset.name, url: asset.url }));
+  attachmentAssets.forEach((asset) => blocks.push({ type: "attachment", content: null, name: asset.name, url: asset.url }));
+  return blocks;
 }
 
 function NoticeDetail({
@@ -1712,10 +1729,12 @@ function ServiceItemsTab() {
       const primaryVideo = videoAssets[0] ?? null;
       const primaryImage = imageAssets[0] ?? null;
       const primaryAttachment = attachmentAssets[0] ?? null;
+      const contentBlocks = buildServiceContentBlocks(content, imageAssets, videoAssets, attachmentAssets);
       const payload = {
         category,
         title,
         content,
+        contentBlocks,
         videoName: primaryVideo?.name ?? null,
         videoData: primaryVideo?.url ?? null,
         videoAssets,
