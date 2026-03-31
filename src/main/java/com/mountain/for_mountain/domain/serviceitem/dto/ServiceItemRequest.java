@@ -18,6 +18,8 @@ public class ServiceItemRequest {
     @NotBlank
     private String title;
 
+    private String summary;
+
     @NotBlank
     private String content;
 

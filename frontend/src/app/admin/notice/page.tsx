@@ -1732,6 +1732,7 @@ function ServiceItemsTab() {
       const payload = {
         category,
         title,
+        summary: null,
         content,
         contentBlocks,
         videoName: primaryVideo?.name ?? null,

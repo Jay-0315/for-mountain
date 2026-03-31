@@ -535,6 +535,7 @@ export type ServiceItemDto = {
   id: number;
   category: string;
   title: string;
+  summary: string | null;
   content: string;
   contentBlocks: ServiceContentBlock[];
   videoName: string | null;
@@ -706,6 +707,7 @@ export async function createServiceItem(
   data: {
     category: string;
     title: string;
+    summary: string | null;
     content: string;
     contentBlocks: ServiceContentBlock[];
     videoName: string | null;
@@ -735,6 +737,7 @@ export async function updateServiceItem(
   data: {
     category: string;
     title: string;
+    summary: string | null;
     content: string;
     contentBlocks: ServiceContentBlock[];
     videoName: string | null;

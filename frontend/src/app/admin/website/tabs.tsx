@@ -1096,6 +1096,7 @@ export function ServiceItemsTab() {
   const [editItem, setEditItem] = useState<ServiceItemDto | null>(null);
   const [category, setCategory] = useState("");
   const [title, setTitle] = useState("");
+  const [summary, setSummary] = useState("");
   const [contentBlocks, setContentBlocks] = useState<ServiceContentBlock[]>([]);
   const [linkUrl, setLinkUrl] = useState("");
   const [thumbnailAsset, setThumbnailAsset] = useState<MediaAsset | null>(null);
@@ -1108,6 +1109,7 @@ export function ServiceItemsTab() {
   const [categoryEditItem, setCategoryEditItem] = useState<ServiceCategoryDto | null>(null);
   const [categorySaving, setCategorySaving] = useState(false);
   const [draggingId, setDraggingId] = useState<number | null>(null);
+  const [draggingBlockIndex, setDraggingBlockIndex] = useState<number | null>(null);
   const [reordering, setReordering] = useState(false);
 
   const load = useCallback(async () => {
@@ -1141,6 +1143,7 @@ export function ServiceItemsTab() {
     setEditItem(null);
     setCategory(categories[0]?.slug ?? "");
     setTitle("");
+    setSummary("");
     setContentBlocks([createTextBlock()]);
     setLinkUrl("");
     setThumbnailAsset(null);
@@ -1152,6 +1155,7 @@ export function ServiceItemsTab() {
     setEditItem(item);
     setCategory(item.category);
     setTitle(item.title);
+    setSummary(item.summary ?? "");
     setContentBlocks(getServiceContentBlocks(item));
     setLinkUrl(item.linkUrl ?? "");
     const allImages = item.imageAssets?.length ? item.imageAssets : item.imageData ? [{ name: item.imageName, url: item.imageData }] : [];
@@ -1306,6 +1310,7 @@ export function ServiceItemsTab() {
       const payload = {
         category,
         title,
+        summary: summary.trim() || null,
         content: textSummary || " ",
         contentBlocks,
         videoName: primaryVideo?.name ?? null,
@@ -1379,6 +1384,18 @@ export function ServiceItemsTab() {
 
         <form onSubmit={handleSave} className="space-y-5 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
           <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">事業タイトル</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+              placeholder="事業タイトルを入力"
+              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-400"
+            />
+          </div>
+
+          <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700">カテゴリ</label>
             <select
               value={category}
@@ -1387,7 +1404,7 @@ export function ServiceItemsTab() {
               className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400"
             >
               {categories.map((option) => (
-                  <option key={option.slug} value={option.slug}>
+                <option key={option.slug} value={option.slug}>
                   {option.name}
                 </option>
               ))}
@@ -1398,15 +1415,46 @@ export function ServiceItemsTab() {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">事業タイトル</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-              placeholder="事業タイトルを入力"
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-400"
+            <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-slate-700">
+              サムネイル
+              <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-semibold text-orange-600">一覧表示に使用</span>
+            </label>
+            <label className="flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-orange-300 bg-orange-50/40 px-4 py-4 transition-colors hover:border-orange-400 hover:bg-orange-50/70">
+              <input type="file" accept="image/*" className="hidden" onChange={handleThumbnailChange} />
+              <div>
+                <p className="text-sm font-medium text-slate-700">サムネイルをアップロード</p>
+                <p className="mt-1 text-xs text-slate-400">{uploading ? "読み込み中..." : "推奨: 1200×800px / PNG・JPG・WebP"}</p>
+              </div>
+              <span className="text-sm font-semibold text-orange-500">選択</span>
+            </label>
+            {thumbnailAsset && (
+              <div className="mt-3 overflow-hidden rounded-xl border border-orange-200 bg-white p-3">
+                <Image src={thumbnailAsset.url} alt={thumbnailAsset.name ?? "Thumbnail preview"} width={1200} height={800} unoptimized className="h-auto max-h-56 w-full rounded-lg object-cover" />
+                <div className="mt-2 flex items-center justify-between gap-3">
+                  <p className="truncate text-xs text-slate-500">{thumbnailAsset.name ?? "サムネイル"}</p>
+                  <button type="button" onClick={() => setThumbnailAsset(null)} className="text-xs font-semibold text-red-500 hover:text-red-600">
+                    削除
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-slate-700">
+              紹介文句
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">カード専用</span>
+            </label>
+            <textarea
+              value={summary}
+              onChange={(e) => setSummary(e.target.value)}
+              rows={3}
+              placeholder="一覧カードにのみ表示する短い紹介文を入力してください。"
+              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm leading-relaxed text-slate-900 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
             />
+            <p className="mt-2 text-xs leading-6 text-slate-400">
+              詳細本文には表示されず、事業カードの紹介文にのみ使用されます。
+            </p>
           </div>
 
           <div className="space-y-3">
@@ -1456,26 +1504,31 @@ export function ServiceItemsTab() {
             {contentBlocks.length > 0 ? (
               <div className="space-y-3">
                 {contentBlocks.map((block, index) => (
-                  <div key={`${block.type}-${block.url ?? "text"}-${index}`} className="rounded-2xl border border-slate-100 bg-white p-4">
+                  <div
+                    key={`${block.type}-${block.url ?? "text"}-${index}`}
+                    draggable={isAdmin}
+                    onDragStart={() => setDraggingBlockIndex(index)}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={() => {
+                      if (draggingBlockIndex === null || draggingBlockIndex === index) return;
+                      setContentBlocks((current) => moveBlock(current, draggingBlockIndex, index));
+                      setDraggingBlockIndex(null);
+                    }}
+                    onDragEnd={() => setDraggingBlockIndex(null)}
+                    className={`rounded-2xl border bg-white p-4 transition ${
+                      draggingBlockIndex === index ? "border-orange-300 shadow-[0_0_0_2px_rgba(249,115,22,0.12)]" : "border-slate-100"
+                    }`}
+                  >
                     <div className="mb-3 flex items-center justify-between gap-3">
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
-                        {block.type === "text" ? "テキスト" : block.type === "image" ? "画像" : block.type === "video" ? "動画" : "添付ファイル"}
-                      </span>
                       <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setContentBlocks((current) => moveBlock(current, index, index - 1))}
-                          className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-500 hover:bg-slate-50"
-                        >
-                          ↑
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setContentBlocks((current) => moveBlock(current, index, index + 1))}
-                          className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-500 hover:bg-slate-50"
-                        >
-                          ↓
-                        </button>
+                        <span className="cursor-grab rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-500 active:cursor-grabbing">
+                          ドラッグ
+                        </span>
+                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                          {block.type === "text" ? "テキスト" : block.type === "image" ? "画像" : block.type === "video" ? "動画" : "添付ファイル"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
                         <button
                           type="button"
                           onClick={() => setContentBlocks((current) => removeBlockAt(current, index))}
@@ -1542,33 +1595,6 @@ export function ServiceItemsTab() {
               placeholder="https://example.com"
               className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-400"
             />
-          </div>
-
-          {/* サムネイル */}
-          <div>
-            <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-slate-700">
-              サムネイル
-              <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-semibold text-orange-600">一覧表示に使用</span>
-            </label>
-            <label className="flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-orange-300 bg-orange-50/40 px-4 py-4 transition-colors hover:border-orange-400 hover:bg-orange-50/70">
-              <input type="file" accept="image/*" className="hidden" onChange={handleThumbnailChange} />
-              <div>
-                <p className="text-sm font-medium text-slate-700">サムネイルをアップロード</p>
-                <p className="mt-1 text-xs text-slate-400">{uploading ? "読み込み中..." : "推奨: 1200×800px / PNG・JPG・WebP"}</p>
-              </div>
-              <span className="text-sm font-semibold text-orange-500">選択</span>
-            </label>
-            {thumbnailAsset && (
-              <div className="mt-3 overflow-hidden rounded-xl border border-orange-200 bg-white p-3">
-                <Image src={thumbnailAsset.url} alt={thumbnailAsset.name ?? "Thumbnail preview"} width={1200} height={800} unoptimized className="h-auto max-h-56 w-full rounded-lg object-cover" />
-                <div className="mt-2 flex items-center justify-between gap-3">
-                  <p className="truncate text-xs text-slate-500">{thumbnailAsset.name ?? "サムネイル"}</p>
-                  <button type="button" onClick={() => setThumbnailAsset(null)} className="text-xs font-semibold text-red-500 hover:text-red-600">
-                    削除
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
 
           {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-500">{error}</p>}

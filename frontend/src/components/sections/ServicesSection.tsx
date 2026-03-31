@@ -57,6 +57,14 @@ function createPreviewLines(content: string) {
     .filter(Boolean);
 }
 
+function getCardPreview(item: ServiceItemDto) {
+  const summary = item.summary?.trim();
+  if (summary) {
+    return renderPreview(createPreviewLines(summary));
+  }
+  return renderPreview(createPreviewLines(item.content));
+}
+
 function renderPreview(lines: string[]): ReactNode[] {
   return lines.map((line, index) => {
     const trimmedLine = line.trim();
@@ -297,7 +305,7 @@ export default function ServicesSection({
                       <div className="mt-4 h-px w-full bg-slate-200" />
 
                       <div className="mt-4 space-y-1 overflow-hidden">
-                        {renderPreview(createPreviewLines(item.content))}
+                        {getCardPreview(item)}
                       </div>
 
                       <div className="mt-6 border-t border-slate-200 pt-4">

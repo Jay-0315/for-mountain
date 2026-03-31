@@ -66,6 +66,7 @@ public class ServiceItemService {
         ServiceItem item = ServiceItem.create(
                 category,
                 request.getTitle().trim(),
+                normalizeNullable(request.getSummary()),
                 summarizeTextContent(contentBlocks, request.getContent()),
                 writeContentBlocks(contentBlocks),
                 firstAssetName(videoAssets),
@@ -102,6 +103,7 @@ public class ServiceItemService {
         item.update(
                 category,
                 request.getTitle().trim(),
+                normalizeNullable(request.getSummary()),
                 summarizeTextContent(contentBlocks, request.getContent()),
                 writeContentBlocks(contentBlocks),
                 firstAssetName(videoAssets),
@@ -161,6 +163,7 @@ public class ServiceItemService {
                 item.getId(),
                 item.getCategory(),
                 item.getTitle(),
+                item.getSummary(),
                 item.getContent(),
                 contentBlocks,
                 item.getVideoName(),

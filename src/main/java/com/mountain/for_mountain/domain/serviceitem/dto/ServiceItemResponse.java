@@ -12,6 +12,7 @@ public class ServiceItemResponse {
     private Long id;
     private String category;
     private String title;
+    private String summary;
     private String content;
     private List<ServiceContentBlockDto> contentBlocks;
     private String videoName;

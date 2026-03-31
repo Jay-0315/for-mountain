@@ -23,6 +23,9 @@ public class ServiceItem {
     @Column(nullable = false, length = 200)
     private String title;
 
+    @Column(length = 1000)
+    private String summary;
+
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
@@ -78,6 +81,7 @@ public class ServiceItem {
     public static ServiceItem create(
             String category,
             String title,
+            String summary,
             String content,
             String contentBlocksJson,
             String videoName,
@@ -95,6 +99,7 @@ public class ServiceItem {
         ServiceItem item = new ServiceItem();
         item.category = category;
         item.title = title;
+        item.summary = summary;
         item.content = content;
         item.contentBlocksJson = contentBlocksJson;
         item.videoName = videoName;
@@ -116,6 +121,7 @@ public class ServiceItem {
     public void update(
             String category,
             String title,
+            String summary,
             String content,
             String contentBlocksJson,
             String videoName,
@@ -131,6 +137,7 @@ public class ServiceItem {
     ) {
         this.category = category;
         this.title = title;
+        this.summary = summary;
         this.content = content;
         this.contentBlocksJson = contentBlocksJson;
         this.videoName = videoName;
