@@ -1,48 +1,75 @@
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
 import type { GetStaticPaths, GetStaticProps, InferGetStaticPropsType } from "next";
 import GridRunnerBackdrop from "@/components/ui/GridRunnerBackdrop";
 import MarkdownContent, { stripMarkdown } from "@/components/ui/MarkdownContent";
 import { renderServiceCategoryIcon } from "@/components/ui/service-category-icons";
-import type { ServiceCategoryDto, ServiceItemDto } from "@/lib/api";
+import { fetchServiceCategories, fetchServiceItemDetail, type ServiceCategoryDto, type ServiceItemDto } from "@/lib/api";
 import { BASE_URL, withTrailingSlash } from "@/lib/site";
 
 type Props = InferGetStaticPropsType<typeof getStaticProps>;
 
 export default function ServiceDetailPage({ item, categories }: Props) {
-  const categoryInfo = categories.find((category) => category.slug === item.category) ?? null;
-  const categoryLabel = categoryInfo ? categoryInfo.name : item.category;
-  const allImageAssets = item.imageAssets?.length
-    ? item.imageAssets
-    : item.imageData
-      ? [{ name: item.imageName, url: item.imageData }]
+  const router = useRouter();
+  const [currentItem, setCurrentItem] = useState(item);
+  const [currentCategories, setCurrentCategories] = useState(categories);
+  const currentId = Number(router.query.id ?? item.id);
+
+  useEffect(() => {
+    if (!currentId) return;
+
+    let active = true;
+
+    Promise.all([fetchServiceItemDetail(currentId), fetchServiceCategories()])
+      .then(([nextItem, nextCategories]) => {
+        if (!active) return;
+        setCurrentItem(nextItem);
+        setCurrentCategories(nextCategories);
+      })
+      .catch(() => {
+        // Keep static content as fallback if the live fetch fails.
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [currentId]);
+
+  const categoryInfo = currentCategories.find((category) => category.slug === currentItem.category) ?? null;
+  const categoryLabel = categoryInfo ? categoryInfo.name : currentItem.category;
+  const allImageAssets = currentItem.imageAssets?.length
+    ? currentItem.imageAssets
+    : currentItem.imageData
+      ? [{ name: currentItem.imageName, url: currentItem.imageData }]
       : [];
   const imageAssets = allImageAssets.slice(1);
-  const videoAssets = item.videoAssets?.length
-    ? item.videoAssets
-    : item.videoData
-      ? [{ name: item.videoName, url: item.videoData }]
+  const videoAssets = currentItem.videoAssets?.length
+    ? currentItem.videoAssets
+    : currentItem.videoData
+      ? [{ name: currentItem.videoName, url: currentItem.videoData }]
       : [];
-  const attachmentAssets = item.attachmentAssets?.length
-    ? item.attachmentAssets
-    : item.attachmentData
-      ? [{ name: item.attachmentName, url: item.attachmentData }]
+  const attachmentAssets = currentItem.attachmentAssets?.length
+    ? currentItem.attachmentAssets
+    : currentItem.attachmentData
+      ? [{ name: currentItem.attachmentName, url: currentItem.attachmentData }]
       : [];
   const description =
-    stripMarkdown(item.content).slice(0, 120) ||
+    stripMarkdown(currentItem.content).slice(0, 120) ||
     "株式会社マウンテンの事業紹介詳細です。画像・動画・関連資料をご確認いただけます。";
 
   return (
     <>
       <Head>
-        <title>{item.title}</title>
+        <title>{currentItem.title}</title>
         <meta name="description" content={description} />
-        <link rel="canonical" href={withTrailingSlash(`/services/${item.id}`)} />
-        <meta property="og:title" content={item.title} />
+        <link rel="canonical" href={withTrailingSlash(`/services/${currentItem.id}`)} />
+        <meta property="og:title" content={currentItem.title} />
         <meta property="og:description" content={description} />
         <meta property="og:type" content="article" />
-        <meta property="og:url" content={withTrailingSlash(`/services/${item.id}`)} />
+        <meta property="og:url" content={withTrailingSlash(`/services/${currentItem.id}`)} />
       </Head>
 
       <div className="min-h-screen bg-[linear-gradient(180deg,#fff7ed_0%,#ffffff_28%,#f8fafc_100%)]">
@@ -69,7 +96,7 @@ export default function ServiceDetailPage({ item, categories }: Props) {
                 {categoryLabel}
               </span>
               <h1 className="mt-6 text-3xl font-bold leading-tight text-white sm:text-5xl sm:leading-tight">
-                {item.title}
+                {currentItem.title}
               </h1>
               <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
                 株式会社マウンテンの事業紹介詳細です。画像・動画・関連資料をご確認いただけます。
@@ -88,7 +115,7 @@ export default function ServiceDetailPage({ item, categories }: Props) {
                       <div key={`${asset.url}-${index}`} className="overflow-hidden rounded-2xl border border-slate-100 bg-slate-50 p-4">
                         <Image
                           src={asset.url}
-                          alt={asset.name ?? item.title}
+                          alt={asset.name ?? currentItem.title}
                           width={1400}
                           height={900}
                           unoptimized
@@ -109,7 +136,7 @@ export default function ServiceDetailPage({ item, categories }: Props) {
                   </div>
                 )}
 
-                <MarkdownContent content={item.content} className="space-y-4" />
+                <MarkdownContent content={currentItem.content} className="space-y-4" />
               </div>
             </article>
 
@@ -126,14 +153,14 @@ export default function ServiceDetailPage({ item, categories }: Props) {
                   </div>
                   <div>
                     <dt className="text-xs font-medium text-slate-400">公開日</dt>
-                    <dd className="mt-1 font-mono text-sm text-slate-700">{item.createdAt.slice(0, 10).replaceAll("-", ".")}</dd>
+                    <dd className="mt-1 font-mono text-sm text-slate-700">{currentItem.createdAt.slice(0, 10).replaceAll("-", ".")}</dd>
                   </div>
                 </dl>
               </div>
 
-              {item.linkUrl && (
+              {currentItem.linkUrl && (
                 <a
-                  href={item.linkUrl}
+                  href={currentItem.linkUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex w-full items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm font-semibold text-slate-600 transition-all hover:-translate-y-0.5 hover:border-orange-300 hover:text-orange-500 hover:shadow-sm hover:shadow-orange-100"

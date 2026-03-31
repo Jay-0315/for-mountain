@@ -1,11 +1,13 @@
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
 import type { GetStaticPaths, GetStaticProps, InferGetStaticPropsType } from "next";
 import GridRunnerBackdrop from "@/components/ui/GridRunnerBackdrop";
 import { stripMarkdown } from "@/components/ui/MarkdownContent";
 import { BASE_URL, withTrailingSlash } from "@/lib/site";
-import type { BoardListResponse, BoardPost } from "@/lib/api";
+import { fetchBoardDetail, fetchBoardList, type BoardListResponse, type BoardPost } from "@/lib/api";
 
 const categoryColors: Record<string, string> = {
   "お知らせ": "bg-blue-50 text-blue-600 ring-blue-100",
@@ -35,20 +37,57 @@ function ArticleBody({ content }: { content: string }) {
 type Props = InferGetStaticPropsType<typeof getStaticProps>;
 
 export default function NewsDetailPage({ post, relatedPosts }: Props) {
+  const router = useRouter();
+  const [currentPost, setCurrentPost] = useState(post);
+  const [currentRelatedPosts, setCurrentRelatedPosts] = useState(relatedPosts);
+  const currentId = Number(router.query.id ?? post.id);
+
+  useEffect(() => {
+    if (!currentId) return;
+
+    let active = true;
+
+    (async () => {
+      try {
+        const data = await fetchBoardDetail(currentId);
+        const list = await fetchBoardList(0, 8);
+        if (!active) return;
+
+        setCurrentPost(data);
+        setCurrentRelatedPosts(
+          list.posts
+            .filter((item) => item.id !== currentId)
+            .sort((a, b) => {
+              const aScore = a.category === data.category ? 1 : 0;
+              const bScore = b.category === data.category ? 1 : 0;
+              return bScore - aScore;
+            })
+            .slice(0, 4)
+        );
+      } catch {
+        // Keep static content as fallback if the live fetch fails.
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [currentId]);
+
   const description =
-    stripMarkdown(post.content).slice(0, 120) ||
+    stripMarkdown(currentPost.content).slice(0, 120) ||
     "株式会社マウンテンからのお知らせ・最新情報の詳細ページです。";
 
   return (
     <>
       <Head>
-        <title>{post.title}</title>
+        <title>{currentPost.title}</title>
         <meta name="description" content={description} />
-        <link rel="canonical" href={withTrailingSlash(`/news/${post.id}`)} />
-        <meta property="og:title" content={post.title} />
+        <link rel="canonical" href={withTrailingSlash(`/news/${currentPost.id}`)} />
+        <meta property="og:title" content={currentPost.title} />
         <meta property="og:description" content={description} />
         <meta property="og:type" content="article" />
-        <meta property="og:url" content={withTrailingSlash(`/news/${post.id}`)} />
+        <meta property="og:url" content={withTrailingSlash(`/news/${currentPost.id}`)} />
       </Head>
 
       <div className="min-h-screen bg-[linear-gradient(180deg,#fff7ed_0%,#ffffff_28%,#f8fafc_100%)]">
@@ -72,21 +111,21 @@ export default function NewsDetailPage({ post, relatedPosts }: Props) {
                 <span className="text-slate-500">/</span>
                 <span>NEWS</span>
                 <span className="text-slate-500">/</span>
-                <span className="truncate text-slate-400">{post.category}</span>
+                <span className="truncate text-slate-400">{currentPost.category}</span>
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
                 <span
                   className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
-                    categoryColors[post.category] ?? "bg-white/10 text-slate-200 ring-white/10"
+                    categoryColors[currentPost.category] ?? "bg-white/10 text-slate-200 ring-white/10"
                   }`}
                 >
-                  {post.category}
+                  {currentPost.category}
                 </span>
-                <time className="font-mono text-sm text-slate-400">{formatDate(post.createdAt)}</time>
+                <time className="font-mono text-sm text-slate-400">{formatDate(currentPost.createdAt)}</time>
               </div>
               <h1 className="mt-6 text-3xl font-bold leading-tight text-white sm:text-5xl sm:leading-tight">
-                {post.title}
+                {currentPost.title}
               </h1>
               <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
                 株式会社マウンテンからのお知らせを掲載しています。本文をご確認ください。
@@ -99,14 +138,14 @@ export default function NewsDetailPage({ post, relatedPosts }: Props) {
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_240px] lg:items-start">
             <article className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
               <div className="px-6 py-8 sm:px-8 sm:py-10">
-                <ArticleBody content={post.content} />
-                {(post.imageData || post.videoData || post.attachmentData) && (
+                <ArticleBody content={currentPost.content} />
+                {(currentPost.imageData || currentPost.videoData || currentPost.attachmentData) && (
                   <div className="mt-8 space-y-5 border-t border-slate-100 pt-8">
-                    {post.imageData && (
+                    {currentPost.imageData && (
                       <div className="overflow-hidden rounded-[1.5rem] border border-slate-100 bg-slate-50 p-3">
                         <Image
-                          src={post.imageData}
-                          alt={post.imageName ?? post.title}
+                          src={currentPost.imageData}
+                          alt={currentPost.imageName ?? currentPost.title}
                           width={1200}
                           height={800}
                           unoptimized
@@ -114,21 +153,21 @@ export default function NewsDetailPage({ post, relatedPosts }: Props) {
                         />
                       </div>
                     )}
-                    {post.videoData && (
+                    {currentPost.videoData && (
                       <div className="overflow-hidden rounded-[1.5rem] border border-slate-100 bg-slate-950">
-                        <video src={post.videoData} controls playsInline className="w-full bg-black" />
+                        <video src={currentPost.videoData} controls playsInline className="w-full bg-black" />
                       </div>
                     )}
-                    {post.attachmentData && (
+                    {currentPost.attachmentData && (
                       <div>
                         <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">Attachment</p>
                         <a
-                          href={post.attachmentData}
+                          href={currentPost.attachmentData}
                           target="_blank"
                           rel="noreferrer"
                           className="mt-2 inline-flex text-sm font-semibold text-orange-600 hover:underline"
                         >
-                          {post.attachmentName ?? "添付ファイルを開く"}
+                          {currentPost.attachmentName ?? "添付ファイルを開く"}
                         </a>
                       </div>
                     )}
@@ -148,7 +187,7 @@ export default function NewsDetailPage({ post, relatedPosts }: Props) {
                 </Link>
               </div>
 
-              {relatedPosts.length > 0 && (
+              {currentRelatedPosts.length > 0 && (
                 <div className="border-t border-slate-100 px-6 py-8 sm:px-8">
                   <div className="mb-5 flex items-center justify-between gap-3">
                     <div>
@@ -160,7 +199,7 @@ export default function NewsDetailPage({ post, relatedPosts }: Props) {
                     </Link>
                   </div>
                   <div className="grid gap-3">
-                    {relatedPosts.map((item) => (
+                    {currentRelatedPosts.map((item) => (
                       <Link
                         key={item.id}
                         href={`/news/${item.id}/`}
@@ -195,16 +234,16 @@ export default function NewsDetailPage({ post, relatedPosts }: Props) {
                 <dl className="mt-4 space-y-4">
                   <div>
                     <dt className="text-xs font-medium text-slate-400">カテゴリ</dt>
-                    <dd className="mt-1 text-sm font-semibold text-slate-900">{post.category}</dd>
+                    <dd className="mt-1 text-sm font-semibold text-slate-900">{currentPost.category}</dd>
                   </div>
                   <div>
                     <dt className="text-xs font-medium text-slate-400">公開日</dt>
-                    <dd className="mt-1 font-mono text-sm text-slate-700">{formatDate(post.createdAt)}</dd>
+                    <dd className="mt-1 font-mono text-sm text-slate-700">{formatDate(currentPost.createdAt)}</dd>
                   </div>
-                  {post.author && (
+                  {currentPost.author && (
                     <div>
                       <dt className="text-xs font-medium text-slate-400">投稿者</dt>
-                      <dd className="mt-1 text-sm text-slate-700">{post.author}</dd>
+                      <dd className="mt-1 text-sm text-slate-700">{currentPost.author}</dd>
                     </div>
                   )}
                 </dl>

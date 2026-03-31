@@ -1,11 +1,11 @@
 "use client";
 
-import { useRef, useState, useCallback, type ReactNode } from "react";
+import { useRef, useState, useCallback, useEffect, type ReactNode } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import Image from "next/image";
 import Link from "next/link";
-import { type ServiceCategoryDto, type ServiceItemDto } from "@/lib/api";
+import { fetchServiceCategories, fetchServiceItems, type ServiceCategoryDto, type ServiceItemDto } from "@/lib/api";
 import { stripMarkdown } from "@/components/ui/MarkdownContent";
 import { renderServiceCategoryIcon } from "@/components/ui/service-category-icons";
 
@@ -118,8 +118,27 @@ export default function ServicesSection({
   const [activeTab, setActiveTab] = useState<string | null>(() =>
     getActiveCategory(initialCategories, null)
   );
-  const [items] = useState<ServiceItemDto[]>(initialItems);
-  const [categories] = useState<ServiceCategoryDto[]>(initialCategories);
+  const [items, setItems] = useState<ServiceItemDto[]>(initialItems);
+  const [categories, setCategories] = useState<ServiceCategoryDto[]>(initialCategories);
+
+  useEffect(() => {
+    let active = true;
+
+    Promise.all([fetchServiceCategories(), fetchServiceItems()])
+      .then(([nextCategories, nextItems]) => {
+        if (!active) return;
+        setCategories(nextCategories);
+        setItems(nextItems);
+        setActiveTab((prev) => getActiveCategory(nextCategories, prev));
+      })
+      .catch(() => {
+        // Keep statically exported content as fallback if the live fetch fails.
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const switchTab = useCallback(
     (id: string) => {
