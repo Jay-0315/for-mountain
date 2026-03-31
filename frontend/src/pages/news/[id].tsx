@@ -103,6 +103,15 @@ export default function NewsDetailPage({ post, relatedPosts }: Props) {
                 <span className="text-orange-300">株式会社</span>
                 <span>MOUNTAIN</span>
               </Link>
+              <Link
+                href="/news/"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-slate-200 transition-all hover:-translate-y-0.5 hover:border-orange-300/40 hover:bg-white/10 hover:text-white"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                一覧へ戻る
+              </Link>
             </div>
 
             <div className="mt-10 max-w-3xl">
@@ -174,19 +183,6 @@ export default function NewsDetailPage({ post, relatedPosts }: Props) {
                   </div>
                 )}
               </div>
-
-              <div className="border-t border-slate-100 bg-slate-50/70 px-6 py-5 sm:px-8">
-                <Link
-                  href="/news/"
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition-all hover:-translate-y-0.5 hover:border-orange-300 hover:text-orange-500 hover:shadow-sm hover:shadow-orange-100"
-                >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                  お知らせ一覧に戻る
-                </Link>
-              </div>
-
               {currentRelatedPosts.length > 0 && (
                 <div className="border-t border-slate-100 px-6 py-8 sm:px-8">
                   <div className="mb-5 flex items-center justify-between gap-3">
