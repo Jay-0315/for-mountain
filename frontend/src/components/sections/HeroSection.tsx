@@ -517,7 +517,7 @@ export default function HeroSection() {
 
       // 초기 상태
       gsap.set(
-        [".hero-badge", ".hero-title-line1", ".hero-cta-1", ".hero-scroll"],
+        [".hero-badge", ".hero-title-line1", ".hero-title-line2", ".hero-cta-1", ".hero-scroll"],
         { opacity: 0, y: 30 }
       );
       gsap.set(".hero-sub", { opacity: 0, y: 20 });
@@ -618,6 +618,7 @@ export default function HeroSection() {
           },
           "<"
         )
+        .to(".hero-title-line2", { opacity: 1, y: 0, duration: 0.7 }, "-=0.7")
         .to(".hero-sub", { opacity: 1, y: 0, duration: 0.7 }, "-=0.6")
         .to(".hero-cta-1", { opacity: 1, y: 0, duration: 0.6 }, "-=0.4")
         .to(".hero-scroll", { opacity: 1, y: 0, duration: 0.5 }, "-=0.2");
@@ -719,28 +720,32 @@ export default function HeroSection() {
       {/* 메인 콘텐츠 */}
       <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
         {/* 배지 */}
-        <div className="hero-badge inline-flex items-center gap-2 px-4 py-2 bg-orange-600/10 border border-orange-500/20 rounded-full text-orange-400 text-sm font-medium mb-8 shadow-[0_10px_24px_rgba(249,115,22,0.08)] backdrop-blur-sm">
-          <span className="w-2 h-2 bg-orange-400 rounded-full animate-pulse" />
-          IT総合カンパニー
+        <div className="hero-badge inline-flex min-h-[4.75rem] items-center gap-4 rounded-[999px] border border-orange-300/20 bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(251,146,60,0.12))] px-6 py-3.5 text-sm font-medium text-orange-100 mb-8 shadow-[0_14px_36px_rgba(15,23,42,0.2)] backdrop-blur-md md:px-8">
+          <span className="h-3 w-3 shrink-0 rounded-full bg-gradient-to-br from-amber-200 via-orange-300 to-orange-500 shadow-[0_0_16px_rgba(251,146,60,0.45)] animate-pulse" />
+          <span className="bg-gradient-to-r from-amber-100 via-orange-200 to-orange-400 bg-clip-text pb-[0.08em] text-[1.7rem] font-bold leading-[1.15] text-transparent md:text-[2rem]">
+            IT Integrator Company
+          </span>
         </div>
 
         {/* 헤드라인 */}
         <h1 className="text-5xl md:text-7xl font-bold text-white leading-tight mb-6">
           <span className="hero-title-line1 block">　ITで、</span>
           <span className="hero-typing block text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-300 min-h-[1.2em]" />
+          <span className="hero-title-line2 mt-3 block bg-gradient-to-r from-orange-50 via-amber-100 to-orange-200 bg-clip-text text-3xl text-transparent md:text-5xl">
+            人と社会に信頼を
+          </span>
         </h1>
 
         {/* 서브텍스트 */}
-        <p className="hero-sub text-lg md:text-xl text-slate-200/88 max-w-2xl mx-auto mb-10 leading-relaxed">
-          株式会社マウンテンは
-          <span className="mx-1 bg-gradient-to-r from-orange-300 to-amber-200 bg-clip-text text-transparent">
-            「IT開発」と「ネットワークエンジニアリング」
+        <p className="hero-sub text-lg md:text-xl text-slate-200/88 max-w-3xl mx-auto mb-10 leading-relaxed">
+          <span className="block whitespace-nowrap">
+            株式会社マウンテンは
+            <span className="ml-1 bg-gradient-to-r from-orange-300 to-amber-200 bg-clip-text text-transparent">
+              ITソリューションとシステム開発に
+            </span>
+            <span className="ml-1 text-orange-200">イノベーションを起こし、</span>
           </span>
-          に
-          <span className="mx-1 text-orange-200">イノベーション</span>
-          を起こし、
-          <span className="mx-1 text-amber-100">お客様のビジネス成長</span>
-          を支援します。
+          <span className="block text-amber-100">お客様のビジネス成長を支援します。</span>
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">

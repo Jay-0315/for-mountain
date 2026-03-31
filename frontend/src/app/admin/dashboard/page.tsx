@@ -395,7 +395,7 @@ export default function DashboardPage() {
   const visibleLeaves = leaderMemberIds === undefined ? [] : leaves.filter((leave) => {
     if (leaderMemberIds !== null) return leaderMemberIds.includes(leave.employeeId);
     if (effectiveDepartment === "全部門") return true;
-    return leave.department === effectiveDepartment;
+    return leave.employeeId === viewer.employee?.id;
   });
 
   const monthDays = useMemo(() => buildCalendarDays(currentMonth), [currentMonth]);
@@ -426,7 +426,7 @@ export default function DashboardPage() {
 
     const filtered = deptNotices.filter((notice) => (allowedDepartments ? allowedDepartments.has(notice.department) : true));
     return filtered.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5);
-  }, [deptNotices, viewer.canViewAll, viewer.employee]);
+  }, [deptNotices, viewer.canViewAll, viewer.employee, effectiveDepartment]);
   const selectedDayKey = selectedDay ? formatDay(selectedDay) : null;
   const selectedDayLeaves = selectedDayKey
     ? visibleLeaves.filter((leave) => leaveIncludesDate(leave, selectedDayKey))
