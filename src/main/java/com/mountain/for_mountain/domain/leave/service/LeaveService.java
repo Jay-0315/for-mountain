@@ -24,6 +24,7 @@ import org.springframework.security.core.Authentication;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -37,6 +38,7 @@ import java.util.Set;
 public class LeaveService {
 
     private static final List<String> CANCELLABLE_STATUSES = List.of("待機中", "拒否", "却下", "否認");
+    private static final int[] GRANT_SCHEDULE = {10, 11, 12, 14, 16, 18, 20};
 
     private final LeaveRepository leaveRepository;
     private final EmployeeRepository employeeRepository;
@@ -77,7 +79,7 @@ public class LeaveService {
     public LeaveResponse create(LeaveCreateRequest request) {
         Employee employee = employeeRepository.findById(request.getEmployeeId())
                 .orElseThrow(() -> new CustomException(ErrorCode.ACCOUNT_NOT_FOUND));
-        validateLeaveDaysWithinBalance(employee, request.getDays());
+        validateLeaveDaysWithinBalance(employee, request.getLeaveType(), request.getDays());
         Leave leave = Leave.create(
                 employee.getId(),
                 request.getLeaveType(),
@@ -104,7 +106,7 @@ public class LeaveService {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
 
-        validateLeaveDaysWithinBalance(currentEmployee, request.getDays());
+        validateLeaveDaysWithinBalance(currentEmployee, request.getLeaveType(), request.getDays());
         leave.updateDetails(
                 request.getLeaveType(),
                 LocalDate.parse(request.getStartDate()),
@@ -263,11 +265,102 @@ public class LeaveService {
         return normalizedBaseUrl + "/admin/leave/" + leaveId;
     }
 
-    private void validateLeaveDaysWithinBalance(Employee employee, Integer requestedDays) {
-        int remainingDays = employee.getAnnualLeaveDays() == null ? 0 : employee.getAnnualLeaveDays();
+    private void validateLeaveDaysWithinBalance(Employee employee, String leaveType, Integer requestedDays) {
         int days = requestedDays == null ? 0 : requestedDays;
+        if (days <= 0) {
+            return;
+        }
+
+        if (!requiresLeaveBalance(leaveType)) {
+            return;
+        }
+
+        int remainingDays = calculateRemainingLeaveDays(employee);
         if (days > remainingDays) {
             throw new CustomException(ErrorCode.INSUFFICIENT_LEAVE_BALANCE);
+        }
+    }
+
+    private int calculateRemainingLeaveDays(Employee employee) {
+        if (employee.getJoinDate() == null) {
+            return employee.getAnnualLeaveDays() == null ? 0 : employee.getAnnualLeaveDays();
+        }
+
+        LocalDate today = LocalDate.now();
+        LocalDate firstGrant = employee.getJoinDate().plusMonths(6);
+        List<LeavePool> pools = new ArrayList<>();
+
+        if (today.isBefore(firstGrant)) {
+            pools.add(new LeavePool(employee.getJoinDate(), firstGrant.plusYears(2), 5));
+        } else {
+            int grantIndex = 0;
+            LocalDate grantDate = firstGrant;
+
+            while (!grantDate.isAfter(today)) {
+                LocalDate expiryDate = grantDate.plusYears(2);
+                if (expiryDate.isAfter(today)) {
+                    pools.add(new LeavePool(grantDate, expiryDate, getGrantDays(grantIndex)));
+                }
+                grantIndex += 1;
+                grantDate = firstGrant.plusYears(grantIndex);
+            }
+        }
+
+        List<Leave> approvedLeaves = leaveRepository.findAllByOrderByCreatedAtDesc().stream()
+                .filter(leave -> leave.getEmployeeId().equals(employee.getId()))
+                .filter(leave -> "承認".equals(leave.getStatus()))
+                .filter(this::requiresLeaveBalance)
+                .sorted(Comparator.comparing(Leave::getStartDate))
+                .toList();
+
+        for (Leave leave : approvedLeaves) {
+            int daysLeft = leave.getDays() == null ? 0 : leave.getDays();
+            for (LeavePool pool : pools) {
+                if (daysLeft <= 0) {
+                    break;
+                }
+                if ((leave.getStartDate().isEqual(pool.grantDate) || leave.getStartDate().isAfter(pool.grantDate))
+                        && leave.getStartDate().isBefore(pool.expiryDate)
+                        && pool.remainingDays > 0) {
+                    int deduct = Math.min(daysLeft, pool.remainingDays);
+                    pool.remainingDays -= deduct;
+                    daysLeft -= deduct;
+                }
+            }
+        }
+
+        return pools.stream()
+                .mapToInt(pool -> pool.remainingDays)
+                .sum();
+    }
+
+    private boolean requiresLeaveBalance(Leave leave) {
+        return leave != null && requiresLeaveBalance(leave.getLeaveType());
+    }
+
+    private boolean requiresLeaveBalance(String leaveType) {
+        if (leaveType == null || leaveType.isBlank()) {
+            return false;
+        }
+
+        return leaveType.contains("有給")
+                || leaveType.contains("公休")
+                || leaveType.contains("代休");
+    }
+
+    private int getGrantDays(int index) {
+        return GRANT_SCHEDULE[Math.min(index, GRANT_SCHEDULE.length - 1)];
+    }
+
+    private static final class LeavePool {
+        private final LocalDate grantDate;
+        private final LocalDate expiryDate;
+        private int remainingDays;
+
+        private LeavePool(LocalDate grantDate, LocalDate expiryDate, int remainingDays) {
+            this.grantDate = grantDate;
+            this.expiryDate = expiryDate;
+            this.remainingDays = remainingDays;
         }
     }
 }

@@ -109,20 +109,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [currentEmployee, setCurrentEmployee] = useState<EmployeeDto | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
   const [leaderMemberIds, setLeaderMemberIds] = useState<number[] | null | undefined>(undefined);
-  const token = typeof window === "undefined" ? null : window.sessionStorage.getItem("admin_token");
+  const [token, setToken] = useState<string | null>(null);
+  const [todayLabel, setTodayLabel] = useState("");
   const role = getSessionRole(token);
 
   useEffect(() => {
-    const token = sessionStorage.getItem("admin_token");
+    setToken(sessionStorage.getItem("admin_token"));
+    setTodayLabel(new Date().toLocaleDateString("ja-JP"));
+  }, []);
+
+  useEffect(() => {
     if (!token && !isLoginPage) {
       router.replace(`/admin?redirect=${encodeURIComponent(normalizedPathname)}`);
       return;
     }
-  }, [isLoginPage, normalizedPathname, router]);
+  }, [isLoginPage, normalizedPathname, router, token]);
 
   useEffect(() => {
     if (isLoginPage) return;
-    const token = sessionStorage.getItem("admin_token");
     const { sub } = getSessionPayload(token);
     if (!sub) return;
 
@@ -146,7 +150,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         setCurrentEmployee(null);
         setLeaderMemberIds(null);
       });
-  }, [isLoginPage, role]);
+  }, [isLoginPage, role, token]);
 
   // 로그인 페이지는 레이아웃 없이 그냥 렌더링
   if (isLoginPage) {
@@ -284,7 +288,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div className="flex items-center gap-4">
               <div className="hidden sm:flex items-center gap-3">
                 <span className="text-sm font-semibold text-slate-500 font-mono">
-                  {new Date().toLocaleDateString("ja-JP")}
+                  {todayLabel}
                 </span>
                 <span className="text-sm font-semibold text-slate-600">
                   {currentEmployee ? `今日もお疲れ様です ${currentEmployee.name}さん` : "今日もお疲れ様です"}
