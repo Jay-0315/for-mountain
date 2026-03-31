@@ -23,6 +23,8 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class EmployeeService {
 
+    private static final String PENDING_ASSIGNMENT_DEPARTMENT = "발령예정";
+
     private final EmployeeRepository employeeRepository;
     private final AdminAccountRepository adminAccountRepository;
     private final AccountManagementService accountManagementService;
@@ -50,7 +52,7 @@ public class EmployeeService {
                 request.getNameKana(),
                 request.getNationality(),
                 LocalDate.parse(request.getBirthDate()),
-                request.getDepartment(),
+                PENDING_ASSIGNMENT_DEPARTMENT,
                 request.getPosition(),
                 request.getJobTitle(),
                 LocalDate.parse(request.getJoinDate()),
@@ -73,7 +75,7 @@ public class EmployeeService {
                 request.getNameKana(),
                 request.getNationality(),
                 LocalDate.parse(request.getBirthDate()),
-                request.getDepartment(),
+                employee.getDepartment(),
                 request.getPosition(),
                 request.getJobTitle(),
                 LocalDate.parse(request.getJoinDate()),

@@ -1,0 +1,89 @@
+name: Deploy Frontend to Xserver
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "frontend/**"
+      - "docker/xserver/**"
+      - ".github/workflows/deploy-frontend.yml"
+
+env:
+  PUBLIC_DIR: /home/xs799946/mountain-info.com/public_html
+  FRONTEND_TMP_DIR: /home/xs799946/mountain-info.com/.deploy_frontend
+
+jobs:
+  deploy-frontend:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build Frontend (Static Export)
+        run: |
+          npm ci
+          STATIC_EXPORT=true npm run build
+
+      - name: Prepare frontend temp directory
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.XSERVER_HOST }}
+          username: ${{ secrets.XSERVER_USER }}
+          key: ${{ secrets.XSERVER_SSH_KEY }}
+          port: ${{ secrets.XSERVER_PORT }}
+          script: |
+            set -eu
+            rm -rf "${{ env.FRONTEND_TMP_DIR }}"
+            mkdir -p "${{ env.FRONTEND_TMP_DIR }}"
+
+      - name: Copy Static Frontend to Xserver temp directory
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.XSERVER_HOST }}
+          username: ${{ secrets.XSERVER_USER }}
+          key: ${{ secrets.XSERVER_SSH_KEY }}
+          port: ${{ secrets.XSERVER_PORT }}
+          source: "frontend/out/"
+          target: ${{ env.FRONTEND_TMP_DIR }}
+          strip_components: 2
+
+      - name: Copy proxy.php and .htaccess to Xserver temp directory
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.XSERVER_HOST }}
+          username: ${{ secrets.XSERVER_USER }}
+          key: ${{ secrets.XSERVER_SSH_KEY }}
+          port: ${{ secrets.XSERVER_PORT }}
+          source: "docker/xserver/proxy.php,docker/xserver/.htaccess"
+          target: ${{ env.FRONTEND_TMP_DIR }}
+          strip_components: 2
+
+      - name: Publish Frontend
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.XSERVER_HOST }}
+          username: ${{ secrets.XSERVER_USER }}
+          key: ${{ secrets.XSERVER_SSH_KEY }}
+          port: ${{ secrets.XSERVER_PORT }}
+          script: |
+            set -eu
+            mkdir -p "${{ env.PUBLIC_DIR }}"
+
+            find "${{ env.PUBLIC_DIR }}" -mindepth 1 -maxdepth 1 ! -name ".well-known" -exec rm -rf {} +
+            cp -R "${{ env.FRONTEND_TMP_DIR }}/"* "${{ env.PUBLIC_DIR }}/"
+            cp "${{ env.FRONTEND_TMP_DIR }}/proxy.php" "${{ env.PUBLIC_DIR }}/proxy.php"
+            cp "${{ env.FRONTEND_TMP_DIR }}/.htaccess" "${{ env.PUBLIC_DIR }}/.htaccess"
+
+            ls -la "${{ env.PUBLIC_DIR }}" | head

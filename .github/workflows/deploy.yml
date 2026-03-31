@@ -3,6 +3,16 @@ name: Deploy to Xserver
 on:
   push:
     branches: ["main"]
+    paths:
+      - "src/**"
+      - "build.gradle"
+      - "settings.gradle"
+      - "gradle/**"
+      - "gradlew"
+      - "Dockerfile"
+      - "docker-compose.yml"
+      - "docker-compose.prod.yml"
+      - ".github/workflows/deploy.yml"
 
 env:
   ROOT_DIR: /home/xs799946/mountain-info.com
