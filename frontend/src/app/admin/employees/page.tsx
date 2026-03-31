@@ -15,20 +15,56 @@ const STATUS_COLOR: Record<string, string> = {
   退職: "bg-slate-100 text-slate-500",
 };
 
-const DEPT_COLOR: Record<string, string> = {
-  "開発Part1":      "bg-yellow-100 text-yellow-700",
-  "開発Part2":      "bg-amber-100 text-amber-700",
-  "技術グループ1":   "bg-green-100 text-green-700",
-  "技術グループ2":   "bg-emerald-100 text-emerald-700",
-  "技術本部":        "bg-lime-100 text-lime-700",
-  "サービスグループ": "bg-red-100 text-red-700",
-  "営業１グループ":  "bg-rose-100 text-rose-700",
-  "管理部":          "bg-orange-100 text-orange-700",
+type GroupColorKey = "orange" | "amber" | "yellow" | "green" | "emerald" | "sky" | "blue" | "rose" | "slate";
+
+const GROUP_BADGE_COLOR: Record<GroupColorKey, string> = {
+  orange: "bg-orange-100 text-orange-700",
+  amber: "bg-amber-100 text-amber-700",
+  yellow: "bg-yellow-100 text-yellow-700",
+  green: "bg-green-100 text-green-700",
+  emerald: "bg-emerald-100 text-emerald-700",
+  sky: "bg-sky-100 text-sky-700",
+  blue: "bg-blue-100 text-blue-700",
+  rose: "bg-rose-100 text-rose-700",
+  slate: "bg-slate-100 text-slate-600",
 };
 
-function deptColorKey(value: string) {
+const LEGACY_GROUP_COLOR_BY_NAME: Record<string, GroupColorKey> = {
+  "管理部": "orange",
+  "技術本部": "emerald",
+  "技術グループ1": "green",
+  "技術グループ2": "yellow",
+  "開発 Part1": "yellow",
+  "開発 Part2": "amber",
+  "サービスグループ": "rose",
+  "営業１グループ": "rose",
+};
+
+function normalizeDepartmentName(value: string) {
   return value.replace(/\s+/g, "").trim();
 }
+
+function isGroupColorKey(value: string): value is GroupColorKey {
+  return value in GROUP_BADGE_COLOR;
+}
+
+function resolveDepartmentBadgeColor(department: string, groups: GroupDto[]) {
+  const normalizedDepartment = normalizeDepartmentName(department);
+  const matchedGroup = groups.find((group) => normalizeDepartmentName(group.name) === normalizedDepartment);
+  const groupColor = matchedGroup?.color?.trim();
+
+  if (groupColor && isGroupColorKey(groupColor)) {
+    return GROUP_BADGE_COLOR[groupColor];
+  }
+
+  const fallbackColor =
+    (matchedGroup && LEGACY_GROUP_COLOR_BY_NAME[matchedGroup.name]) ||
+    LEGACY_GROUP_COLOR_BY_NAME[department] ||
+    "slate";
+
+  return GROUP_BADGE_COLOR[fallbackColor];
+}
+
 const POSITIONS: Position[] = ["代表取締役", "常務", "部長", "次長", "課長", "課長代理", "主任", "社員"];
 const JOB_TITLES: JobTitle[] = ["役員", "管理職", "一般社員"];
 
@@ -367,7 +403,7 @@ export default function EmployeesPage() {
                         <p className="text-slate-400 text-xs mt-0.5">{emp.nameKana}</p>
                       </td>
                       <td className="px-5 py-3.5 hidden sm:table-cell">
-                        <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${DEPT_COLOR[deptColorKey(emp.department)] ?? "bg-slate-100 text-slate-600"}`}>
+                        <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${resolveDepartmentBadgeColor(emp.department, groups)}`}>
                           {emp.department}
                         </span>
                       </td>
