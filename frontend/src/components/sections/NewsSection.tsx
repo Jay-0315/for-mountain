@@ -207,8 +207,9 @@ export default function NewsSection() {
             お知らせ
           </h2>
 
-          <p className="text-slate-500 text-lg max-w-xl mx-auto">
-            株式会社マウンテン &gt; お知らせ
+          <p className="mx-auto max-w-xl text-lg font-semibold text-slate-500">
+            <span className="text-orange-500">株式会社マウンテン</span>
+            <span> &gt; お知らせ</span>
           </p>
         </div>
 
@@ -241,20 +242,20 @@ export default function NewsSection() {
                   ${i !== items.length - 1 ? "border-b border-slate-100" : ""}`}
               >
                 {/* 날짜 */}
-                <time className="text-sm text-slate-400 font-mono shrink-0 w-28">
+                <time className="w-32 shrink-0 font-mono text-[16px] text-slate-400">
                   {formatDate(item.date)}
                 </time>
 
                 {/* 카테고리 배지 */}
                 <span
-                  className={`px-2.5 py-1 text-xs font-semibold rounded-full shrink-0 w-20 text-center
+                  className={`w-24 shrink-0 rounded-full px-2.5 py-1 text-center text-[14px] font-semibold
                     ${categoryColors[item.category] ?? "bg-slate-50 text-slate-500"} transition-transform duration-300 group-hover:-translate-y-0.5`}
                 >
                   {item.category}
                 </span>
 
                 {/* 제목 */}
-                <p className="text-sm text-slate-700 group-hover:text-orange-500 transition-colors leading-relaxed flex-1">
+                <p className="flex-1 text-[18px] font-semibold leading-relaxed text-slate-700 transition-colors group-hover:text-orange-500">
                   {item.title}
                 </p>
 
