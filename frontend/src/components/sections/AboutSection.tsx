@@ -193,7 +193,12 @@ export default function AboutSection() {
   const activeTabData = tabs.find((t) => t.id === activeTab)!;
 
   return (
-    <section ref={sectionRef} id="about" className="pt-44 pb-[32rem] bg-gray-50 overflow-hidden">
+    <section
+      ref={sectionRef}
+      id="about"
+      className="pt-44 pb-[32rem] bg-gray-50 overflow-hidden"
+      style={{ fontFamily: '"Meiryo UI", Meiryo, "Yu Gothic UI", "MS PGothic", sans-serif' }}
+    >
       <div className="max-w-6xl mx-auto px-6 sm:px-10 lg:px-6">
 
         {/* 섹션 헤더 */}
