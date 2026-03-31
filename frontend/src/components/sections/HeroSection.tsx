@@ -739,7 +739,7 @@ export default function HeroSection() {
         {/* 서브텍스트 */}
         <p className="hero-sub text-lg md:text-xl text-slate-200/88 max-w-3xl mx-auto mb-10 leading-relaxed">
           <span className="block whitespace-nowrap">
-            株式会社マウンテンは
+            <span className="text-orange-300">株式会社マウンテンは</span>
             <span className="ml-1 bg-gradient-to-r from-orange-300 to-amber-200 bg-clip-text text-transparent">
               ITソリューションとシステム開発に
             </span>

@@ -30,9 +30,9 @@ const tabs = [
       </svg>
     ),
     content: (
-      <p className="text-slate-600 leading-relaxed text-base md:text-[1.075rem]">
+      <p className="text-slate-700 text-xl md:text-[2rem] font-semibold leading-[1.7]">
         私たちはモノの価値を最大限生み出し、社会の変化と調和しながら
-        <strong className="text-slate-800">便利で豊かな人間社会を実現するために</strong>
+        <strong className="font-extrabold text-slate-900">便利で豊かな人間社会を実現するために</strong>
         、常に挑戦し人と社会に信頼される企業を目指します。
       </p>
     ),
@@ -47,9 +47,9 @@ const tabs = [
       </svg>
     ),
     content: (
-      <div className="space-y-3 text-base md:text-[1.075rem] text-slate-600 leading-relaxed">
+      <div className="space-y-5 text-xl md:text-[2rem] text-slate-700 font-semibold leading-[1.7]">
         <p>
-          弊社はITの総合サポート企業として、<strong className="text-slate-800">ソリューションと開発を通じて便利で豊かな社会を実現する</strong>
+          弊社はITの総合サポート企業として、<strong className="font-extrabold text-slate-900">ソリューションと開発を通じて便利で豊かな社会を実現する</strong>
           ことを目標にしております。
         </p>
         <p>
@@ -58,7 +58,7 @@ const tabs = [
         </p>
         <p>
           システム開発においては要件定義・設計・製造・テスト・保守の業務全盤を対応しており、
-          高い技術力と特化したマネージドサービスを持つ<strong className="text-slate-800">MSP企業として成長</strong>
+          高い技術力と特化したマネージドサービスを持つ<strong className="font-extrabold text-slate-900">MSP企業として成長</strong>
           してまいります。
         </p>
       </div>
@@ -230,7 +230,7 @@ export default function AboutSection() {
           </div>
 
           {/* 탭 콘텐츠 */}
-          <div ref={tabPanelRef} className="bg-white rounded-2xl border border-slate-100 p-8 shadow-sm min-h-[140px]">
+          <div ref={tabPanelRef} className="bg-white rounded-2xl border border-slate-100 p-10 md:p-12 shadow-sm min-h-[320px]">
             <h3 className="text-xl md:text-2xl font-bold text-slate-900 mb-4 flex items-center gap-2">
               <span className="w-1 h-5 bg-orange-500 rounded-full inline-block" />
               {activeTabData.label}
@@ -267,10 +267,10 @@ export default function AboutSection() {
                   key={row.label}
                   className={`about-table-row flex gap-0 ${i !== companyInfo.length - 1 ? "border-b border-slate-100" : ""}`}
                 >
-                  <span className="text-xs font-semibold text-slate-500 bg-slate-50 w-28 shrink-0 px-4 py-3.5 flex items-start pt-3.5">
+                  <span className="w-36 shrink-0 bg-slate-50 px-5 py-5 text-sm md:text-base font-bold text-slate-600 flex items-start">
                     {row.label}
                   </span>
-                  <span className="text-base md:text-[1.05rem] text-slate-800 px-5 py-3.5 leading-relaxed whitespace-pre-line flex-1">
+                  <span className="flex-1 whitespace-pre-line px-6 py-5 text-xl md:text-[2rem] font-semibold leading-[1.6] text-slate-900">
                     {row.value}
                   </span>
                 </div>
