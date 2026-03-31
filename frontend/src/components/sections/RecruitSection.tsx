@@ -283,8 +283,9 @@ export default function RecruitSection() {
           <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
             採用情報
           </h2>
-          <p className="text-slate-500 text-lg max-w-xl mx-auto">
-            株式会社マウンテン &gt; Recruit
+          <p className="mx-auto max-w-xl text-lg font-semibold text-slate-500">
+            <span className="text-orange-500">株式会社マウンテン</span>
+            <span> &gt; Recruit</span>
           </p>
         </div>
 
