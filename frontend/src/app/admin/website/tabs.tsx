@@ -573,7 +573,6 @@ export function WebsiteTab() {
         createdAt={selectedPost.createdAt}
         imageName={selectedPost.imageName}
         imageUrl={selectedPost.imageData}
-        videoName={selectedPost.videoName}
         videoUrl={selectedPost.videoData}
         attachmentName={selectedPost.attachmentName}
         attachmentUrl={selectedPost.attachmentData}
