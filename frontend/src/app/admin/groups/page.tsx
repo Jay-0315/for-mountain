@@ -32,6 +32,44 @@ function resolveDepartmentColor(value: string) {
   return DEPT_COLOR[normalized] ?? "bg-slate-100 text-slate-700";
 }
 
+type GroupColorKey = "orange" | "amber" | "yellow" | "green" | "emerald" | "sky" | "blue" | "rose" | "slate";
+
+const GROUP_COLOR_OPTIONS: Array<{
+  key: GroupColorKey;
+  label: string;
+  dot: string;
+  accent: { border: string; leaderBg: string; leaderLabel: string; leaderPos: string; memberTag: string };
+}> = [
+  { key: "orange", label: "Orange", dot: "bg-orange-400", accent: { border: "border-l-orange-400", leaderBg: "from-orange-50 to-amber-50 border-orange-100", leaderLabel: "text-orange-600", leaderPos: "text-orange-400", memberTag: "bg-orange-50 border-orange-100 text-orange-700" } },
+  { key: "amber", label: "Amber", dot: "bg-amber-400", accent: { border: "border-l-amber-400", leaderBg: "from-amber-50 to-orange-50 border-amber-100", leaderLabel: "text-amber-600", leaderPos: "text-amber-400", memberTag: "bg-amber-50 border-amber-100 text-amber-700" } },
+  { key: "yellow", label: "Yellow", dot: "bg-yellow-400", accent: { border: "border-l-yellow-400", leaderBg: "from-yellow-50 to-amber-50 border-yellow-100", leaderLabel: "text-yellow-700", leaderPos: "text-yellow-500", memberTag: "bg-yellow-50 border-yellow-100 text-yellow-700" } },
+  { key: "green", label: "Green", dot: "bg-green-400", accent: { border: "border-l-green-400", leaderBg: "from-green-50 to-lime-50 border-green-100", leaderLabel: "text-green-600", leaderPos: "text-green-400", memberTag: "bg-green-50 border-green-100 text-green-700" } },
+  { key: "emerald", label: "Emerald", dot: "bg-emerald-400", accent: { border: "border-l-emerald-400", leaderBg: "from-emerald-50 to-green-50 border-emerald-100", leaderLabel: "text-emerald-600", leaderPos: "text-emerald-400", memberTag: "bg-emerald-50 border-emerald-100 text-emerald-700" } },
+  { key: "sky", label: "Sky", dot: "bg-sky-400", accent: { border: "border-l-sky-400", leaderBg: "from-sky-50 to-cyan-50 border-sky-100", leaderLabel: "text-sky-600", leaderPos: "text-sky-500", memberTag: "bg-sky-50 border-sky-100 text-sky-700" } },
+  { key: "blue", label: "Blue", dot: "bg-blue-400", accent: { border: "border-l-blue-400", leaderBg: "from-blue-50 to-indigo-50 border-blue-100", leaderLabel: "text-blue-600", leaderPos: "text-blue-500", memberTag: "bg-blue-50 border-blue-100 text-blue-700" } },
+  { key: "rose", label: "Rose", dot: "bg-rose-400", accent: { border: "border-l-rose-400", leaderBg: "from-rose-50 to-pink-50 border-rose-100", leaderLabel: "text-rose-600", leaderPos: "text-rose-400", memberTag: "bg-rose-50 border-rose-100 text-rose-700" } },
+  { key: "slate", label: "Slate", dot: "bg-slate-400", accent: { border: "border-l-slate-300", leaderBg: "from-slate-50 to-white border-slate-100", leaderLabel: "text-slate-500", leaderPos: "text-slate-400", memberTag: "bg-slate-50 border-slate-100 text-slate-600" } },
+];
+
+const LEGACY_GROUP_COLOR_BY_NAME: Record<string, GroupColorKey> = {
+  "管理部": "orange",
+  "技術本部": "emerald",
+  "技術グループ1": "green",
+  "技術グループ2": "yellow",
+  "開発 Part1": "yellow",
+  "開発 Part2": "amber",
+  "サービスグループ": "rose",
+  "営業１グループ": "rose",
+};
+
+function resolveGroupColorKey(group: Pick<GroupDto, "name" | "color"> | null | undefined): GroupColorKey {
+  const color = group?.color?.trim();
+  if (color && GROUP_COLOR_OPTIONS.some((option) => option.key === color)) {
+    return color as GroupColorKey;
+  }
+  return LEGACY_GROUP_COLOR_BY_NAME[group?.name ?? ""] ?? "slate";
+}
+
 type GroupCreateMode = "independent" | "subgroup";
 
 function GroupModal({
@@ -57,6 +95,7 @@ function GroupModal({
   const [memberIds, setMemberIds] = useState<number[]>(group?.memberIds ?? []);
   const [selectedMemberId, setSelectedMemberId] = useState<number | "">("");
   const [description, setDescription] = useState(group?.description ?? "");
+  const [color, setColor] = useState<GroupColorKey>(resolveGroupColorKey(group));
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const parentOptions = useMemo(() => {
@@ -118,6 +157,7 @@ function GroupModal({
         memberIds,
         description: description.trim(),
         parentGroupId: createMode === "subgroup" ? Number(parentGroupId) : null,
+        color,
       };
 
       if (isEdit && group) {
@@ -253,6 +293,31 @@ function GroupModal({
             />
           </div>
 
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">グループ色</label>
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+              {GROUP_COLOR_OPTIONS.map((option) => (
+                <button
+                  key={option.key}
+                  type="button"
+                  onClick={() => setColor(option.key)}
+                  className={`flex min-h-20 flex-col items-center justify-center gap-2 rounded-2xl border px-3 py-3 text-xs font-semibold transition-colors ${
+                    color === option.key
+                      ? "border-orange-300 bg-orange-50 text-orange-600"
+                      : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                  }`}
+                >
+                  <span
+                    className={`h-8 w-8 rounded-full ring-4 ${
+                      color === option.key ? "ring-white shadow-sm" : "ring-slate-50"
+                    } ${option.dot}`}
+                  />
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
             <div className="flex items-center justify-between gap-3">
               <p className="text-sm font-semibold text-slate-900">所属メンバー</p>
@@ -369,20 +434,9 @@ function StatCard({
   );
 }
 
-const GROUP_ACCENT: Record<string, { border: string; leaderBg: string; leaderLabel: string; leaderPos: string; memberTag: string }> = {
-  "管理部":           { border: "border-l-orange-400",  leaderBg: "from-orange-50 to-amber-50 border-orange-100",    leaderLabel: "text-orange-600",  leaderPos: "text-orange-400",  memberTag: "bg-orange-50 border-orange-100 text-orange-700" },
-  "技術本部":         { border: "border-l-emerald-400", leaderBg: "from-emerald-50 to-green-50 border-emerald-100",  leaderLabel: "text-emerald-600", leaderPos: "text-emerald-400", memberTag: "bg-emerald-50 border-emerald-100 text-emerald-700" },
-  "技術グループ1":    { border: "border-l-green-400",   leaderBg: "from-green-50 to-lime-50 border-green-100",       leaderLabel: "text-green-600",   leaderPos: "text-green-400",   memberTag: "bg-green-50 border-green-100 text-green-700" },
-  "技術グループ2":    { border: "border-l-lime-500",    leaderBg: "from-lime-50 to-yellow-50 border-lime-100",       leaderLabel: "text-lime-700",    leaderPos: "text-lime-500",    memberTag: "bg-lime-50 border-lime-100 text-lime-700" },
-  "開発 Part1":      { border: "border-l-yellow-400",  leaderBg: "from-yellow-50 to-amber-50 border-yellow-100",    leaderLabel: "text-yellow-700",  leaderPos: "text-yellow-500",  memberTag: "bg-yellow-50 border-yellow-100 text-yellow-700" },
-  "開発 Part2":      { border: "border-l-amber-400",   leaderBg: "from-amber-50 to-orange-50 border-amber-100",     leaderLabel: "text-amber-600",   leaderPos: "text-amber-400",   memberTag: "bg-amber-50 border-amber-100 text-amber-700" },
-  "サービスグループ": { border: "border-l-red-400",    leaderBg: "from-red-50 to-rose-50 border-red-100",           leaderLabel: "text-red-600",     leaderPos: "text-red-400",     memberTag: "bg-red-50 border-red-100 text-red-700" },
-  "営業１グループ":   { border: "border-l-rose-400",   leaderBg: "from-rose-50 to-pink-50 border-rose-100",         leaderLabel: "text-rose-600",    leaderPos: "text-rose-400",    memberTag: "bg-rose-50 border-rose-100 text-rose-700" },
-};
-const DEFAULT_ACCENT = { border: "border-l-slate-300", leaderBg: "from-slate-50 to-white border-slate-100", leaderLabel: "text-slate-500", leaderPos: "text-slate-400", memberTag: "bg-slate-50 border-slate-100 text-slate-600" };
-
 function resolveGroupAccent(group: GroupDto) {
-  return GROUP_ACCENT[group.name] ?? DEFAULT_ACCENT;
+  const key = resolveGroupColorKey(group);
+  return GROUP_COLOR_OPTIONS.find((option) => option.key === key)?.accent ?? GROUP_COLOR_OPTIONS[GROUP_COLOR_OPTIONS.length - 1].accent;
 }
 
 function GroupCard({
@@ -495,16 +549,16 @@ function TreeNode({
   group: GroupDto;
   employees: EmployeeDto[];
   allGroups: GroupDto[];
-  expanded: Record<string, boolean>;
+  expanded: Record<number, boolean>;
   canManage: boolean;
-  onToggle: (name: string) => void;
+  onToggle: (id: number) => void;
   onEdit: (group: GroupDto) => void;
   onDelete: (groupId: number) => void;
   depth?: number;
 }) {
   const children = allGroups.filter((item) => item.parentGroupId === group.id);
   const hasChildren = children.length > 0;
-  const isOpen = expanded[group.name] ?? true;
+  const isOpen = expanded[group.id] ?? true;
 
   return (
     <div className={`${depth > 0 ? "ml-4 border-l border-slate-200 pl-4 sm:ml-6 sm:pl-5" : ""}`}>
@@ -513,7 +567,7 @@ function TreeNode({
           {hasChildren ? (
             <button
               type="button"
-              onClick={() => onToggle(group.name)}
+              onClick={() => onToggle(group.id)}
               className="flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition-all duration-300 ease-out hover:border-orange-200 hover:text-orange-500"
               aria-label={isOpen ? `${group.name}を閉じる` : `${group.name}を開く`}
             >
@@ -542,13 +596,8 @@ function TreeNode({
           </div>
         </div>
 
-        {hasChildren && (
-          <div
-            className={`overflow-hidden transition-all duration-300 ease-out ${
-              isOpen ? "max-h-[2400px] translate-y-0 opacity-100" : "max-h-0 -translate-y-1 opacity-0"
-            }`}
-          >
-            <div className="space-y-3 pt-1">
+        {hasChildren && isOpen && (
+          <div className="space-y-3 pt-1">
             {children.map((child) => (
               <TreeNode
                 key={child.id}
@@ -563,7 +612,6 @@ function TreeNode({
                 depth={depth + 1}
               />
             ))}
-          </div>
           </div>
         )}
       </div>
@@ -584,12 +632,11 @@ export default function GroupsPage() {
     setToken(t);
     setIsAdmin(getSessionRole(t) === "ADMIN");
   }, []);
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [expanded, setExpanded] = useState<Record<number, boolean>>({});
 
   const load = () => {
     setLoading(true);
     const t = sessionStorage.getItem("admin_token") ?? "";
-    const role = getSessionRole(t);
     const { sub } = getSessionPayload(t);
     Promise.all([fetchGroups(), fetchEmployees()])
       .then(([allGroups, employees]) => {
@@ -647,8 +694,8 @@ export default function GroupsPage() {
     return result;
   };
 
-  const toggleGroup = (name: string) => {
-    setExpanded((prev) => ({ ...prev, [name]: !prev[name] }));
+  const toggleGroup = (id: number) => {
+    setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   const handleDelete = (groupId: number) => {

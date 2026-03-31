@@ -15,4 +15,5 @@ public class GroupResponse {
     private String leaderName;
     private List<Long> memberIds;
     private Long parentGroupId;
+    private String color;
 }

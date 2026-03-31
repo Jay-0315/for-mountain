@@ -29,28 +29,33 @@ public class Group {
     @Column(name = "parent_group_id")
     private Long parentGroupId;
 
+    @Column(length = 30)
+    private String color;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    public static Group create(String name, String description, Long leaderId, Long parentGroupId) {
+    public static Group create(String name, String description, Long leaderId, Long parentGroupId, String color) {
         Group g = new Group();
         g.name = name;
         g.description = description;
         g.leaderId = leaderId;
         g.parentGroupId = parentGroupId;
+        g.color = color;
         g.createdAt = LocalDateTime.now();
         g.updatedAt = LocalDateTime.now();
         return g;
     }
 
-    public void update(String name, String description, Long leaderId, Long parentGroupId) {
+    public void update(String name, String description, Long leaderId, Long parentGroupId, String color) {
         this.name = name;
         this.description = description;
         this.leaderId = leaderId;
         this.parentGroupId = parentGroupId;
+        this.color = color;
         this.updatedAt = LocalDateTime.now();
     }
 

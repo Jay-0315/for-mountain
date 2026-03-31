@@ -291,6 +291,7 @@ export type GroupDto = {
   leaderName: string;
   memberIds: number[];
   parentGroupId: number | null;
+  color?: string | null;
 };
 
 export async function fetchGroups(): Promise<GroupDto[]> {
@@ -323,7 +324,7 @@ export function resolveLeaderMemberIds(groups: GroupDto[], employeeId: number): 
 
 export async function createGroup(
   token: string,
-  data: { name: string; description: string; leaderId: number | null; memberIds: number[]; parentGroupId?: number | null }
+  data: { name: string; description: string; leaderId: number | null; memberIds: number[]; parentGroupId?: number | null; color?: string | null }
 ): Promise<GroupDto> {
   const res = await fetch(`${API_BASE}/api/v1/groups`, {
     method: "POST",
@@ -337,7 +338,7 @@ export async function createGroup(
 export async function updateGroup(
   token: string,
   id: number,
-  data: { name: string; description: string; leaderId: number | null; memberIds: number[]; parentGroupId?: number | null }
+  data: { name: string; description: string; leaderId: number | null; memberIds: number[]; parentGroupId?: number | null; color?: string | null }
 ): Promise<GroupDto> {
   const res = await fetch(`${API_BASE}/api/v1/groups/${id}`, {
     method: "PUT",

@@ -97,6 +97,7 @@ export interface Group {
   leaderName: string;
   memberIds: number[];       // 멤버 employeeId 목록
   description: string;
+  color?: string | null;
 }
 
 export const mockGroups: Group[] = [

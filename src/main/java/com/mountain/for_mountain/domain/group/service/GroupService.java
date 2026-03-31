@@ -43,7 +43,8 @@ public class GroupService {
                 request.getName(),
                 request.getDescription(),
                 request.getLeaderId(),
-                request.getParentGroupId()
+                request.getParentGroupId(),
+                request.getColor()
         ));
         List<Long> syncedMemberIds = saveMembers(group.getId(), request.getLeaderId(), request.getMemberIds());
         syncEmployeeDepartments(syncedMemberIds, group.getName());
@@ -58,7 +59,13 @@ public class GroupService {
         List<Long> previousMemberIds = groupMemberRepository.findByGroupId(id).stream()
                 .map(GroupMember::getEmployeeId)
                 .toList();
-        group.update(request.getName(), request.getDescription(), request.getLeaderId(), request.getParentGroupId());
+        group.update(
+                request.getName(),
+                request.getDescription(),
+                request.getLeaderId(),
+                request.getParentGroupId(),
+                request.getColor()
+        );
         groupMemberRepository.deleteByGroupId(id);
         groupMemberRepository.flush();
         List<Long> syncedMemberIds = saveMembers(id, request.getLeaderId(), request.getMemberIds());
@@ -119,7 +126,8 @@ public class GroupService {
                 group.getLeaderId(),
                 leaderName,
                 memberIds,
-                group.getParentGroupId()
+                group.getParentGroupId(),
+                group.getColor()
         );
     }
 
@@ -247,6 +255,7 @@ public class GroupService {
                 .orElseGet(() -> groupRepository.save(Group.create(
                         PENDING_ASSIGNMENT_GROUP_NAME,
                         "임시 소속 그룹",
+                        null,
                         null,
                         null
                 )));

@@ -21,4 +21,6 @@ public class GroupRequest {
     private List<Long> memberIds;
 
     private Long parentGroupId;
+
+    private String color;
 }
