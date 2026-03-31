@@ -267,7 +267,7 @@ export default function AboutSection() {
                   key={row.label}
                   className={`about-table-row flex gap-0 ${i !== companyInfo.length - 1 ? "border-b border-slate-100" : ""}`}
                 >
-                  <span className="w-36 shrink-0 bg-slate-50 px-5 py-5 text-sm md:text-base font-bold text-slate-600 flex items-start">
+                  <span className="w-40 shrink-0 bg-slate-50 px-5 py-5 text-lg md:text-[1.35rem] font-extrabold text-slate-700 flex items-start">
                     {row.label}
                   </span>
                   <span className="flex-1 whitespace-pre-line px-6 py-5 text-xl md:text-[2rem] font-semibold leading-[1.6] text-slate-900">
