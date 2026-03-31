@@ -45,7 +45,9 @@ export default function ServiceDetailPage({ item, categories }: Props) {
   const hasTextBlock = contentBlocks.some((block) => block.type === "text" && block.content?.trim());
   const hasImageBlock = contentBlocks.some((block) => block.type === "image" && block.url);
   const hasVideoBlock = contentBlocks.some((block) => block.type === "video" && block.url);
-  const hasAttachmentBlock = contentBlocks.some((block) => block.type === "attachment" && block.url);
+  const blockAttachmentAssets = contentBlocks
+    .filter((block) => block.type === "attachment" && block.url)
+    .map((block) => ({ name: block.name, url: block.url as string }));
   const legacyAllImageAssets = currentItem.imageAssets?.length
     ? currentItem.imageAssets
     : currentItem.imageData
@@ -62,6 +64,7 @@ export default function ServiceDetailPage({ item, categories }: Props) {
     : currentItem.attachmentData
       ? [{ name: currentItem.attachmentName, url: currentItem.attachmentData }]
       : [];
+  const attachmentAssetsToShow = blockAttachmentAssets.length > 0 ? blockAttachmentAssets : legacyAttachmentAssets;
   const description =
     stripMarkdown(currentItem.content).slice(0, 120) ||
     "株式会社マウンテンの事業紹介詳細です。画像・動画・関連資料をご確認いただけます。";
@@ -122,21 +125,7 @@ export default function ServiceDetailPage({ item, categories }: Props) {
       );
     }
 
-    if (block.type === "attachment") {
-      return (
-        <div key={`block-${index}`} className="flex">
-          <button
-            type="button"
-            onClick={() => {
-              void handleAttachmentDownload({ name: block.name, url: block.url as string });
-            }}
-            className="inline-flex items-center justify-center rounded-2xl border border-orange-200 bg-orange-50 px-5 py-4 text-sm font-semibold text-orange-600 transition-all hover:-translate-y-0.5 hover:border-orange-500 hover:bg-orange-500 hover:text-white"
-          >
-            {downloadingUrl === block.url ? "ダウンロード中..." : "添付ファイルをダウンロード"}
-          </button>
-        </div>
-      );
-    }
+    if (block.type === "attachment") return null;
 
     return null;
   };
@@ -211,22 +200,6 @@ export default function ServiceDetailPage({ item, categories }: Props) {
                     ))}
                   </div>
                 )}
-                {!hasAttachmentBlock && legacyAttachmentAssets.length > 0 && (
-                  <div className="flex flex-wrap gap-3">
-                    {legacyAttachmentAssets.map((asset, index) => (
-                      <button
-                        key={`legacy-attachment-${asset.url}-${index}`}
-                        type="button"
-                        onClick={() => {
-                          void handleAttachmentDownload(asset);
-                        }}
-                        className="inline-flex items-center justify-center rounded-2xl border border-orange-200 bg-orange-50 px-5 py-4 text-sm font-semibold text-orange-600 transition-all hover:-translate-y-0.5 hover:border-orange-500 hover:bg-orange-500 hover:text-white"
-                      >
-                        {downloadingUrl === asset.url ? "ダウンロード中..." : "添付ファイルをダウンロード"}
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
             </article>
 
@@ -257,6 +230,23 @@ export default function ServiceDetailPage({ item, categories }: Props) {
                 >
                   詳細サイト
                 </a>
+              )}
+
+              {attachmentAssetsToShow.length > 0 && (
+                <div className="space-y-3">
+                  {attachmentAssetsToShow.map((asset, index) => (
+                    <button
+                      key={`attachment-${asset.url}-${index}`}
+                      type="button"
+                      onClick={() => {
+                        void handleAttachmentDownload(asset);
+                      }}
+                      className="inline-flex w-full items-center justify-center rounded-2xl border border-orange-200 bg-orange-50 px-5 py-4 text-sm font-semibold text-orange-600 transition-all hover:-translate-y-0.5 hover:border-orange-500 hover:bg-orange-500 hover:text-white"
+                    >
+                      {downloadingUrl === asset.url ? "ダウンロード中..." : "添付ファイルをダウンロード"}
+                    </button>
+                  ))}
+                </div>
               )}
 
               <Link
