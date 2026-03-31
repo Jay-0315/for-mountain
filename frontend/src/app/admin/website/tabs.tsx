@@ -1506,8 +1506,6 @@ export function ServiceItemsTab() {
                 {contentBlocks.map((block, index) => (
                   <div
                     key={`${block.type}-${block.url ?? "text"}-${index}`}
-                    draggable={isAdmin}
-                    onDragStart={() => setDraggingBlockIndex(index)}
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={() => {
                       if (draggingBlockIndex === null || draggingBlockIndex === index) return;
@@ -1521,8 +1519,25 @@ export function ServiceItemsTab() {
                   >
                     <div className="mb-3 flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
-                        <span className="cursor-grab rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-500 active:cursor-grabbing">
-                          ドラッグ
+                        <span
+                          draggable={isAdmin}
+                          onDragStart={() => setDraggingBlockIndex(index)}
+                          onDragEnd={() => setDraggingBlockIndex(null)}
+                          className={`inline-flex cursor-grab items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold active:cursor-grabbing ${
+                            draggingBlockIndex === index
+                              ? "border border-orange-400 bg-orange-500 text-white shadow-sm"
+                              : "border border-orange-200 bg-orange-50 text-orange-600"
+                          }`}
+                        >
+                          <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                            <circle cx="5" cy="4" r="1" />
+                            <circle cx="11" cy="4" r="1" />
+                            <circle cx="5" cy="8" r="1" />
+                            <circle cx="11" cy="8" r="1" />
+                            <circle cx="5" cy="12" r="1" />
+                            <circle cx="11" cy="12" r="1" />
+                          </svg>
+                          <span>ドラッグ</span>
                         </span>
                         <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
                           {block.type === "text" ? "テキスト" : block.type === "image" ? "画像" : block.type === "video" ? "動画" : "添付ファイル"}
