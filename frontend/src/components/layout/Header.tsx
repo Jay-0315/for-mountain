@@ -7,11 +7,11 @@ import { usePathname } from "next/navigation";
 
 const navItems = [
   { label: "トップ", href: "/" },
-  { label: "企業情報", href: "/about" },
-  { label: "事業内容", href: "/services" },
-  { label: "お知らせ", href: "/news" },
-  { label: "採用情報", href: "/recruit" },
-  { label: "お問い合わせ", href: "/contact" },
+  { label: "企業情報", href: "/about/" },
+  { label: "事業内容", href: "/services/" },
+  { label: "お知らせ", href: "/news/" },
+  { label: "採用情報", href: "/recruit/" },
+  { label: "お問い合わせ", href: "/contact/" },
 ];
 
 export default function Header() {

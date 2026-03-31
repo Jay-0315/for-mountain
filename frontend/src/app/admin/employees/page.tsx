@@ -7,6 +7,7 @@ import { getSessionPayload, getSessionRole } from "@/lib/session";
 type EmployeeStatus = "在籍" | "休職" | "退職";
 type Position = "代表取締役" | "常務" | "部長" | "次長" | "課長" | "課長代理" | "主任" | "社員";
 type JobTitle = "役員" | "管理職" | "一般社員";
+const PENDING_ASSIGNMENT_DEPARTMENT = "발령예정";
 
 const STATUS_COLOR: Record<string, string> = {
   在籍: "bg-green-100 text-green-700",
@@ -37,19 +38,17 @@ type FilterDept   = "すべて" | string;
 // ── 추가/수정 모달 ────────────────────────────────────────────
 function EmployeeModal({
   employee,
-  departments,
   token,
   onClose,
   onSaved,
 }: {
   employee: EmployeeDto | null;
-  departments: string[];
   token: string;
   onClose: () => void;
   onSaved: () => void;
 }) {
   const isEdit = employee !== null;
-  const defaultDepartment = employee?.department ?? departments[0] ?? "";
+  const defaultDepartment = employee?.department ?? PENDING_ASSIGNMENT_DEPARTMENT;
   const [form, setForm] = useState({
     employeeNumber: employee?.employeeNumber ?? "",
     name:           employee?.name ?? "",
@@ -76,6 +75,7 @@ function EmployeeModal({
     try {
       const payload = {
         ...form,
+        department: isEdit && employee ? employee.department : PENDING_ASSIGNMENT_DEPARTMENT,
         annualLeaveDays: form.annualLeaveDays !== "" ? Number(form.annualLeaveDays) : null,
       };
       if (isEdit && employee) {
@@ -129,8 +129,18 @@ function EmployeeModal({
             </div>
           ))}
 
+          <div>
+            <label className="block text-xs font-medium text-slate-700 mb-1">部署</label>
+            <input
+              type="text"
+              value={defaultDepartment}
+              disabled
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-500"
+            />
+            <p className="mt-1 text-[11px] text-slate-400">部署はグループ管理で変更します。</p>
+          </div>
+
           {[
-            { label: "部署",       key: "department", options: departments },
             { label: "職級",       key: "position",   options: POSITIONS },
             { label: "職責",       key: "jobTitle",   options: JOB_TITLES },
             { label: "ステータス", key: "status",     options: ["在籍", "休職", "退職"] },
@@ -259,7 +269,6 @@ export default function EmployeesPage() {
         <EmployeeModal
           token={token}
           employee={modalEmployee ?? null}
-          departments={departments}
           onClose={() => setModalEmployee(undefined)}
           onSaved={() => { setModalEmployee(undefined); load(); }}
         />
