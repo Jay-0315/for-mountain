@@ -30,7 +30,7 @@ const tabs = [
       </svg>
     ),
     content: (
-      <p className="text-slate-600 leading-relaxed text-sm md:text-base">
+      <p className="text-slate-600 leading-relaxed text-base md:text-[1.075rem]">
         私たちはモノの価値を最大限生み出し、社会の変化と調和しながら
         <strong className="text-slate-800">便利で豊かな人間社会を実現するために</strong>
         、常に挑戦し人と社会に信頼される企業を目指します。
@@ -47,7 +47,7 @@ const tabs = [
       </svg>
     ),
     content: (
-      <div className="space-y-3 text-sm md:text-base text-slate-600 leading-relaxed">
+      <div className="space-y-3 text-base md:text-[1.075rem] text-slate-600 leading-relaxed">
         <p>
           弊社はITの総合サポート企業として、<strong className="text-slate-800">ソリューションと開発を通じて便利で豊かな社会を実現する</strong>
           ことを目標にしております。
@@ -217,7 +217,7 @@ export default function AboutSection() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[15px] md:text-base font-semibold transition-all duration-200
                   ${activeTab === tab.id
                     ? "bg-orange-500 text-white shadow-md shadow-orange-200"
                     : "bg-white text-slate-500 border border-slate-200 hover:border-orange-200 hover:text-orange-500"
@@ -231,7 +231,7 @@ export default function AboutSection() {
 
           {/* 탭 콘텐츠 */}
           <div ref={tabPanelRef} className="bg-white rounded-2xl border border-slate-100 p-8 shadow-sm min-h-[140px]">
-            <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <h3 className="text-xl md:text-2xl font-bold text-slate-900 mb-4 flex items-center gap-2">
               <span className="w-1 h-5 bg-orange-500 rounded-full inline-block" />
               {activeTabData.label}
             </h3>
@@ -257,7 +257,7 @@ export default function AboutSection() {
 
           {/* 왼쪽: 회사개요 (3/5) */}
           <div className="lg:col-span-3">
-            <h3 className="text-xl font-bold text-slate-900 mb-5 flex items-center gap-2">
+            <h3 className="text-2xl md:text-[1.7rem] font-bold text-slate-900 mb-5 flex items-center gap-2">
               <span className="w-1 h-5 bg-orange-500 rounded-full inline-block" />
               会社概要
             </h3>
@@ -270,7 +270,7 @@ export default function AboutSection() {
                   <span className="text-xs font-semibold text-slate-500 bg-slate-50 w-28 shrink-0 px-4 py-3.5 flex items-start pt-3.5">
                     {row.label}
                   </span>
-                  <span className="text-sm text-slate-800 px-5 py-3.5 leading-relaxed whitespace-pre-line flex-1">
+                  <span className="text-base md:text-[1.05rem] text-slate-800 px-5 py-3.5 leading-relaxed whitespace-pre-line flex-1">
                     {row.value}
                   </span>
                 </div>

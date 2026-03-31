@@ -3,7 +3,6 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import MarkdownContent from "@/components/ui/MarkdownContent";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -62,31 +61,9 @@ const values = [
   },
 ];
 
-const SERVICE_PANELS = [
-  {
-    label: "System Development / SES",
-    title: "システム開発・SES事業",
-    body:
-      "- 要件定義から開発まで対応\n- 運用保守まで一貫支援\n- 最適なSESサービスを提供",
-  },
-  {
-    label: "Network Build / Operations",
-    title: "ネットワーク構築・運用支援",
-    body:
-      "- 通信機器の導入と設定\n- 監視・保守・障害対応を支援\n- 安定したネットワーク環境を実現",
-  },
-  {
-    label: "Infrastructure / IT Consulting",
-    title: "インフラ構築とITコンサルティング",
-    body:
-      "- サーバー・クラウド構築に対応\n- セキュリティを含む基盤設計\n- ITコンサルティングで最適化",
-  },
-] as const;
-
 export default function ValuesStrip() {
   const sectionRef = useRef<HTMLElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const panelRefs = useRef<(HTMLElement | null)[]>([]);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -103,23 +80,6 @@ export default function ValuesStrip() {
           scrollTrigger: {
             trigger: sectionRef.current,
             start: "top 80%",
-            once: true,
-          },
-        }
-      );
-
-      gsap.fromTo(
-        panelRefs.current,
-        { opacity: 0, y: 28 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.55,
-          ease: "power3.out",
-          stagger: 0.1,
-          scrollTrigger: {
-            trigger: panelRefs.current[0],
-            start: "top 84%",
             once: true,
           },
         }
@@ -173,31 +133,6 @@ export default function ValuesStrip() {
                 <p className="text-sm font-extrabold tracking-widest text-white">{v.key}</p>
                 <p className="text-sm text-slate-400">{v.ja}</p>
               </div>
-            ))}
-          </div>
-
-          <div className="mx-auto mt-20 grid max-w-6xl gap-5 text-left md:grid-cols-2 xl:grid-cols-3">
-            {SERVICE_PANELS.map((panel, index) => (
-              <article
-                key={panel.title}
-                ref={(el) => {
-                  panelRefs.current[index] = el;
-                }}
-                className="flex h-full flex-col rounded-[1.75rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.04))] p-6 shadow-[0_18px_44px_rgba(2,6,23,0.22)] backdrop-blur-md transition-transform duration-300 hover:-translate-y-1"
-              >
-                <div className="mb-4 flex min-h-[2.75rem] items-start">
-                  <p className="inline-flex whitespace-nowrap rounded-2xl border border-orange-400/20 bg-orange-500/10 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-orange-200">
-                    {panel.label}
-                  </p>
-                </div>
-                <h2 className="min-h-[3.5rem] text-lg font-bold leading-snug text-white md:text-[1.15rem]">
-                  {panel.title}
-                </h2>
-                <MarkdownContent
-                  content={panel.body}
-                  className="mt-4 space-y-3 [&_ul]:space-y-2 [&_ul]:pl-5 [&_ul]:text-[15px] [&_ul]:leading-7 [&_ul]:text-slate-300 [&_li]:marker:text-orange-300"
-                />
-              </article>
             ))}
           </div>
         </div>
