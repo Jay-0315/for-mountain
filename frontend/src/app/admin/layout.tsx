@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -100,6 +100,28 @@ function PAGE_LABEL(pathname: string): string {
   return item?.label ?? "管理者";
 }
 
+function subscribeAdminToken(onStoreChange: () => void) {
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+
+  const handleChange = () => onStoreChange();
+  window.addEventListener("storage", handleChange);
+  window.addEventListener("admin-session-changed", handleChange);
+
+  return () => {
+    window.removeEventListener("storage", handleChange);
+    window.removeEventListener("admin-session-changed", handleChange);
+  };
+}
+
+function getAdminTokenSnapshot() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  return sessionStorage.getItem("admin_token");
+}
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname() ?? "";
@@ -109,14 +131,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [currentEmployee, setCurrentEmployee] = useState<EmployeeDto | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
   const [leaderMemberIds, setLeaderMemberIds] = useState<number[] | null | undefined>(undefined);
-  const [token, setToken] = useState<string | null>(null);
-  const [todayLabel, setTodayLabel] = useState("");
+  const token = useSyncExternalStore(subscribeAdminToken, getAdminTokenSnapshot, () => null);
+  const todayLabel = new Intl.DateTimeFormat("ja-JP").format(new Date());
   const role = getSessionRole(token);
-
-  useEffect(() => {
-    setToken(sessionStorage.getItem("admin_token"));
-    setTodayLabel(new Date().toLocaleDateString("ja-JP"));
-  }, []);
 
   useEffect(() => {
     if (!token && !isLoginPage) {
@@ -126,7 +143,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [isLoginPage, normalizedPathname, router, token]);
 
   useEffect(() => {
-    if (isLoginPage) return;
+    if (isLoginPage || !token) return;
     const { sub } = getSessionPayload(token);
     if (!sub) return;
 
@@ -183,6 +200,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const handleLogout = () => {
     sessionStorage.removeItem("admin_token");
+    window.dispatchEvent(new Event("admin-session-changed"));
     router.replace("/admin");
   };
 

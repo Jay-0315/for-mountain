@@ -44,6 +44,7 @@ function AdminPageContent() {
       } else {
         const { token } = await adminLogin(username, password);
         sessionStorage.setItem("admin_token", token);
+        window.dispatchEvent(new Event("admin-session-changed"));
       }
       router.replace(isSafeRedirectPath(redirectPath ?? null) ? redirectPath ?? "/admin/dashboard" : "/admin/dashboard");
     } catch (err: unknown) {
