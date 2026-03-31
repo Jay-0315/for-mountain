@@ -413,7 +413,14 @@ export async function createLeave(
     headers: authHeaders(token),
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error("Failed to create leave");
+  if (!res.ok) {
+    try {
+      const error = (await res.json()) as { message?: string };
+      throw new Error(error.message || "Failed to create leave");
+    } catch {
+      throw new Error("Failed to create leave");
+    }
+  }
   return normalizeLeave((await res.json()) as LeaveDto);
 }
 

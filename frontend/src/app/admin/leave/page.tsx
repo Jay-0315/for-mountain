@@ -60,7 +60,11 @@ function calcDays(start: string, end: string): number {
 }
 
 function getTodayDateString() {
-  return new Date().toLocaleDateString("en-CA");
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = `${now.getMonth() + 1}`.padStart(2, "0");
+  const day = `${now.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function ApplyForm({
@@ -83,7 +87,11 @@ function ApplyForm({
   const [reason, setReason]         = useState("");
   const [loading, setLoading]       = useState(false);
   const [error, setError]           = useState("");
-  const today = getTodayDateString();
+  const [today, setToday]           = useState("");
+
+  useEffect(() => {
+    setToday(getTodayDateString());
+  }, []);
 
   const days = calcDays(startDate, endDate);
 
@@ -92,7 +100,7 @@ function ApplyForm({
     setError("");
     if (!employee) { setError("現在のログイン情報に紐づく社員情報がありません。"); return; }
     if (!leaveType) { setError("休暇種類を選択してください。"); return; }
-    if (startDate < today) { setError("開始日は本日以降を選択してください。"); return; }
+    if (today && startDate < today) { setError("開始日は本日以降を選択してください。"); return; }
     if (endDate < startDate) { setError("終了日は開始日以降にしてください。"); return; }
 
     setLoading(true);
@@ -152,13 +160,13 @@ function ApplyForm({
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">開始日</label>
-            <input type="date" value={startDate} min={today} required
+            <input type="date" value={startDate} min={today || undefined} required
               onChange={(e) => { setStartDate(e.target.value); if (endDate && e.target.value > endDate) setEndDate(e.target.value); }}
               className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm" />
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">終了日</label>
-            <input type="date" value={endDate} min={startDate || today} required onChange={(e) => setEndDate(e.target.value)}
+            <input type="date" value={endDate} min={startDate || today || undefined} required onChange={(e) => setEndDate(e.target.value)}
               className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm" />
           </div>
         </div>
