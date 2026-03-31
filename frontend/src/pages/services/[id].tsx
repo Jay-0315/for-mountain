@@ -42,6 +42,7 @@ export default function ServiceDetailPage({ item, categories }: Props) {
   const categoryInfo = currentCategories.find((category) => category.slug === currentItem.category) ?? null;
   const categoryLabel = categoryInfo ? categoryInfo.name : currentItem.category;
   const contentBlocks = currentItem.contentBlocks ?? [];
+  const hasTextBlock = contentBlocks.some((block) => block.type === "text" && block.content?.trim());
   const description =
     stripMarkdown(currentItem.content).slice(0, 120) ||
     "株式会社マウンテンの事業紹介詳細です。画像・動画・関連資料をご確認いただけます。";
@@ -162,6 +163,9 @@ export default function ServiceDetailPage({ item, categories }: Props) {
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px] lg:items-start">
             <article className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
               <div className="space-y-8 px-6 py-8 sm:px-8 sm:py-10">
+                {!hasTextBlock && currentItem.content.trim() && (
+                  <MarkdownContent content={currentItem.content} className="space-y-4" />
+                )}
                 {contentBlocks.map(renderContentBlock)}
               </div>
             </article>
