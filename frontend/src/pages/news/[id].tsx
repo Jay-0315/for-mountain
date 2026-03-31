@@ -95,24 +95,13 @@ export default function NewsDetailPage({ post, relatedPosts }: Props) {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(251,146,60,0.28),transparent_34%),radial-gradient(circle_at_80%_20%,rgba(148,163,184,0.22),transparent_30%)]" />
           <GridRunnerBackdrop />
           <div className="relative mx-auto max-w-5xl px-6 pb-18 pt-10 sm:pb-24 sm:pt-14">
-            <div className="flex items-center justify-between gap-4">
-              <Link
-                href="/"
-                className="inline-flex items-center gap-2 text-sm font-medium text-slate-300 transition-colors hover:text-white"
-              >
-                <span className="text-orange-300">株式会社</span>
-                <span>MOUNTAIN</span>
-              </Link>
-              <Link
-                href="/news/"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-slate-200 transition-all hover:-translate-y-0.5 hover:border-orange-300/40 hover:bg-white/10 hover:text-white"
-              >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-                一覧へ戻る
-              </Link>
-            </div>
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 text-sm font-medium text-slate-300 transition-colors hover:text-white"
+            >
+              <span className="text-orange-300">株式会社</span>
+              <span>MOUNTAIN</span>
+            </Link>
 
             <div className="mt-10 max-w-3xl">
               <div className="mb-5 flex flex-wrap items-center gap-3 text-sm text-slate-300">
@@ -185,14 +174,9 @@ export default function NewsDetailPage({ post, relatedPosts }: Props) {
               </div>
               {currentRelatedPosts.length > 0 && (
                 <div className="border-t border-slate-100 px-6 py-8 sm:px-8">
-                  <div className="mb-5 flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-orange-500">More News</p>
-                      <h2 className="mt-2 text-xl font-bold text-slate-900">その他のお知らせ</h2>
-                    </div>
-                    <Link href="/news/" className="text-sm font-semibold text-slate-500 hover:text-orange-500">
-                      一覧を見る
-                    </Link>
+                  <div className="mb-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-orange-500">More News</p>
+                    <h2 className="mt-2 text-xl font-bold text-slate-900">その他のお知らせ</h2>
                   </div>
                   <div className="grid gap-3">
                     {currentRelatedPosts.map((item) => (
