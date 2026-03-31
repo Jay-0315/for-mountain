@@ -32,7 +32,7 @@ const tabs = [
     content: (
       <p className="text-slate-600 leading-relaxed text-[20px]">
         私たちはモノの価値を最大限生み出し、社会の変化と調和しながら
-        <strong className="text-slate-800">便利で豊かな人間社会を実現するために</strong>
+        <strong className="font-bold text-slate-800">便利で豊かな人間社会を実現するために</strong>
         、常に挑戦し人と社会に信頼される企業を目指します。
       </p>
     ),
@@ -49,7 +49,7 @@ const tabs = [
     content: (
       <div className="space-y-3 text-[20px] text-slate-600 leading-relaxed">
         <p>
-          弊社はITの総合サポート企業として、<strong className="text-slate-800">ソリューションと開発を通じて便利で豊かな社会を実現する</strong>
+          弊社はITの総合サポート企業として、<strong className="font-normal text-slate-800">ソリューションと開発を通じて便利で豊かな社会を実現する</strong>
           ことを目標にしております。
         </p>
         <p>
@@ -58,7 +58,7 @@ const tabs = [
         </p>
         <p>
           システム開発においては要件定義・設計・製造・テスト・保守の業務全盤を対応しており、
-          高い技術力と特化したマネージドサービスを持つ<strong className="text-slate-800">MSP企業として成長</strong>
+          高い技術力と特化したマネージドサービスを持つ<strong className="font-normal text-slate-800">MSP企業として成長</strong>
           してまいります。
         </p>
       </div>
@@ -244,7 +244,7 @@ export default function AboutSection() {
                       {value.icon}
                     </div>
                     <p className="text-sm font-extrabold tracking-widest text-slate-900">{value.key}</p>
-                    <p className="text-sm text-slate-500">{value.ja}</p>
+                    <p className="text-base font-bold text-slate-600 md:text-[1.05rem]">{value.ja}</p>
                   </div>
                 ))}
               </div>
@@ -284,15 +284,15 @@ export default function AboutSection() {
             {/* 소재지 카드 */}
             <div className="info-card p-6 bg-orange-500 rounded-2xl text-white shadow-lg shadow-orange-200">
               <div className="flex items-start gap-3">
-                <svg className="w-5 h-5 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="mt-0.5 h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                     d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                     d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
                 <div>
-                  <p className="font-semibold mb-1.5">所在地</p>
-                  <p className="text-orange-100 text-sm leading-relaxed">
+                  <p className="mb-1.5 text-[18px] font-semibold">所在地</p>
+                  <p className="text-[18px] leading-relaxed text-orange-100">
                     東京都千代田区岩本町<br />
                     二丁目１３番６号<br />
                     リアライズ岩本町ビル ５階
@@ -304,16 +304,16 @@ export default function AboutSection() {
             {/* 연락처 카드 */}
             <div className="info-card p-6 bg-white rounded-2xl border border-slate-100 shadow-sm">
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 bg-orange-50 text-orange-500 rounded-lg flex items-center justify-center shrink-0">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-orange-500">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                       d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                   </svg>
                 </div>
                 <div>
-                  <p className="font-semibold text-slate-800 mb-1.5 text-sm">お問い合わせ</p>
-                  <p className="text-slate-500 text-sm">TEL：03-5829-6357</p>
-                  <p className="text-slate-500 text-sm">FAX：03-5829-8032</p>
+                  <p className="mb-1.5 text-[18px] font-semibold text-slate-800">お問い合わせ</p>
+                  <p className="text-[18px] text-slate-500">TEL：03-5829-6357</p>
+                  <p className="text-[18px] text-slate-500">FAX：03-5829-8032</p>
                 </div>
               </div>
             </div>
@@ -322,28 +322,28 @@ export default function AboutSection() {
             <div className="info-card p-6 bg-white rounded-2xl border border-slate-100 shadow-sm">
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-orange-50 text-orange-500 rounded-lg flex items-center justify-center shrink-0">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-orange-500">
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                         d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-400 font-medium">設立</p>
-                    <p className="text-sm font-semibold text-slate-800">2022年2月7日</p>
+                    <p className="text-[18px] text-slate-500 font-semibold">設立</p>
+                    <p className="text-[18px] font-semibold text-slate-800">2022年2月7日</p>
                   </div>
                 </div>
                 <div className="w-full h-px bg-slate-100" />
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-orange-50 text-orange-500 rounded-lg flex items-center justify-center shrink-0">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-orange-500">
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                         d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-400 font-medium">代表取締役社長</p>
-                    <p className="text-sm font-semibold text-slate-800">盧 鍾錫</p>
+                    <p className="text-[18px] text-slate-500 font-semibold">代表取締役社長</p>
+                    <p className="text-[18px] font-semibold text-slate-800">盧 鍾錫</p>
                   </div>
                 </div>
               </div>
