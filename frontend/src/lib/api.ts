@@ -414,12 +414,14 @@ export async function createLeave(
     body: JSON.stringify(data),
   });
   if (!res.ok) {
+    let message = "Failed to create leave";
     try {
       const error = (await res.json()) as { message?: string };
-      throw new Error(error.message || "Failed to create leave");
+      message = error.message || message;
     } catch {
-      throw new Error("Failed to create leave");
+      // Ignore JSON parse failures and fall back to the generic message.
     }
+    throw new Error(message);
   }
   return normalizeLeave((await res.json()) as LeaveDto);
 }

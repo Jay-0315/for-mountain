@@ -80,7 +80,7 @@ function ApplyForm({
   initialStartDate?: string;
   initialEndDate?: string;
 }) {
-  const [token]                     = useState(() => (typeof window === "undefined" ? "" : sessionStorage.getItem("admin_token") ?? ""));
+  const [token, setToken]           = useState("");
   const [leaveType, setLeaveType]   = useState<LeaveType>("");
   const [startDate, setStartDate]   = useState(initialStartDate ?? "");
   const [endDate, setEndDate]       = useState(initialEndDate ?? initialStartDate ?? "");
@@ -90,6 +90,7 @@ function ApplyForm({
   const [today, setToday]           = useState("");
 
   useEffect(() => {
+    setToken(sessionStorage.getItem("admin_token") ?? "");
     setToday(getTodayDateString());
   }, []);
 
