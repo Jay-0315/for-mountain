@@ -196,7 +196,7 @@ public class LeaveService {
 
     private void sendLeaveRequestMail(Employee employee, Leave leave) {
         groupRepository.findByName(employee.getDepartment())
-                .flatMap(group -> resolveLeader(group))
+                .flatMap(group -> resolveApprovalLeader(group, employee.getId()))
                 .filter(leader -> leader.getEmail() != null && !leader.getEmail().isBlank())
                 .ifPresent(leader -> {
                     try {
@@ -211,11 +211,23 @@ public class LeaveService {
                 });
     }
 
-    private java.util.Optional<Employee> resolveLeader(Group group) {
-        if (group.getLeaderId() == null) {
-            return java.util.Optional.empty();
+    private java.util.Optional<Employee> resolveApprovalLeader(Group group, Long applicantId) {
+        Group current = group;
+        Set<Long> visited = new HashSet<>();
+
+        while (current != null && visited.add(current.getId())) {
+            if (current.getLeaderId() != null && !current.getLeaderId().equals(applicantId)) {
+                return employeeRepository.findById(current.getLeaderId());
+            }
+
+            if (current.getParentGroupId() == null) {
+                break;
+            }
+
+            current = groupRepository.findById(current.getParentGroupId()).orElse(null);
         }
-        return employeeRepository.findById(group.getLeaderId());
+
+        return java.util.Optional.empty();
     }
 
     private String buildLeaveRequestMailBody(Employee employee, Leave leave, Employee leader) {
