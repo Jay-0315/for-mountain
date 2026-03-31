@@ -16,6 +16,7 @@ export default function ServiceDetailPage({ item, categories }: Props) {
   const router = useRouter();
   const [currentItem, setCurrentItem] = useState(item);
   const [currentCategories, setCurrentCategories] = useState(categories);
+  const [downloadingUrl, setDownloadingUrl] = useState<string | null>(null);
   const currentId = Number(router.query.id ?? item.id);
 
   useEffect(() => {
@@ -59,6 +60,30 @@ export default function ServiceDetailPage({ item, categories }: Props) {
   const description =
     stripMarkdown(currentItem.content).slice(0, 120) ||
     "株式会社マウンテンの事業紹介詳細です。画像・動画・関連資料をご確認いただけます。";
+
+  const handleAttachmentDownload = async (asset: { name: string | null; url: string }) => {
+    try {
+      setDownloadingUrl(asset.url);
+      const response = await fetch(asset.url);
+      if (!response.ok) {
+        throw new Error("Failed to download attachment");
+      }
+
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = asset.name?.trim() || "attachment";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      window.open(asset.url, "_blank", "noopener,noreferrer");
+    } finally {
+      setDownloadingUrl((current) => (current === asset.url ? null : current));
+    }
+  };
 
   return (
     <>
@@ -113,9 +138,12 @@ export default function ServiceDetailPage({ item, categories }: Props) {
             <article className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
               <div className="space-y-8 px-6 py-8 sm:px-8 sm:py-10">
                 {imageAssets.length > 0 && (
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="flex gap-4 overflow-x-auto pb-2">
                     {imageAssets.map((asset, index) => (
-                      <div key={`${asset.url}-${index}`} className="overflow-hidden rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                      <div
+                        key={`${asset.url}-${index}`}
+                        className="min-w-[280px] flex-[0_0_280px] overflow-hidden rounded-2xl border border-slate-100 bg-slate-50 p-4 sm:min-w-[340px] sm:flex-[0_0_340px]"
+                      >
                         <Image
                           src={asset.url}
                           alt={asset.name ?? currentItem.title}
@@ -175,17 +203,29 @@ export default function ServiceDetailPage({ item, categories }: Props) {
               {attachmentAssets.length > 0 && (
                 <div className="space-y-3">
                   {attachmentAssets.map((asset, index) => (
-                    <a
+                    <button
                       key={`${asset.url}-${index}`}
-                      href={asset.url}
-                      download={asset.name ?? "attachment"}
+                      type="button"
+                      onClick={() => {
+                        void handleAttachmentDownload(asset);
+                      }}
                       className="inline-flex w-full items-center justify-center rounded-2xl border border-orange-200 bg-orange-50 px-5 py-4 text-sm font-semibold text-orange-600 transition-all hover:-translate-y-0.5 hover:border-orange-500 hover:bg-orange-500 hover:text-white"
                     >
-                      {asset.name ?? "詳細資料"}
-                    </a>
+                      {downloadingUrl === asset.url ? "ダウンロード中..." : "添付ファイルをダウンロード"}
+                    </button>
                   ))}
                 </div>
               )}
+
+              <Link
+                href="/services/"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm font-semibold text-slate-600 transition-all hover:-translate-y-0.5 hover:border-orange-300 hover:text-orange-500 hover:shadow-sm hover:shadow-orange-100"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                一覧へ戻る
+              </Link>
             </aside>
           </div>
         </section>

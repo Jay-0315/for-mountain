@@ -244,6 +244,16 @@ export default function NewsDetailPage({ post, relatedPosts }: Props) {
                   )}
                 </dl>
               </div>
+
+              <Link
+                href="/news/"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm font-semibold text-slate-600 transition-all hover:-translate-y-0.5 hover:border-orange-300 hover:text-orange-500 hover:shadow-sm hover:shadow-orange-100"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                一覧へ戻る
+              </Link>
             </aside>
           </div>
         </section>
