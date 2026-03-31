@@ -34,15 +34,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
 
     if (servicesRes.status === "fulfilled" && servicesRes.value.ok) {
-      const items: { id: number; updatedAt?: string; createdAt: string }[] = await servicesRes.value.json();
-      items.forEach((item) => {
-        dynamicRoutes.push({
-          url: withTrailingSlash(`/services/${item.id}`),
-          lastModified: new Date(item.updatedAt ?? item.createdAt),
-          changeFrequency: "monthly",
-          priority: 0.7,
-        });
-      });
+      await servicesRes.value.json();
     }
 
     return [...staticRoutes, ...dynamicRoutes];

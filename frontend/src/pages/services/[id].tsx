@@ -43,6 +43,25 @@ export default function ServiceDetailPage({ item, categories }: Props) {
   const categoryLabel = categoryInfo ? categoryInfo.name : currentItem.category;
   const contentBlocks = currentItem.contentBlocks ?? [];
   const hasTextBlock = contentBlocks.some((block) => block.type === "text" && block.content?.trim());
+  const hasImageBlock = contentBlocks.some((block) => block.type === "image" && block.url);
+  const hasVideoBlock = contentBlocks.some((block) => block.type === "video" && block.url);
+  const hasAttachmentBlock = contentBlocks.some((block) => block.type === "attachment" && block.url);
+  const legacyAllImageAssets = currentItem.imageAssets?.length
+    ? currentItem.imageAssets
+    : currentItem.imageData
+      ? [{ name: currentItem.imageName, url: currentItem.imageData }]
+      : [];
+  const legacyImageAssets = legacyAllImageAssets.slice(1);
+  const legacyVideoAssets = currentItem.videoAssets?.length
+    ? currentItem.videoAssets
+    : currentItem.videoData
+      ? [{ name: currentItem.videoName, url: currentItem.videoData }]
+      : [];
+  const legacyAttachmentAssets = currentItem.attachmentAssets?.length
+    ? currentItem.attachmentAssets
+    : currentItem.attachmentData
+      ? [{ name: currentItem.attachmentName, url: currentItem.attachmentData }]
+      : [];
   const description =
     stripMarkdown(currentItem.content).slice(0, 120) ||
     "株式会社マウンテンの事業紹介詳細です。画像・動画・関連資料をご確認いただけます。";
@@ -167,6 +186,47 @@ export default function ServiceDetailPage({ item, categories }: Props) {
                   <MarkdownContent content={currentItem.content} className="space-y-4" />
                 )}
                 {contentBlocks.map(renderContentBlock)}
+                {!hasImageBlock && legacyImageAssets.length > 0 && (
+                  <div className="space-y-4">
+                    {legacyImageAssets.map((asset, index) => (
+                      <div key={`legacy-image-${asset.url}-${index}`} className="overflow-hidden rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                        <Image
+                          src={asset.url}
+                          alt={asset.name ?? currentItem.title}
+                          width={1400}
+                          height={900}
+                          unoptimized
+                          className="h-auto w-full rounded-xl object-contain"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {!hasVideoBlock && legacyVideoAssets.length > 0 && (
+                  <div className="grid gap-4">
+                    {legacyVideoAssets.map((asset, index) => (
+                      <div key={`legacy-video-${asset.url}-${index}`} className="overflow-hidden rounded-2xl border border-slate-100 bg-slate-950">
+                        <video src={asset.url} controls playsInline className="w-full bg-black" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {!hasAttachmentBlock && legacyAttachmentAssets.length > 0 && (
+                  <div className="flex flex-wrap gap-3">
+                    {legacyAttachmentAssets.map((asset, index) => (
+                      <button
+                        key={`legacy-attachment-${asset.url}-${index}`}
+                        type="button"
+                        onClick={() => {
+                          void handleAttachmentDownload(asset);
+                        }}
+                        className="inline-flex items-center justify-center rounded-2xl border border-orange-200 bg-orange-50 px-5 py-4 text-sm font-semibold text-orange-600 transition-all hover:-translate-y-0.5 hover:border-orange-500 hover:bg-orange-500 hover:text-white"
+                      >
+                        {downloadingUrl === asset.url ? "ダウンロード中..." : "添付ファイルをダウンロード"}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </article>
 

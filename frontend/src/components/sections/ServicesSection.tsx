@@ -256,7 +256,7 @@ export default function ServicesSection({
                 return (
                   <Link
                     key={item.id}
-                    href={`/services/${item.id}/`}
+                    href={{ pathname: "/services/detail/", query: { id: item.id } }}
                     className="service-card group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.05)] transition-all duration-300 hover:-translate-y-1 hover:border-orange-200 hover:shadow-[0_18px_40px_rgba(249,115,22,0.10)]"
                     style={{ animation: "svc-card-up 0.45s ease-out both" }}
                   >
