@@ -1,9 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import {
+  COMPANY_FULL_ADDRESS,
+  COMPANY_GOOGLE_MAPS_EMBED_URL,
+  COMPANY_GOOGLE_MAPS_URL,
+} from "@/lib/site";
 
 // ── 데이터 ────────────────────────────────────────────────────
 const companyInfo = [
@@ -350,6 +356,37 @@ export default function AboutSection() {
               </div>
             </div>
 
+          </div>
+        </div>
+
+        <div className="mt-12 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex flex-col gap-4 border-b border-slate-100 px-6 py-5 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-orange-500">
+                Google Maps
+              </p>
+              <p className="mt-1 text-base font-semibold text-slate-800">
+                {COMPANY_FULL_ADDRESS}
+              </p>
+            </div>
+            <Link
+              href={COMPANY_GOOGLE_MAPS_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="min-w-[112px] whitespace-nowrap rounded-full bg-orange-500 px-5 py-2 text-center text-sm font-semibold text-white transition hover:bg-orange-400"
+            >
+              地図開き
+            </Link>
+          </div>
+          <div className="h-[380px] bg-slate-100 md:h-[480px]">
+            <iframe
+              title="株式会社マウンテンの所在地マップ"
+              src={COMPANY_GOOGLE_MAPS_EMBED_URL}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              className="h-full w-full border-0"
+              allowFullScreen
+            />
           </div>
         </div>
       </div>

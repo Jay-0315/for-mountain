@@ -3,6 +3,10 @@ spring:
     name: for-mountain
   profiles:
     active: dev
+  servlet:
+    multipart:
+      max-file-size: -1
+      max-request-size: -1
   data:
     redis:
       host: localhost
