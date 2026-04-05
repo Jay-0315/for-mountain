@@ -363,7 +363,7 @@ export default function AboutSection() {
           <div className="flex flex-col gap-4 border-b border-slate-100 px-6 py-5 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.22em] text-orange-500">
-                Google Maps
+                Access
               </p>
               <p className="mt-1 text-base font-semibold text-slate-800">
                 {COMPANY_FULL_ADDRESS}
