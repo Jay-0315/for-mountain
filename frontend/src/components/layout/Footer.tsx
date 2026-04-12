@@ -21,8 +21,8 @@ export default function Footer() {
               <span className="text-orange-400">株式会社</span>マウンテン
             </p>
             <p className="text-sm text-slate-400 max-w-sm leading-relaxed">
-              ITエンジニアのアウトソーシング、自社開発と<br />
-              ネットワーク通信機器の製品開発・販売を両立する<br />
+              システム開発、ソリューション販売・技術支援、<br />
+              インフラ構築・技術支援、コンサルを対応する<br />
               IT総合カンパニーです。
             </p>
             <dl className="mt-5 space-y-2 text-sm text-slate-400">

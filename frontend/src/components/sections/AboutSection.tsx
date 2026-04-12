@@ -119,6 +119,24 @@ const companyValues = [
   },
 ];
 
+const accessCards = [
+  {
+    line: "都営新宿線",
+    station: "岩本町駅",
+    detail: "4番出口より徒歩3分",
+  },
+  {
+    line: "日比谷線",
+    station: "秋葉原駅",
+    detail: "4番出口より徒歩5分",
+  },
+  {
+    line: "JR",
+    station: "秋葉原駅",
+    detail: "駅より徒歩7分",
+  },
+];
+
 // ── コンポーネント ─────────────────────────────────────────────
 export default function AboutSection() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -387,6 +405,20 @@ export default function AboutSection() {
               className="h-full w-full border-0"
               allowFullScreen
             />
+          </div>
+          <div className="grid gap-4 border-t border-slate-100 px-6 py-5 md:grid-cols-3">
+            {accessCards.map((card) => (
+              <div
+                key={`${card.line}-${card.station}`}
+                className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4"
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-500">
+                  {card.line}
+                </p>
+                <p className="mt-2 text-lg font-bold text-slate-900">{card.station}</p>
+                <p className="mt-1 text-sm leading-relaxed text-slate-600">{card.detail}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
