@@ -22,7 +22,7 @@ export default function Footer() {
             </p>
             <p className="text-sm text-slate-400 max-w-sm leading-relaxed">
               システム開発、ソリューション販売・技術支援、<br />
-              インフラ構築・技術支援、コンサルを対応する<br />
+              インフラ構築・技術支援、コンサルを提供する<br />
               IT総合カンパニーです。
             </p>
             <dl className="mt-5 space-y-2 text-sm text-slate-400">
