@@ -12,108 +12,8 @@ type Particle = {
   radius: number;
   alpha: number;
 };
-
-type GridPoint = {
-  x: number;
-  y: number;
-};
-
-type GridCoord = {
-  col: number;
-  row: number;
-};
-
-type BurstRunner = {
-  trailIndex: number;
-  progress: number;
-  speed: number;
-  length: number;
-  delayFrames: number;
-  active: boolean;
-};
-
-const GRID_SIZE = 44;
-const RUNNER_CELL_SIZE = 28;
-const RUNNER_CELL_OFFSET_X = 10;
-const RUNNER_CELL_OFFSET_Y = 8;
 const HERO_STAGE_DELAY_MS = 0;
 const HERO_STAGE_DELAY_S = HERO_STAGE_DELAY_MS / 1000;
-const HERO_STAGE_DELAY_FRAMES = Math.round((HERO_STAGE_DELAY_MS / 1000) * 60);
-const GRID_RUNNERS = [
-  { length: 6, speed: 0.085, offset: 0 },
-  { length: 7, speed: 0.092, offset: -18 },
-  { length: 6, speed: 0.078, offset: -34 },
-  { length: 7, speed: 0.072, offset: -12 },
-  { length: 6, speed: 0.075, offset: -28 },
-] as const;
-
-function appendSegment(path: GridCoord[], next: GridCoord) {
-  const last = path[path.length - 1];
-  if (!last) {
-    path.push(next);
-    return;
-  }
-
-  const colStep = Math.sign(next.col - last.col);
-  const rowStep = Math.sign(next.row - last.row);
-  let currentCol = last.col;
-  let currentRow = last.row;
-
-  while (currentCol !== next.col || currentRow !== next.row) {
-    if (currentCol !== next.col) currentCol += colStep;
-    else if (currentRow !== next.row) currentRow += rowStep;
-    path.push({ col: currentCol, row: currentRow });
-  }
-}
-
-function toPixelTrail(path: GridCoord[]): GridPoint[] {
-  return path.map((point) => ({
-    x: point.col * GRID_SIZE,
-    y: point.row * GRID_SIZE,
-  }));
-}
-
-function buildRunnerTrails(width: number, height: number) {
-  const overscan = 6;
-  const cols = Math.max(20, Math.ceil(width / GRID_SIZE));
-  const rows = Math.max(12, Math.ceil(height / GRID_SIZE));
-  const rowA = Math.max(2, Math.floor(rows * 0.22));
-  const rowB = Math.max(rowA + 2, Math.floor(rows * 0.42));
-  const rowC = Math.max(rowB + 2, Math.floor(rows * 0.62));
-  const rowD = Math.max(rowC + 1, Math.floor(rows * 0.76));
-  const colA = Math.max(8, Math.floor(cols * 0.3));
-  const colB = Math.max(colA + 5, Math.floor(cols * 0.52));
-  const colC = Math.max(colB + 4, Math.floor(cols * 0.7));
-
-  const runner1: GridCoord[] = [{ col: -overscan, row: rowA }];
-  appendSegment(runner1, { col: colA, row: rowA });
-  appendSegment(runner1, { col: colA, row: rowB });
-  appendSegment(runner1, { col: cols + overscan, row: rowB });
-
-  const runner2: GridCoord[] = [{ col: cols + overscan, row: rowB + 1 }];
-  appendSegment(runner2, { col: colC, row: rowB + 1 });
-  appendSegment(runner2, { col: colC, row: rowA + 2 });
-  appendSegment(runner2, { col: -overscan, row: rowA + 1 });
-
-  const runner3: GridCoord[] = [{ col: -overscan, row: rowC }];
-  appendSegment(runner3, { col: colB, row: rowC });
-  appendSegment(runner3, { col: colB, row: rowD });
-  appendSegment(runner3, { col: colC, row: rowD });
-  appendSegment(runner3, { col: colC, row: rowC });
-  appendSegment(runner3, { col: cols + overscan, row: rowC });
-
-  const runner4: GridCoord[] = [{ col: Math.max(4, Math.floor(cols * 0.22)), row: -overscan }];
-  appendSegment(runner4, { col: Math.max(4, Math.floor(cols * 0.22)), row: rowB });
-  appendSegment(runner4, { col: Math.max(6, Math.floor(cols * 0.34)), row: rowB });
-  appendSegment(runner4, { col: Math.max(6, Math.floor(cols * 0.34)), row: rows + overscan });
-
-  const runner5: GridCoord[] = [{ col: Math.max(10, Math.floor(cols * 0.78)), row: rows + overscan }];
-  appendSegment(runner5, { col: Math.max(10, Math.floor(cols * 0.78)), row: rowC });
-  appendSegment(runner5, { col: Math.max(8, Math.floor(cols * 0.66)), row: rowC });
-  appendSegment(runner5, { col: Math.max(8, Math.floor(cols * 0.66)), row: -overscan });
-
-  return [runner1, runner2, runner3, runner4, runner5].map(toPixelTrail);
-}
 
 export default function HeroSection() {
   const containerRef = useRef<HTMLElement>(null);
@@ -130,12 +30,9 @@ export default function HeroSection() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    let snakeTrails = buildRunnerTrails(window.innerWidth, window.innerHeight);
-
     const resize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
-      snakeTrails = buildRunnerTrails(window.innerWidth, window.innerHeight);
     };
     resize();
     window.addEventListener("resize", resize);
@@ -148,22 +45,12 @@ export default function HeroSection() {
       radius: Math.random() * 1.8 + 0.4,
       alpha: Math.random() * 0.45 + 0.1,
     }));
-    const snakeProgress = GRID_RUNNERS.map((runner) => runner.offset);
-    const burstRunners: BurstRunner[] = Array.from({ length: 34 }, (_, index) => ({
-      trailIndex: index % GRID_RUNNERS.length,
-      progress: -8 - index * 1.6,
-      speed: 0.34 + (index % 5) * 0.03,
-      length: 2 + (index % 3),
-      delayFrames: HERO_STAGE_DELAY_FRAMES + 18 + index * 2,
-      active: true,
-    }));
     const pointer = {
       x: window.innerWidth * 0.62,
       y: window.innerHeight * 0.4,
       tx: window.innerWidth * 0.62,
       ty: window.innerHeight * 0.4,
     };
-    let frameCount = 0;
     let rafId: number;
 
     const handlePointerMove = (event: MouseEvent) => {
@@ -177,7 +64,6 @@ export default function HeroSection() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       pointer.x += (pointer.tx - pointer.x) * 0.06;
       pointer.y += (pointer.ty - pointer.y) * 0.06;
-      frameCount += 1;
 
       const centerGradient = ctx.createRadialGradient(
         pointer.x,
@@ -192,58 +78,6 @@ export default function HeroSection() {
       centerGradient.addColorStop(1, "rgba(15,23,42,0)");
       ctx.fillStyle = centerGradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      snakeTrails.forEach((trail, snakeIndex) => {
-        const runner = GRID_RUNNERS[snakeIndex];
-        if (!runner) return;
-
-        snakeProgress[snakeIndex] += runner.speed;
-        if (snakeProgress[snakeIndex] > trail.length + runner.length + 4) {
-          snakeProgress[snakeIndex] = -12;
-        }
-
-        for (let cellIndex = 0; cellIndex < runner.length; cellIndex += 1) {
-          const trailIndex = Math.floor(snakeProgress[snakeIndex]) - cellIndex;
-          if (trailIndex < 0 || trailIndex >= trail.length) continue;
-
-          const point = trail[trailIndex];
-          const alpha = 0.055 + (runner.length - cellIndex) * 0.028;
-          ctx.fillStyle = `rgba(253,186,116,${alpha})`;
-          ctx.fillRect(
-            Math.round(point.x + RUNNER_CELL_OFFSET_X),
-            Math.round(point.y + RUNNER_CELL_OFFSET_Y),
-            RUNNER_CELL_SIZE,
-            RUNNER_CELL_SIZE
-          );
-        }
-      });
-
-      burstRunners.forEach((runner) => {
-        if (!runner.active || frameCount < runner.delayFrames) return;
-        const trail = snakeTrails[runner.trailIndex];
-        if (!trail) return;
-
-        runner.progress += runner.speed;
-
-        for (let cellIndex = 0; cellIndex < runner.length; cellIndex += 1) {
-          const trailIndex = Math.floor(runner.progress) - cellIndex;
-          if (trailIndex < 0 || trailIndex >= trail.length) continue;
-
-          const point = trail[trailIndex];
-          const alpha = 0.08 + (runner.length - cellIndex) * 0.04;
-          ctx.fillStyle = `rgba(253,186,116,${alpha})`;
-          ctx.fillRect(
-            Math.round(point.x + RUNNER_CELL_OFFSET_X),
-            Math.round(point.y + RUNNER_CELL_OFFSET_Y),
-            RUNNER_CELL_SIZE,
-            RUNNER_CELL_SIZE
-          );
-        }
-
-        if (runner.progress > trail.length + runner.length + 2) {
-          runner.active = false;
-        }
-      });
 
       for (let i = 0; i < particles.length; i += 1) {
         const p = particles[i];
@@ -411,11 +245,11 @@ export default function HeroSection() {
       <div ref={glowRef2} className="absolute left-1/2 bottom-[22%] h-[38vh] w-[16vw] translate-x-[12%] rounded-full bg-gradient-to-tr from-amber-300/7 via-orange-300/4 to-transparent blur-3xl pointer-events-none" />
 
       <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
-        <div className="hero-badge mb-8 inline-flex min-h-[4.75rem] items-center rounded-[999px] border border-orange-300/20 bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(251,146,60,0.12))] px-6 py-3.5 text-sm font-medium text-orange-100 shadow-[0_14px_36px_rgba(15,23,42,0.2)] backdrop-blur-md md:px-8">
-          <span className="pb-[0.08em] text-[1.7rem] font-bold leading-[1.15] text-orange-50 md:text-[2rem]">
+        <p className="hero-badge mb-6 text-center text-base font-semibold uppercase tracking-[0.18em] md:text-lg">
+          <span className="bg-gradient-to-r from-orange-400 to-amber-300 bg-clip-text text-transparent">
             IT Integrator Company
           </span>
-        </div>
+        </p>
 
         <h1 className="mb-6 text-5xl font-bold leading-tight text-white md:text-7xl">
           <span className="hero-title-line1 block">　ITで、</span>
