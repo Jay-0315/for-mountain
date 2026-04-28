@@ -2,92 +2,15 @@
 
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
-import { TextPlugin } from "gsap/TextPlugin";
-
-gsap.registerPlugin(TextPlugin);
 
 /* ─── types ─────────────────────────────────────── */
 type Particle  = { x:number; y:number; vx:number; vy:number; radius:number; alpha:number };
 type Ripple    = { x:number; y:number; radius:number; alpha:number; speed:number };
-type GridPoint = { x:number; y:number };
-type GridCoord = { col:number; row:number };
-
-/* ─── constants ──────────────────────────────────── */
-const GRID_SIZE          = 44;
-const RUNNER_CELL_SIZE   = 28;
-const RUNNER_CELL_OFFSET = { x: 10, y: 8 };
-const GRID_RUNNERS = [
-  { length:6, speed:0.085, offset:0   },
-  { length:7, speed:0.092, offset:-18 },
-  { length:6, speed:0.078, offset:-34 },
-  { length:7, speed:0.072, offset:-12 },
-  { length:6, speed:0.075, offset:-28 },
-] as const;
-
-const AMBIENT_LINES = [
-  "edge.sync(packet => packet.latency < 12);",
-  "cache.prime('/news').staleWhileRevalidate();",
-  "auth.rotate(keys).seal('session-token');",
-  "cluster.balance({ mode: 'smart', floor: 3 });",
-  "stream.window(32).flush('realtime');",
-  "policy.attach('network').permit('internal');",
-  "observe(span).tag('hero-background');",
-  "queue.dispatch(job => job.priority === 'burst');",
-  "telemetry.batch(24).ship('ap-southeast-2');",
-  "proxy.route('/api').upgrade('http2');",
-  "trace.merge(core, edge).compress();",
-  "signal.emit('warmup').handoff('gateway');",
-];
-
-/* ─── helpers ────────────────────────────────────── */
-function appendSegment(path: GridCoord[], next: GridCoord) {
-  const last = path[path.length - 1];
-  if (!last) { path.push(next); return; }
-  let col = last.col, row = last.row;
-  while (col !== next.col || row !== next.row) {
-    if (col !== next.col) col += Math.sign(next.col - col);
-    else row += Math.sign(next.row - row);
-    path.push({ col, row });
-  }
-}
-function toPixel(path: GridCoord[]): GridPoint[] {
-  return path.map(p => ({ x: p.col * GRID_SIZE, y: p.row * GRID_SIZE }));
-}
-function buildTrails(w: number, h: number) {
-  const os = 6;
-  const cols = Math.max(20, Math.ceil(w / GRID_SIZE));
-  const rows = Math.max(12, Math.ceil(h / GRID_SIZE));
-  const rA = Math.max(2,       Math.floor(rows * 0.22));
-  const rB = Math.max(rA+2,    Math.floor(rows * 0.42));
-  const rC = Math.max(rB+2,    Math.floor(rows * 0.62));
-  const rD = Math.max(rC+1,    Math.floor(rows * 0.76));
-  const cA = Math.max(8,       Math.floor(cols * 0.30));
-  const cB = Math.max(cA+5,    Math.floor(cols * 0.52));
-  const cC = Math.max(cB+4,    Math.floor(cols * 0.70));
-
-  const t1: GridCoord[] = [{ col:-os, row:rA }];
-  appendSegment(t1, { col:cA, row:rA }); appendSegment(t1, { col:cA, row:rB }); appendSegment(t1, { col:cols+os, row:rB });
-
-  const t2: GridCoord[] = [{ col:cols+os, row:rB+1 }];
-  appendSegment(t2, { col:cC, row:rB+1 }); appendSegment(t2, { col:cC, row:rA+2 }); appendSegment(t2, { col:-os, row:rA+1 });
-
-  const t3: GridCoord[] = [{ col:-os, row:rC }];
-  appendSegment(t3, { col:cB, row:rC }); appendSegment(t3, { col:cB, row:rD }); appendSegment(t3, { col:cC, row:rD }); appendSegment(t3, { col:cC, row:rC }); appendSegment(t3, { col:cols+os, row:rC });
-
-  const t4: GridCoord[] = [{ col:Math.max(4,Math.floor(cols*0.22)), row:-os }];
-  appendSegment(t4, { col:Math.max(4,Math.floor(cols*0.22)), row:rB }); appendSegment(t4, { col:Math.max(6,Math.floor(cols*0.34)), row:rB }); appendSegment(t4, { col:Math.max(6,Math.floor(cols*0.34)), row:rows+os });
-
-  const t5: GridCoord[] = [{ col:Math.max(10,Math.floor(cols*0.78)), row:rows+os }];
-  appendSegment(t5, { col:Math.max(10,Math.floor(cols*0.78)), row:rC }); appendSegment(t5, { col:Math.max(8,Math.floor(cols*0.66)), row:rC }); appendSegment(t5, { col:Math.max(8,Math.floor(cols*0.66)), row:-os });
-
-  return [t1,t2,t3,t4,t5].map(toPixel);
-}
 
 /* ─── component ──────────────────────────────────── */
 export default function DarkCanvasBg() {
   const wrapRef        = useRef<HTMLDivElement>(null);
   const canvasRef      = useRef<HTMLCanvasElement>(null);
-  const ambientRef     = useRef<HTMLDivElement>(null);
   const blob1Ref       = useRef<HTMLDivElement>(null);
   const blob2Ref       = useRef<HTMLDivElement>(null);
   const lastPointerRef = useRef<{ clientX: number; clientY: number } | null>(null);
@@ -100,12 +23,9 @@ export default function DarkCanvasBg() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    let trails = buildTrails(wrap.offsetWidth, wrap.offsetHeight);
-
     const resize = () => {
       canvas.width  = wrap.offsetWidth;
       canvas.height = wrap.offsetHeight;
-      trails = buildTrails(wrap.offsetWidth, wrap.offsetHeight);
     };
     resize();
 
@@ -122,7 +42,6 @@ export default function DarkCanvasBg() {
     }));
 
     const ripples: Ripple[] = [];
-    const snakeProgress = GRID_RUNNERS.map(r => r.offset);
 
     const pointer = {
       x: canvas.width * 0.62, y: canvas.height * 0.4,
@@ -200,32 +119,6 @@ export default function DarkCanvasBg() {
         ctx.stroke();
       }
 
-      /* grid runners */
-      trails.forEach((trail, si) => {
-        const runner = GRID_RUNNERS[si]; if (!runner) return;
-        snakeProgress[si] += runner.speed;
-        if (snakeProgress[si] > trail.length + runner.length + 4) snakeProgress[si] = -12;
-        for (let ci = 0; ci < runner.length; ci++) {
-          const ti = Math.floor(snakeProgress[si]) - ci;
-          if (ti < 0 || ti >= trail.length) continue;
-          const pt = trail[ti];
-          const yRatio = pt.y / Math.max(canvas.height, 1);
-          const sectionFade =
-            yRatio < 0.38
-              ? 1
-              : yRatio < 0.62
-                ? 0.78
-                : yRatio < 0.82
-                  ? 0.56
-                  : 0.38;
-          const pointerDist = Math.hypot(pt.x - pointer.x, pt.y - pointer.y);
-          const pointerBoost = 1 + Math.max(0, 1 - pointerDist / 260) * 0.32;
-          const runnerAlpha = (0.055 + (runner.length - ci) * 0.028) * sectionFade * pointerBoost;
-          ctx.fillStyle = `rgba(253,186,116,${runnerAlpha})`;
-          ctx.fillRect(Math.round(pt.x+RUNNER_CELL_OFFSET.x), Math.round(pt.y+RUNNER_CELL_OFFSET.y), RUNNER_CELL_SIZE, RUNNER_CELL_SIZE);
-        }
-      });
-
       /* particles + connection lines */
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
@@ -264,44 +157,6 @@ export default function DarkCanvasBg() {
       window.removeEventListener("scroll", onViewportChange);
       window.removeEventListener("resize", onViewportChange);
     };
-  }, []);
-
-  /* ambient code snippets */
-  useEffect(() => {
-    const layer = ambientRef.current;
-    if (!layer) return;
-    const snippets = new Set<HTMLDivElement>();
-
-    const spawn = () => {
-      const el = document.createElement("div");
-      const count = 2 + Math.floor(Math.random()*3);
-      const lines = [...AMBIENT_LINES].sort(()=>Math.random()-0.5).slice(0,count);
-      el.className = "pointer-events-none absolute font-mono text-[9px] leading-5 tracking-[0.08em] text-orange-300/18 md:text-[11px]";
-      el.style.left    = `${8  + Math.random()*72}%`;
-      el.style.top     = `${10 + Math.random()*72}%`;
-      el.style.opacity = "0";
-      el.style.transform = "translate3d(0,10px,0)";
-      lines.forEach(line => {
-        const row = document.createElement("div");
-        row.className   = "whitespace-nowrap drop-shadow-[0_0_8px_rgba(249,115,22,0.12)]";
-        row.dataset.line = line;
-        row.textContent  = "";
-        el.appendChild(row);
-      });
-      layer.appendChild(el); snippets.add(el);
-
-      const rows = Array.from(el.children) as HTMLDivElement[];
-      const tl = gsap.timeline({ onComplete: () => { snippets.delete(el); el.remove(); } });
-      tl.to(el, { opacity:1, y:0, duration:0.28, ease:"power2.out" });
-      rows.forEach((row, ri) => {
-        tl.to(row, { duration: 0.34+row.dataset.line!.length*0.012, text:{ value:row.dataset.line??"", delimiter:"" }, ease:"none" }, ri===0?"<":">-0.02");
-      });
-      tl.to(el, { opacity:0, y:-18, duration:1.2, ease:"power1.inOut" }, "+=0.6");
-    };
-
-    spawn(); spawn();
-    const id = window.setInterval(spawn, 2200);
-    return () => { window.clearInterval(id); snippets.forEach(s=>s.remove()); };
   }, []);
 
   /* blob mouse parallax */
@@ -353,9 +208,6 @@ export default function DarkCanvasBg() {
           backgroundSize: "44px 44px",
         }}
       />
-
-      {/* ambient code */}
-      <div ref={ambientRef} className="absolute inset-0 z-[1] overflow-hidden" />
     </div>
   );
 }
