@@ -320,11 +320,6 @@ export default function HeroSection() {
       const glow2 = glowRef2.current;
       if (!halo || !glow1 || !glow2) return;
 
-      gsap.set(
-        [".hero-badge", ".hero-title-line1", ".hero-title-line2", ".hero-typing", ".hero-cta-1", ".hero-scroll"],
-        { opacity: 0, y: 30 }
-      );
-      gsap.set(".hero-sub", { opacity: 0, y: 20 });
       gsap.set(halo, {
         opacity: 0,
         scale: 0.92,
@@ -340,12 +335,6 @@ export default function HeroSection() {
       });
 
       tl.to(halo, { opacity: 1, scale: 1, duration: 1.2, ease: "power2.out" })
-        .to(".hero-badge", { opacity: 1, y: 0, duration: 0.7 }, "-=0.3")
-        .to(".hero-title-line1", { opacity: 1, y: 0, duration: 0.8 }, "-=0.3")
-        .to(".hero-typing", { opacity: 1, y: 0, duration: 0.7 }, "-=0.4")
-        .to(".hero-title-line2", { opacity: 1, y: 0, duration: 0.7 }, "-=0.5")
-        .to(".hero-sub", { opacity: 1, y: 0, duration: 0.7 }, "-=0.6")
-        .to(".hero-cta-1", { opacity: 1, y: 0, duration: 0.6 }, "-=0.4")
         .to(".hero-scroll", { opacity: 1, y: 0, duration: 0.5 }, "-=0.2");
 
       gsap.to(halo, {
@@ -422,8 +411,7 @@ export default function HeroSection() {
       <div ref={glowRef2} className="absolute left-1/2 bottom-[22%] h-[38vh] w-[16vw] translate-x-[12%] rounded-full bg-gradient-to-tr from-amber-300/7 via-orange-300/4 to-transparent blur-3xl pointer-events-none" />
 
       <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
-        <div className="hero-badge mb-8 inline-flex min-h-[4.75rem] items-center gap-4 rounded-[999px] border border-orange-300/20 bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(251,146,60,0.12))] px-6 py-3.5 text-sm font-medium text-orange-100 shadow-[0_14px_36px_rgba(15,23,42,0.2)] backdrop-blur-md md:px-8">
-          <span className="h-3 w-3 shrink-0 rounded-full bg-orange-300 shadow-[0_0_16px_rgba(251,146,60,0.28)]" />
+        <div className="hero-badge mb-8 inline-flex min-h-[4.75rem] items-center rounded-[999px] border border-orange-300/20 bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(251,146,60,0.12))] px-6 py-3.5 text-sm font-medium text-orange-100 shadow-[0_14px_36px_rgba(15,23,42,0.2)] backdrop-blur-md md:px-8">
           <span className="pb-[0.08em] text-[1.7rem] font-bold leading-[1.15] text-orange-50 md:text-[2rem]">
             IT Integrator Company
           </span>
@@ -453,9 +441,8 @@ export default function HeroSection() {
         <div className="flex justify-center gap-4 sm:flex-row">
           <a
             href="#partners"
-            className="hero-cta-1 public-elevated inline-flex min-h-[4.75rem] items-center justify-center gap-4 rounded-2xl border border-orange-300/20 bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(251,146,60,0.12))] px-8 py-3.5 text-[1.15rem] font-bold text-orange-50 shadow-[0_14px_36px_rgba(15,23,42,0.2)] backdrop-blur-md transition-[transform,box-shadow,border-color,background] duration-300 hover:-translate-y-0.5 hover:border-orange-300/28 hover:bg-[linear-gradient(135deg,rgba(255,255,255,0.1),rgba(251,146,60,0.16))] hover:shadow-[0_20px_40px_rgba(15,23,42,0.24)] md:px-10"
+            className="hero-cta-1 public-elevated inline-flex items-center justify-center gap-3 rounded-xl border border-orange-400/18 bg-[linear-gradient(135deg,rgba(251,146,60,0.2),rgba(249,115,22,0.1))] px-8 py-4 font-semibold text-orange-50 shadow-[0_18px_40px_rgba(249,115,22,0.14)] backdrop-blur-md transition-[transform,box-shadow,border-color,background] duration-300 hover:-translate-y-0.5 hover:border-orange-300/28 hover:bg-[linear-gradient(135deg,rgba(251,146,60,0.24),rgba(249,115,22,0.14))] hover:shadow-[0_24px_48px_rgba(249,115,22,0.18)]"
           >
-            <span className="h-3 w-3 shrink-0 rounded-full bg-orange-300 shadow-[0_0_16px_rgba(251,146,60,0.28)]" />
             株式会社MOUNTAIN Partners
           </a>
         </div>
