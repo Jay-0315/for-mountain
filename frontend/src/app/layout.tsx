@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import ScrollProgressBar from "@/components/layout/ScrollProgressBar";
-import CustomCursor from "@/components/ui/CustomCursor";
 import {
   BASE_URL,
   COMPANY_ADDRESS_LOCALITY,
@@ -103,7 +102,6 @@ export default function RootLayout({
       </head>
       <body suppressHydrationWarning className="antialiased">
         <ScrollProgressBar />
-        <CustomCursor />
         {children}
       </body>
     </html>

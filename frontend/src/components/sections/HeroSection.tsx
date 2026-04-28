@@ -3,9 +3,6 @@
 import { useEffect, useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
-import { TextPlugin } from "gsap/TextPlugin";
-
-gsap.registerPlugin(TextPlugin);
 
 type Particle = {
   x: number;
@@ -14,14 +11,6 @@ type Particle = {
   vy: number;
   radius: number;
   alpha: number;
-};
-
-type Ripple = {
-  x: number;
-  y: number;
-  radius: number;
-  alpha: number;
-  speed: number;
 };
 
 type GridPoint = {
@@ -57,29 +46,6 @@ const GRID_RUNNERS = [
   { length: 7, speed: 0.072, offset: -12 },
   { length: 6, speed: 0.075, offset: -28 },
 ] as const;
-const HERO_CODE_LINES = [
-  "const signal = deploy({ region: 'ap-southeast-2', edge: true, priority: 'hot' });",
-  "mesh.route('/core/cluster', latency < 20 ? 'direct' : 'adaptive');",
-  "stream.push({ layer: 'network', status: 'warm', drift: 0.14, health: 'stable' });",
-  "observe(trace).filter(span => span.kind === 'client').map(sync).buffer(12);",
-  "pipeline.stage('secure').attach(policy('zero-trust')).forward(packet);",
-  "runtime.cache('/partners').revalidate({ burst: true, interval: 60 });",
-  "orchestrator.link('services').fanOut({ replicas: 4, region: 'tokyo-edge' });",
-];
-const HERO_AMBIENT_CODE_LINES = [
-  "edge.sync(packet => packet.latency < 12);",
-  "cache.prime('/news').staleWhileRevalidate();",
-  "auth.rotate(keys).seal('session-token');",
-  "cluster.balance({ mode: 'smart', floor: 3 });",
-  "stream.window(32).flush('realtime');",
-  "policy.attach('network').permit('internal');",
-  "observe(span).tag('hero-background');",
-  "queue.dispatch(job => job.priority === 'burst');",
-  "telemetry.batch(24).ship('ap-southeast-2');",
-  "proxy.route('/api').upgrade('http2');",
-  "trace.merge(core, edge).compress();",
-  "signal.emit('warmup').handoff('gateway');",
-];
 
 function appendSegment(path: GridCoord[], next: GridCoord) {
   const last = path[path.length - 1];
@@ -155,12 +121,9 @@ export default function HeroSection() {
   const blobRef1 = useRef<HTMLDivElement>(null);
   const blobRef2 = useRef<HTMLDivElement>(null);
   const haloRef = useRef<HTMLDivElement>(null);
-  const codeRainRef = useRef<HTMLDivElement>(null);
-  const ambientCodeLayerRef = useRef<HTMLDivElement>(null);
   const glowRef1 = useRef<HTMLDivElement>(null);
   const glowRef2 = useRef<HTMLDivElement>(null);
 
-  // ── Canvas Particle 배경 ──────────────────────────────────────
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -185,7 +148,6 @@ export default function HeroSection() {
       radius: Math.random() * 1.8 + 0.4,
       alpha: Math.random() * 0.45 + 0.1,
     }));
-    const ripples: Ripple[] = [];
     const snakeProgress = GRID_RUNNERS.map((runner) => runner.offset);
     const burstRunners: BurstRunner[] = Array.from({ length: 34 }, (_, index) => ({
       trailIndex: index % GRID_RUNNERS.length,
@@ -201,26 +163,8 @@ export default function HeroSection() {
       tx: window.innerWidth * 0.62,
       ty: window.innerHeight * 0.4,
     };
-    let introPulse = 0;
-    let rippleTick = 0;
     let frameCount = 0;
-
     let rafId: number;
-
-    const addRipple = (x: number, y: number, speed = 1.6) => {
-      ripples.push({ x, y, radius: 20, alpha: 0.22, speed });
-    };
-
-    const addAmbientRipple = () => {
-      const marginX = canvas.width * 0.12;
-      const marginY = canvas.height * 0.14;
-      const x = marginX + Math.random() * (canvas.width - marginX * 2);
-      const y = marginY + Math.random() * (canvas.height - marginY * 2);
-      addRipple(x, y, 1.1 + Math.random() * 0.9);
-    };
-
-    addAmbientRipple();
-    addAmbientRipple();
 
     const handlePointerMove = (event: MouseEvent) => {
       pointer.tx = event.clientX;
@@ -233,8 +177,6 @@ export default function HeroSection() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       pointer.x += (pointer.tx - pointer.x) * 0.06;
       pointer.y += (pointer.ty - pointer.y) * 0.06;
-      introPulse += 0.015;
-      rippleTick += 1;
       frameCount += 1;
 
       const centerGradient = ctx.createRadialGradient(
@@ -250,50 +192,6 @@ export default function HeroSection() {
       centerGradient.addColorStop(1, "rgba(15,23,42,0)");
       ctx.fillStyle = centerGradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      for (let i = ripples.length - 1; i >= 0; i -= 1) {
-        const ripple = ripples[i];
-        ripple.radius += ripple.speed;
-        ripple.alpha *= 0.985;
-
-        ctx.beginPath();
-        ctx.arc(ripple.x, ripple.y, ripple.radius, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(253,186,116,${ripple.alpha})`;
-        ctx.lineWidth = 1.2;
-        ctx.stroke();
-
-        if (ripple.alpha < 0.03) {
-          ripples.splice(i, 1);
-        }
-      }
-
-      if (rippleTick % 72 === 0) {
-        addAmbientRipple();
-      }
-
-      for (let i = 0; i < 7; i += 1) {
-        const bandY = canvas.height * (0.14 + i * 0.13);
-        const wave = Math.sin(introPulse * 1.8 + i * 0.7) * 18;
-        const bandGradient = ctx.createLinearGradient(0, bandY, canvas.width, bandY + wave);
-        bandGradient.addColorStop(0, "rgba(251,146,60,0)");
-        bandGradient.addColorStop(0.4, `rgba(251,146,60,${0.015 + i * 0.004})`);
-        bandGradient.addColorStop(0.6, `rgba(253,186,116,${0.025 + i * 0.004})`);
-        bandGradient.addColorStop(1, "rgba(251,146,60,0)");
-
-        ctx.beginPath();
-        ctx.strokeStyle = bandGradient;
-        ctx.lineWidth = 1;
-        ctx.moveTo(0, bandY + wave);
-        ctx.bezierCurveTo(
-          canvas.width * 0.28,
-          bandY - wave,
-          canvas.width * 0.62,
-          bandY + wave,
-          canvas.width,
-          bandY - wave * 0.6
-        );
-        ctx.stroke();
-      }
 
       snakeTrails.forEach((trail, snakeIndex) => {
         const runner = GRID_RUNNERS[snakeIndex];
@@ -347,15 +245,14 @@ export default function HeroSection() {
         }
       });
 
-      for (let i = 0; i < particles.length; i++) {
+      for (let i = 0; i < particles.length; i += 1) {
         const p = particles[i];
         p.x += p.vx;
         p.y += p.vy;
         if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
         if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
 
-        // 근접 연결선
-        for (let j = i + 1; j < particles.length; j++) {
+        for (let j = i + 1; j < particles.length; j += 1) {
           const q = particles[j];
           const dx = p.x - q.x;
           const dy = p.y - q.y;
@@ -372,7 +269,6 @@ export default function HeroSection() {
           }
         }
 
-        // 파티클 점
         const particleDist = Math.hypot(p.x - pointer.x, p.y - pointer.y);
         const particleBoost = Math.max(0, 1 - particleDist / 260);
         ctx.beginPath();
@@ -393,95 +289,6 @@ export default function HeroSection() {
     };
   }, []);
 
-  useEffect(() => {
-    const layer = ambientCodeLayerRef.current;
-    if (!layer) return;
-
-    const snippets = new Set<HTMLDivElement>();
-    const startedAt = Date.now();
-
-    const spawnSnippet = () => {
-      const snippet = document.createElement("div");
-      const lineCount = 2 + Math.floor(Math.random() * 3);
-      const available = [...HERO_AMBIENT_CODE_LINES].sort(() => Math.random() - 0.5).slice(0, lineCount);
-      snippet.className = "pointer-events-none absolute font-mono text-[9px] leading-5 tracking-[0.08em] text-orange-300/55 md:text-[11px]";
-      snippet.style.left = `${8 + Math.random() * 72}%`;
-      snippet.style.top = `${10 + Math.random() * 72}%`;
-      snippet.style.opacity = "0";
-      snippet.style.transform = "translate3d(0, 10px, 0)";
-
-      available.forEach((line) => {
-        const row = document.createElement("div");
-        row.className = "whitespace-nowrap drop-shadow-[0_0_8px_rgba(249,115,22,0.12)]";
-        row.dataset.line = line;
-        row.textContent = "";
-        snippet.appendChild(row);
-      });
-
-      layer.appendChild(snippet);
-      snippets.add(snippet);
-
-      const rows = Array.from(snippet.children) as HTMLDivElement[];
-      const snippetTimeline = gsap.timeline({
-        onComplete: () => {
-          snippets.delete(snippet);
-          snippet.remove();
-        },
-      });
-
-      snippetTimeline.to(snippet, {
-        opacity: 1,
-        y: 0,
-        duration: 0.28,
-        ease: "power2.out",
-      });
-
-      rows.forEach((row, rowIndex) => {
-        snippetTimeline.to(
-          row,
-          {
-            duration: 0.34 + row.dataset.line!.length * 0.012,
-            text: { value: row.dataset.line ?? "", delimiter: "" },
-            ease: "none",
-          },
-          rowIndex === 0 ? "<" : ">-0.02"
-        );
-      });
-
-      snippetTimeline.to(
-        snippet,
-        {
-          opacity: 0,
-          y: -18,
-          duration: 1.2,
-          ease: "power1.inOut",
-        },
-        "+=0.6"
-      );
-    };
-
-    const initialBurst = window.setTimeout(() => {
-      spawnSnippet();
-      spawnSnippet();
-    }, HERO_STAGE_DELAY_MS + 400);
-    const intervalStart = window.setTimeout(() => {
-      spawnSnippet();
-    }, HERO_STAGE_DELAY_MS + 1200);
-    const intervalId = window.setInterval(() => {
-      if (Date.now() - startedAt < HERO_STAGE_DELAY_MS) return;
-      spawnSnippet();
-    }, 2200);
-
-    return () => {
-      window.clearTimeout(initialBurst);
-      window.clearTimeout(intervalStart);
-      window.clearInterval(intervalId);
-      snippets.forEach((snippet) => snippet.remove());
-      snippets.clear();
-    };
-  }, []);
-
-  // ── 마우스 패럴랙스 (Blob) ─────────────────────────────────────
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       const blob1 = blobRef1.current;
@@ -506,23 +313,19 @@ export default function HeroSection() {
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
-  // ── GSAP 타임라인 + TextPlugin ────────────────────────────────
   useGSAP(
     () => {
       const halo = haloRef.current;
-      const codeRain = codeRainRef.current;
       const glow1 = glowRef1.current;
       const glow2 = glowRef2.current;
-      if (!halo || !codeRain || !glow1 || !glow2) return;
+      if (!halo || !glow1 || !glow2) return;
 
-      // 초기 상태
       gsap.set(
-        [".hero-badge", ".hero-title-line1", ".hero-title-line2", ".hero-cta-1", ".hero-scroll"],
+        [".hero-badge", ".hero-title-line1", ".hero-title-line2", ".hero-typing", ".hero-cta-1", ".hero-scroll"],
         { opacity: 0, y: 30 }
       );
       gsap.set(".hero-sub", { opacity: 0, y: 20 });
-      gsap.set(".hero-typing", { opacity: 0 });
-      gsap.set([halo, codeRain], {
+      gsap.set(halo, {
         opacity: 0,
         scale: 0.92,
       });
@@ -530,95 +333,17 @@ export default function HeroSection() {
         opacity: 0.22,
         scale: 1,
       });
-      gsap.set(".hero-code-line", {
-        opacity: 0,
-        text: "",
-      });
-      gsap.set(".hero-code-mask", {
-        opacity: 0,
-        yPercent: -8,
-      });
 
       const tl = gsap.timeline({
         defaults: { ease: "power3.out" },
         delay: HERO_STAGE_DELAY_S,
       });
-      const codeLines = gsap.utils.toArray<HTMLElement>(".hero-code-line");
 
       tl.to(halo, { opacity: 1, scale: 1, duration: 1.2, ease: "power2.out" })
-        .to(
-          codeRain,
-          {
-            opacity: 1,
-            scale: 1,
-            duration: 0.28,
-            ease: "power2.out",
-          },
-          "-=0.7"
-        )
-        .to(
-          ".hero-code-mask",
-          {
-            opacity: 1,
-            yPercent: 0,
-            duration: 0.24,
-            ease: "power2.out",
-          },
-          "<"
-        );
-
-      codeLines.forEach((line, index) => {
-        tl.to(
-          line,
-          {
-            opacity: 0.94,
-            duration: 0.08,
-            ease: "power1.out",
-          },
-          index === 0 ? "<" : ">-0.03"
-        ).to(
-          line,
-          {
-            duration: 0.62,
-            text: { value: HERO_CODE_LINES[index] ?? "", delimiter: "" },
-            ease: "none",
-          },
-          "<"
-        );
-      });
-
-      tl.to(
-        ".hero-code-line",
-        {
-          opacity: 0.34,
-          duration: 0.4,
-          stagger: 0.03,
-          ease: "power2.inOut",
-        },
-        ">-0.05"
-      )
-        .to(".hero-code-mask", { opacity: 0, yPercent: 10, duration: 0.34 }, "<")
-        .to(codeRain, { opacity: 0, duration: 0.24 }, "<")
         .to(".hero-badge", { opacity: 1, y: 0, duration: 0.7 }, "-=0.3")
         .to(".hero-title-line1", { opacity: 1, y: 0, duration: 0.8 }, "-=0.3")
-        .to(
-          ".hero-typing",
-          {
-            opacity: 1,
-            duration: 0.1,
-          },
-          "-=0.2"
-        )
-        .to(
-          ".hero-typing",
-          {
-            duration: 1.6,
-            text: { value: "お客様を幸せに", delimiter: "" },
-            ease: "none",
-          },
-          "<"
-        )
-        .to(".hero-title-line2", { opacity: 1, y: 0, duration: 0.7 }, "-=0.7")
+        .to(".hero-typing", { opacity: 1, y: 0, duration: 0.7 }, "-=0.4")
+        .to(".hero-title-line2", { opacity: 1, y: 0, duration: 0.7 }, "-=0.5")
         .to(".hero-sub", { opacity: 1, y: 0, duration: 0.7 }, "-=0.6")
         .to(".hero-cta-1", { opacity: 1, y: 0, duration: 0.6 }, "-=0.4")
         .to(".hero-scroll", { opacity: 1, y: 0, duration: 0.5 }, "-=0.2");
@@ -663,13 +388,11 @@ export default function HeroSection() {
       id="top"
       className="relative z-10 -mb-px min-h-screen flex items-center justify-center overflow-hidden"
     >
-      {/* Canvas Particle 배경 */}
       <canvas
         ref={canvasRef}
         className="absolute inset-0 w-full h-full pointer-events-none"
       />
 
-      {/* Blob 그라디언트 */}
       <div className="absolute inset-0 pointer-events-none">
         <div
           ref={blobRef1}
@@ -681,7 +404,6 @@ export default function HeroSection() {
         />
       </div>
 
-      {/* 그리드 오버레이 */}
       <div
         className="absolute inset-0 pointer-events-none opacity-[0.025]"
         style={{
@@ -695,49 +417,29 @@ export default function HeroSection() {
         ref={haloRef}
         className="pointer-events-none absolute left-1/2 top-1/2 h-[32rem] w-[32rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-orange-300/6 bg-[radial-gradient(circle,rgba(251,146,60,0.08)_0%,rgba(251,146,60,0.025)_36%,rgba(6,11,24,0)_74%)] blur-xl"
       />
-      <div
-        ref={codeRainRef}
-        className="pointer-events-none absolute left-[18%] right-[4%] top-1/2 z-[2] -translate-y-1/2 overflow-hidden md:left-[24%] md:right-[6%]"
-      >
-        <div className="hero-code-mask px-2 py-2 md:px-4">
-          <div className="space-y-2 font-mono text-[10px] tracking-[0.06em] text-orange-300/95 md:text-[12px] md:tracking-[0.14em]">
-            {HERO_CODE_LINES.map((line) => (
-              <div key={line} className="hero-code-line whitespace-nowrap drop-shadow-[0_0_10px_rgba(249,115,22,0.16)]">
-                {line}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div
-        ref={ambientCodeLayerRef}
-        className="pointer-events-none absolute inset-0 z-[1] overflow-hidden"
-      />
 
       <div ref={glowRef1} className="absolute left-1/2 top-[16%] h-[44vh] w-[22vw] -translate-x-[115%] rounded-full bg-gradient-to-br from-orange-400/8 via-orange-300/4 to-transparent blur-3xl pointer-events-none" />
       <div ref={glowRef2} className="absolute left-1/2 bottom-[22%] h-[38vh] w-[16vw] translate-x-[12%] rounded-full bg-gradient-to-tr from-amber-300/7 via-orange-300/4 to-transparent blur-3xl pointer-events-none" />
-      {/* 메인 콘텐츠 */}
+
       <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
-        {/* 배지 */}
-        <div className="hero-badge inline-flex min-h-[4.75rem] items-center gap-4 rounded-[999px] border border-orange-300/20 bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(251,146,60,0.12))] px-6 py-3.5 text-sm font-medium text-orange-100 mb-8 shadow-[0_14px_36px_rgba(15,23,42,0.2)] backdrop-blur-md md:px-8">
+        <div className="hero-badge mb-8 inline-flex min-h-[4.75rem] items-center gap-4 rounded-[999px] border border-orange-300/20 bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(251,146,60,0.12))] px-6 py-3.5 text-sm font-medium text-orange-100 shadow-[0_14px_36px_rgba(15,23,42,0.2)] backdrop-blur-md md:px-8">
           <span className="h-3 w-3 shrink-0 rounded-full bg-gradient-to-br from-amber-200 via-orange-300 to-orange-500 shadow-[0_0_16px_rgba(251,146,60,0.45)] animate-pulse" />
           <span className="bg-gradient-to-r from-amber-100 via-orange-200 to-orange-400 bg-clip-text pb-[0.08em] text-[1.7rem] font-bold leading-[1.15] text-transparent md:text-[2rem]">
             IT Integrator Company
           </span>
         </div>
 
-        {/* 헤드라인 */}
-        <h1 className="text-5xl md:text-7xl font-bold text-white leading-tight mb-6">
+        <h1 className="mb-6 text-5xl font-bold leading-tight text-white md:text-7xl">
           <span className="hero-title-line1 block">　ITで、</span>
-          <span className="hero-typing block text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-300 min-h-[1.2em]" />
+          <span className="hero-typing block min-h-[1.2em] bg-gradient-to-r from-orange-400 to-amber-300 bg-clip-text text-transparent">
+            お客様を幸せに
+          </span>
           <span className="hero-title-line2 mt-3 block bg-gradient-to-r from-orange-50 via-amber-100 to-orange-200 bg-clip-text text-3xl text-transparent md:text-5xl">
             人と社会に信頼を
           </span>
         </h1>
 
-        {/* 서브텍스트 */}
-        <p className="hero-sub text-lg md:text-xl text-slate-200/88 max-w-3xl mx-auto mb-10 leading-relaxed">
+        <p className="hero-sub mx-auto mb-10 max-w-3xl text-lg leading-relaxed text-slate-200/88 md:text-xl">
           <span className="block whitespace-nowrap">
             <span className="text-orange-300">株式会社マウンテンは</span>
             <span className="ml-1 bg-gradient-to-r from-orange-300 to-amber-200 bg-clip-text text-transparent">
@@ -748,28 +450,20 @@ export default function HeroSection() {
           <span className="block text-amber-100">お客様のビジネス成長を支援します。</span>
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="flex justify-center gap-4 sm:flex-row">
           <a
             href="#partners"
-            className="hero-cta-1 public-elevated inline-flex items-center justify-center gap-3 px-8 py-4 rounded-xl border border-orange-400/18 bg-[linear-gradient(135deg,rgba(251,146,60,0.2),rgba(249,115,22,0.1))] text-orange-50 font-semibold shadow-[0_18px_40px_rgba(249,115,22,0.14)] backdrop-blur-md transition-[transform,box-shadow,border-color,background] duration-300 hover:-translate-y-0.5 hover:border-orange-300/28 hover:bg-[linear-gradient(135deg,rgba(251,146,60,0.24),rgba(249,115,22,0.14))] hover:shadow-[0_24px_48px_rgba(249,115,22,0.18)]"
+            className="hero-cta-1 public-elevated inline-flex items-center justify-center gap-3 rounded-xl border border-orange-400/18 bg-[linear-gradient(135deg,rgba(251,146,60,0.2),rgba(249,115,22,0.1))] px-8 py-4 font-semibold text-orange-50 shadow-[0_18px_40px_rgba(249,115,22,0.14)] backdrop-blur-md transition-[transform,box-shadow,border-color,background] duration-300 hover:-translate-y-0.5 hover:border-orange-300/28 hover:bg-[linear-gradient(135deg,rgba(251,146,60,0.24),rgba(249,115,22,0.14))] hover:shadow-[0_24px_48px_rgba(249,115,22,0.18)]"
           >
             <span className="h-2.5 w-2.5 rounded-full bg-orange-300 animate-pulse" />
             株式会社MOUNTAIN Partners
           </a>
-          {/*<a*/}
-          {/*  href="#services"*/}
-          {/*  className="hero-cta-2 px-8 py-4 bg-white/5 text-white font-semibold rounded-xl border border-white/10 hover:bg-white/10 hover:-translate-y-0.5 transition-all"*/}
-          {/*>*/}
-          {/*  事業内容を見る*/}
-          {/*</a>*/}
         </div>
-
       </div>
 
-      {/* 스크롤 인디케이터 */}
-      <div className="hero-scroll absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-slate-500">
-        <span className="text-xs tracking-widest uppercase">Scroll</span>
-        <div className="w-px h-8 bg-gradient-to-b from-slate-500 to-transparent animate-pulse" />
+      <div className="hero-scroll absolute bottom-8 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2 text-slate-500">
+        <span className="text-xs uppercase tracking-widest">Scroll</span>
+        <div className="h-8 w-px bg-gradient-to-b from-slate-500 to-transparent animate-pulse" />
       </div>
     </section>
   );
