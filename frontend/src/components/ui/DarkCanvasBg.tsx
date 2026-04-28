@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import gsap from "gsap";
 
 /* ─── types ─────────────────────────────────────── */
 type Particle  = { x:number; y:number; vx:number; vy:number; radius:number; alpha:number };
@@ -11,9 +10,6 @@ type Ripple    = { x:number; y:number; radius:number; alpha:number; speed:number
 export default function DarkCanvasBg() {
   const wrapRef        = useRef<HTMLDivElement>(null);
   const canvasRef      = useRef<HTMLCanvasElement>(null);
-  const blob1Ref       = useRef<HTMLDivElement>(null);
-  const blob2Ref       = useRef<HTMLDivElement>(null);
-  const lastPointerRef = useRef<{ clientX: number; clientY: number } | null>(null);
 
   /* canvas animation */
   useEffect(() => {
@@ -42,11 +38,6 @@ export default function DarkCanvasBg() {
     }));
 
     const ripples: Ripple[] = [];
-
-    const pointer = {
-      x: canvas.width * 0.62, y: canvas.height * 0.4,
-      tx: canvas.width * 0.62, ty: canvas.height * 0.4,
-    };
     let introPulse = 0, rippleTick = 0;
 
     const addRipple = (x:number, y:number, speed=1.6) =>
@@ -58,39 +49,11 @@ export default function DarkCanvasBg() {
     };
     addAmbient(); addAmbient();
 
-    const syncPointer = (clientX: number, clientY: number) => {
-      const rect = wrap.getBoundingClientRect();
-      pointer.tx = clientX - rect.left;
-      pointer.ty = clientY - rect.top;
-    };
-    const onMove = (e: MouseEvent) => {
-      lastPointerRef.current = { clientX: e.clientX, clientY: e.clientY };
-      syncPointer(e.clientX, e.clientY);
-    };
-    const onViewportChange = () => {
-      const lastPointer = lastPointerRef.current;
-      if (!lastPointer) return;
-      syncPointer(lastPointer.clientX, lastPointer.clientY);
-    };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("scroll", onViewportChange, { passive: true });
-    window.addEventListener("resize", onViewportChange);
-
     let rafId: number;
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      pointer.x += (pointer.tx - pointer.x) * 0.06;
-      pointer.y += (pointer.ty - pointer.y) * 0.06;
       introPulse += 0.015;
       rippleTick += 1;
-
-      /* radial glow under pointer */
-      const cg = ctx.createRadialGradient(pointer.x, pointer.y, 0, pointer.x, pointer.y, Math.min(canvas.width, canvas.height)*0.4);
-      cg.addColorStop(0, "rgba(251,146,60,0.16)");
-      cg.addColorStop(0.42, "rgba(249,115,22,0.08)");
-      cg.addColorStop(1, "rgba(15,23,42,0)");
-      ctx.fillStyle = cg;
-      ctx.fillRect(0,0,canvas.width,canvas.height);
 
       /* ripples */
       for (let i = ripples.length-1; i >= 0; i--) {
@@ -130,19 +93,15 @@ export default function DarkCanvasBg() {
           const dx = p.x-q.x, dy = p.y-q.y;
           const dist = Math.sqrt(dx*dx+dy*dy);
           if (dist < 130) {
-            const pd = Math.hypot((p.x+q.x)/2-pointer.x, (p.y+q.y)/2-pointer.y);
-            const boost = Math.max(0, 1-pd/280)*0.18;
             ctx.beginPath();
-            ctx.strokeStyle = `rgba(251,146,60,${(1-dist/130)*(0.12+boost)})`;
+            ctx.strokeStyle = `rgba(251,146,60,${(1-dist/130)*0.12})`;
             ctx.lineWidth = 0.5;
             ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y); ctx.stroke();
           }
         }
-        const pd = Math.hypot(p.x-pointer.x, p.y-pointer.y);
-        const boost = Math.max(0, 1-pd/260);
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius+boost*1.4, 0, Math.PI*2);
-        ctx.fillStyle = `rgba(251,146,60,${p.alpha+boost*0.24})`;
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2);
+        ctx.fillStyle = `rgba(251,146,60,${p.alpha})`;
         ctx.fill();
       }
 
@@ -153,41 +112,6 @@ export default function DarkCanvasBg() {
     return () => {
       cancelAnimationFrame(rafId);
       ro.disconnect();
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("scroll", onViewportChange);
-      window.removeEventListener("resize", onViewportChange);
-    };
-  }, []);
-
-  /* blob mouse parallax */
-  useEffect(() => {
-    const wrap = wrapRef.current; if (!wrap) return;
-    const syncBlobPosition = (clientX: number, clientY: number) => {
-      const blob1 = blob1Ref.current;
-      const blob2 = blob2Ref.current;
-      if (!blob1 || !blob2) return;
-      const rect = wrap.getBoundingClientRect();
-      const xR = ((clientX - rect.left) / rect.width - 0.5) * 2;
-      const yR = ((clientY - rect.top) / rect.height - 0.5) * 2;
-      gsap.to(blob1, { x:xR*40, y:yR*28, duration:1.4, ease:"power2.out" });
-      gsap.to(blob2, { x:xR*-28, y:yR*-20, duration:1.8, ease:"power2.out" });
-    };
-    const onMove = (e: MouseEvent) => {
-      lastPointerRef.current = { clientX: e.clientX, clientY: e.clientY };
-      syncBlobPosition(e.clientX, e.clientY);
-    };
-    const onViewportChange = () => {
-      const lastPointer = lastPointerRef.current;
-      if (!lastPointer) return;
-      syncBlobPosition(lastPointer.clientX, lastPointer.clientY);
-    };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("scroll", onViewportChange, { passive: true });
-    window.addEventListener("resize", onViewportChange);
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("scroll", onViewportChange);
-      window.removeEventListener("resize", onViewportChange);
     };
   }, []);
 
@@ -197,8 +121,8 @@ export default function DarkCanvasBg() {
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
 
       {/* blobs */}
-      <div ref={blob1Ref} className="absolute top-[18%] left-[18%] h-[420px] w-[420px] rounded-full bg-orange-500/14 blur-3xl" />
-      <div ref={blob2Ref} className="absolute bottom-[18%] right-[16%] h-[340px] w-[340px] rounded-full bg-amber-400/10 blur-3xl" />
+      <div className="absolute top-[18%] left-[18%] h-[420px] w-[420px] rounded-full bg-orange-500/14 blur-3xl" />
+      <div className="absolute bottom-[18%] right-[16%] h-[340px] w-[340px] rounded-full bg-amber-400/10 blur-3xl" />
 
       {/* grid overlay */}
       <div

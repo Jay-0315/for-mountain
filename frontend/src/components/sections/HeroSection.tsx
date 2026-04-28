@@ -45,39 +45,10 @@ export default function HeroSection() {
       radius: Math.random() * 1.8 + 0.4,
       alpha: Math.random() * 0.45 + 0.1,
     }));
-    const pointer = {
-      x: window.innerWidth * 0.62,
-      y: window.innerHeight * 0.4,
-      tx: window.innerWidth * 0.62,
-      ty: window.innerHeight * 0.4,
-    };
     let rafId: number;
-
-    const handlePointerMove = (event: MouseEvent) => {
-      pointer.tx = event.clientX;
-      pointer.ty = event.clientY;
-    };
-
-    window.addEventListener("mousemove", handlePointerMove);
 
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      pointer.x += (pointer.tx - pointer.x) * 0.06;
-      pointer.y += (pointer.ty - pointer.y) * 0.06;
-
-      const centerGradient = ctx.createRadialGradient(
-        pointer.x,
-        pointer.y,
-        0,
-        pointer.x,
-        pointer.y,
-        Math.min(canvas.width, canvas.height) * 0.4
-      );
-      centerGradient.addColorStop(0, "rgba(251,146,60,0.16)");
-      centerGradient.addColorStop(0.42, "rgba(249,115,22,0.08)");
-      centerGradient.addColorStop(1, "rgba(15,23,42,0)");
-      ctx.fillStyle = centerGradient;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       for (let i = 0; i < particles.length; i += 1) {
         const p = particles[i];
@@ -93,9 +64,7 @@ export default function HeroSection() {
           const dist = Math.sqrt(dx * dx + dy * dy);
           if (dist < 130) {
             ctx.beginPath();
-            const pointerDist = Math.hypot((p.x + q.x) / 2 - pointer.x, (p.y + q.y) / 2 - pointer.y);
-            const pointerBoost = Math.max(0, 1 - pointerDist / 280) * 0.18;
-            ctx.strokeStyle = `rgba(251,146,60,${(1 - dist / 130) * (0.12 + pointerBoost)})`;
+            ctx.strokeStyle = `rgba(251,146,60,${(1 - dist / 130) * 0.12})`;
             ctx.lineWidth = 0.5;
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(q.x, q.y);
@@ -103,11 +72,9 @@ export default function HeroSection() {
           }
         }
 
-        const particleDist = Math.hypot(p.x - pointer.x, p.y - pointer.y);
-        const particleBoost = Math.max(0, 1 - particleDist / 260);
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius + particleBoost * 1.4, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(251,146,60,${p.alpha + particleBoost * 0.24})`;
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(251,146,60,${p.alpha})`;
         ctx.fill();
       }
 
@@ -118,33 +85,8 @@ export default function HeroSection() {
 
     return () => {
       cancelAnimationFrame(rafId);
-      window.removeEventListener("mousemove", handlePointerMove);
       window.removeEventListener("resize", resize);
     };
-  }, []);
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      const blob1 = blobRef1.current;
-      const blob2 = blobRef2.current;
-      if (!blob1 || !blob2) return;
-      const xR = (e.clientX / window.innerWidth - 0.5) * 2;
-      const yR = (e.clientY / window.innerHeight - 0.5) * 2;
-      gsap.to(blob1, {
-        x: xR * 50,
-        y: yR * 35,
-        duration: 1.4,
-        ease: "power2.out",
-      });
-      gsap.to(blob2, {
-        x: xR * -35,
-        y: yR * -25,
-        duration: 1.8,
-        ease: "power2.out",
-      });
-    };
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
   useGSAP(
