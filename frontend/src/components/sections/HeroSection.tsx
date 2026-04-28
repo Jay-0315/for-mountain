@@ -423,8 +423,8 @@ export default function HeroSection() {
 
       <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
         <div className="hero-badge mb-8 inline-flex min-h-[4.75rem] items-center gap-4 rounded-[999px] border border-orange-300/20 bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(251,146,60,0.12))] px-6 py-3.5 text-sm font-medium text-orange-100 shadow-[0_14px_36px_rgba(15,23,42,0.2)] backdrop-blur-md md:px-8">
-          <span className="h-3 w-3 shrink-0 rounded-full bg-gradient-to-br from-amber-200 via-orange-300 to-orange-500 shadow-[0_0_16px_rgba(251,146,60,0.45)] animate-pulse" />
-          <span className="bg-gradient-to-r from-amber-100 via-orange-200 to-orange-400 bg-clip-text pb-[0.08em] text-[1.7rem] font-bold leading-[1.15] text-transparent md:text-[2rem]">
+          <span className="h-3 w-3 shrink-0 rounded-full bg-orange-300 shadow-[0_0_16px_rgba(251,146,60,0.28)]" />
+          <span className="pb-[0.08em] text-[1.7rem] font-bold leading-[1.15] text-orange-50 md:text-[2rem]">
             IT Integrator Company
           </span>
         </div>
@@ -453,9 +453,9 @@ export default function HeroSection() {
         <div className="flex justify-center gap-4 sm:flex-row">
           <a
             href="#partners"
-            className="hero-cta-1 public-elevated inline-flex items-center justify-center gap-3 rounded-xl border border-orange-400/18 bg-[linear-gradient(135deg,rgba(251,146,60,0.2),rgba(249,115,22,0.1))] px-8 py-4 font-semibold text-orange-50 shadow-[0_18px_40px_rgba(249,115,22,0.14)] backdrop-blur-md transition-[transform,box-shadow,border-color,background] duration-300 hover:-translate-y-0.5 hover:border-orange-300/28 hover:bg-[linear-gradient(135deg,rgba(251,146,60,0.24),rgba(249,115,22,0.14))] hover:shadow-[0_24px_48px_rgba(249,115,22,0.18)]"
+            className="hero-cta-1 public-elevated inline-flex min-h-[4.75rem] items-center justify-center gap-4 rounded-2xl border border-orange-300/20 bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(251,146,60,0.12))] px-8 py-3.5 text-[1.15rem] font-bold text-orange-50 shadow-[0_14px_36px_rgba(15,23,42,0.2)] backdrop-blur-md transition-[transform,box-shadow,border-color,background] duration-300 hover:-translate-y-0.5 hover:border-orange-300/28 hover:bg-[linear-gradient(135deg,rgba(255,255,255,0.1),rgba(251,146,60,0.16))] hover:shadow-[0_20px_40px_rgba(15,23,42,0.24)] md:px-10"
           >
-            <span className="h-2.5 w-2.5 rounded-full bg-orange-300 animate-pulse" />
+            <span className="h-3 w-3 shrink-0 rounded-full bg-orange-300 shadow-[0_0_16px_rgba(251,146,60,0.28)]" />
             株式会社MOUNTAIN Partners
           </a>
         </div>
