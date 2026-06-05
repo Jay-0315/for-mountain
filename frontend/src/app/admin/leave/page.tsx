@@ -181,18 +181,22 @@ function ApplyForm({
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5">
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">承認者</label>
+          </div>
+          <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">グループ長</label>
             <div className="min-h-[76px] rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">
               {groupLeader ? (
-                <>
-                  <p className="font-medium">{groupLeader.name}（{groupLeader.department} / {groupLeader.position}）</p>
-                  <p className="mt-1.5 text-xs text-slate-400">{groupLeader.nameKana} — {groupLeader.employeeNumber}</p>
-                </>
+                  <>
+                    <p className="font-medium">{groupLeader.name}（{groupLeader.department} / {groupLeader.position}）</p>
+                    <p className="mt-1.5 text-xs text-slate-400">{groupLeader.nameKana} — {groupLeader.employeeNumber}</p>
+                  </>
               ) : (
-                <p className="text-sm text-slate-400">グループ長が設定されていません。</p>
+                  <p className="text-sm text-slate-400">グループ長が設定されていません。</p>
               )}
             </div>
           </div>
+
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">上位承認者</label>
