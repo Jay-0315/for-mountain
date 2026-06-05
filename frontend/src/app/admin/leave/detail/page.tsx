@@ -1,9 +1,5 @@
 import { Suspense } from "react";
-import LeaveDetailClient from "./LeaveDetailClient";
-
-export function generateStaticParams() {
-  return [{ id: "_" }];
-}
+import LeaveDetailClient from "../[id]/LeaveDetailClient";
 
 export default function LeaveDetailPage() {
   return (

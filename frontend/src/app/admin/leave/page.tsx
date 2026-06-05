@@ -388,7 +388,7 @@ function LeavePageContent() {
         {filtered.map((req) => (
           <div
             key={req.id}
-            onClick={() => router.push(`/admin/leave/${req.id}`)}
+            onClick={() => router.push(`/admin/leave/detail?id=${req.id}`)}
             className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm"
           >
             <div className="flex items-start justify-between gap-3">
@@ -471,7 +471,7 @@ function LeavePageContent() {
                 <button
                   onClick={(event) => {
                     event.stopPropagation();
-                    router.push(`/admin/leave/${req.id}`);
+                    router.push(`/admin/leave/detail?id=${req.id}`);
                   }}
                   className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-500 transition-colors hover:bg-slate-50"
                 >
@@ -509,7 +509,7 @@ function LeavePageContent() {
                 {filtered.map((req) => (
                   <tr
                     key={req.id}
-                    onClick={() => router.push(`/admin/leave/${req.id}`)}
+                    onClick={() => router.push(`/admin/leave/detail?id=${req.id}`)}
                     className="cursor-pointer hover:bg-slate-50"
                   >
                     <td className="px-5 py-3.5">

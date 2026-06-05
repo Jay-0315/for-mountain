@@ -453,7 +453,7 @@ export default function DashboardPage() {
           }}
           onOpenLeaveDetail={(leaveId) => {
             setSelectedDay(null);
-            router.push(`/admin/leave/${leaveId}`);
+            router.push(`/admin/leave/detail?id=${leaveId}`);
           }}
         />
       )}
@@ -498,7 +498,7 @@ export default function DashboardPage() {
                   type="button"
                   onClick={() => {
                     setSummaryModal(null);
-                    router.push(`/admin/leave/${leave.id}`);
+                    router.push(`/admin/leave/detail?id=${leave.id}`);
                   }}
                   className="w-full rounded-xl bg-green-50 px-4 py-3 text-left ring-1 ring-green-200 transition-colors hover:bg-green-100/70"
                 >
@@ -537,7 +537,7 @@ export default function DashboardPage() {
                   type="button"
                   onClick={() => {
                     setSummaryModal(null);
-                    router.push(`/admin/leave/${leave.id}`);
+                    router.push(`/admin/leave/detail?id=${leave.id}`);
                   }}
                   className={`w-full rounded-xl px-4 py-3 text-left ring-1 transition-colors ${LEAVE_BADGE[leave.status]} hover:opacity-80`}
                 >

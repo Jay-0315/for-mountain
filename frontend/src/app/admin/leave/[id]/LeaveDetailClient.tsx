@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   cancelLeave,
@@ -27,9 +27,10 @@ function formatLeaveDays(days: number): string {
 }
 
 export default function LeaveDetailPage() {
-  const params = useParams<{ id: string }>();
+  const params = useParams<{ id?: string }>();
   const router = useRouter();
-  const leaveId = Number(params?.id);
+  const searchParams = useSearchParams();
+  const leaveId = Number(searchParams?.get("id") ?? params?.id);
   const [token, setToken] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
