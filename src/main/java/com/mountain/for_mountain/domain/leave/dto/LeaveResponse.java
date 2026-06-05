@@ -13,7 +13,7 @@ public class LeaveResponse {
     private String leaveType;
     private String startDate;
     private String endDate;
-    private Integer days;
+    private Double days;
     private String reason;
     private String status;
     private String appliedAt;

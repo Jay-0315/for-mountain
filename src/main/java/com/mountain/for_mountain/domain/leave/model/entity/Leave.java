@@ -21,7 +21,7 @@ public class Leave {
     @Column(name = "employee_id", nullable = false)
     private Long employeeId;
 
-    // 有給休暇 / 慶弔休暇 / 病気休暇 / 無給休暇
+    // 有給 / 午前給(有給) / 午後給(有給) / 代休 / 慶弔休暇 / 病気休暇 / 特別休暇 / 福利厚生休暇 / 法定休暇(有給外) / その他
     @Column(nullable = false, length = 20)
     private String leaveType;
 
@@ -32,7 +32,7 @@ public class Leave {
     private LocalDate endDate;
 
     @Column(nullable = false)
-    private Integer days;
+    private Double days;
 
     @Column(length = 500)
     private String reason;
@@ -51,7 +51,7 @@ public class Leave {
     private LocalDateTime updatedAt;
 
     public static Leave create(Long employeeId, String leaveType, LocalDate startDate,
-                               LocalDate endDate, Integer days, String reason) {
+                               LocalDate endDate, Double days, String reason) {
         Leave l = new Leave();
         l.employeeId = employeeId;
         l.leaveType = leaveType;
@@ -71,7 +71,7 @@ public class Leave {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public void updateDetails(String leaveType, LocalDate startDate, LocalDate endDate, Integer days, String reason) {
+    public void updateDetails(String leaveType, LocalDate startDate, LocalDate endDate, Double days, String reason) {
         this.leaveType = leaveType;
         this.startDate = startDate;
         this.endDate = endDate;

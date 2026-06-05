@@ -17,7 +17,7 @@ public class LeaveUpdateRequest {
     private String endDate;
 
     @NotNull
-    private Integer days;
+    private Double days;
 
     private String reason;
 }

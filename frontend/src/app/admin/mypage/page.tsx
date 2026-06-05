@@ -16,6 +16,10 @@ const STATUS_COLOR: Record<string, string> = {
   拒否:   "bg-red-100 text-red-600",
 };
 
+function formatLeaveDays(days: number): string {
+  return Number.isInteger(days) ? String(days) : days.toFixed(1);
+}
+
 export default function MyPage() {
   const [employee, setEmployee] = useState<EmployeeDto | null>(null);
   const [leaves,   setLeaves]   = useState<LeaveDto[]>([]);
@@ -108,13 +112,13 @@ export default function MyPage() {
                   <p className={`text-sm font-medium ${urgent ? "text-red-600" : "text-orange-700"}`}>
                     <span className="font-bold">{formatDateDisplay(pool.expiryDate)}</span>
                     までに
-                    <span className={`font-bold ${urgent ? "text-red-500" : "text-orange-500"}`}> {pool.remainingDays}日 </span>
+                    <span className={`font-bold ${urgent ? "text-red-500" : "text-orange-500"}`}> {formatLeaveDays(pool.remainingDays)}日 </span>
                     消化が必要です！
                   </p>
                   {/* 큰 숫자 */}
                   <div className="mt-1 flex items-end gap-1.5">
                     <span className={`text-5xl font-bold leading-none ${urgent ? "text-red-500" : "text-orange-500"}`}>
-                      {pool.remainingDays}
+                      {formatLeaveDays(pool.remainingDays)}
                     </span>
                     <span className="mb-0.5 text-base font-medium text-orange-400">
                       日 / {pool.grantDays}日
@@ -192,7 +196,7 @@ export default function MyPage() {
                     <td className="px-5 py-3.5 font-mono text-xs text-slate-500">
                       {leave.startDate}{leave.startDate !== leave.endDate ? ` ~ ${leave.endDate}` : ""}
                     </td>
-                    <td className="px-5 py-3.5 text-slate-700">{leave.days}日</td>
+                    <td className="px-5 py-3.5 text-slate-700">{formatLeaveDays(leave.days)}日</td>
                     <td className="px-5 py-3.5">
                       <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_COLOR[leave.status] ?? "bg-slate-100 text-slate-500"}`}>
                         {leave.status}

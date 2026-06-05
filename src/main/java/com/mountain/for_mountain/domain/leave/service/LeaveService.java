@@ -244,7 +244,7 @@ public class LeaveService {
                 "所属部署    : " + employee.getDepartment(),
                 "休暇種類    : " + leave.getLeaveType(),
                 "期間        : " + leave.getStartDate() + " ~ " + leave.getEndDate(),
-                "日数        : " + leave.getDays() + "日",
+                "日数        : " + formatLeaveDays(leave.getDays()) + "日",
                 "申請理由    : " + (leave.getReason() == null || leave.getReason().isBlank() ? "-" : leave.getReason()),
                 ""
         ));
@@ -266,8 +266,8 @@ public class LeaveService {
         return normalizedBaseUrl + "/admin/leave/" + leaveId;
     }
 
-    private void validateLeaveDaysWithinBalance(Employee employee, String leaveType, Integer requestedDays) {
-        int days = requestedDays == null ? 0 : requestedDays;
+    private void validateLeaveDaysWithinBalance(Employee employee, String leaveType, Double requestedDays) {
+        double days = requestedDays == null ? 0 : requestedDays;
         if (days <= 0) {
             return;
         }
@@ -276,13 +276,13 @@ public class LeaveService {
             return;
         }
 
-        int remainingDays = calculateRemainingLeaveDays(employee);
+        double remainingDays = calculateRemainingLeaveDays(employee);
         if (days > remainingDays) {
             throw new CustomException(ErrorCode.INSUFFICIENT_LEAVE_BALANCE);
         }
     }
 
-    private int calculateRemainingLeaveDays(Employee employee) {
+    private double calculateRemainingLeaveDays(Employee employee) {
         if (employee.getJoinDate() == null) {
             return employee.getAnnualLeaveDays() == null ? 0 : employee.getAnnualLeaveDays();
         }
@@ -315,7 +315,7 @@ public class LeaveService {
                 .toList();
 
         for (Leave leave : approvedLeaves) {
-            int daysLeft = leave.getDays() == null ? 0 : leave.getDays();
+            double daysLeft = leave.getDays() == null ? 0 : leave.getDays();
             for (LeavePool pool : pools) {
                 if (daysLeft <= 0) {
                     break;
@@ -323,7 +323,7 @@ public class LeaveService {
                 if ((leave.getStartDate().isEqual(pool.grantDate) || leave.getStartDate().isAfter(pool.grantDate))
                         && leave.getStartDate().isBefore(pool.expiryDate)
                         && pool.remainingDays > 0) {
-                    int deduct = Math.min(daysLeft, pool.remainingDays);
+                    double deduct = Math.min(daysLeft, pool.remainingDays);
                     pool.remainingDays -= deduct;
                     daysLeft -= deduct;
                 }
@@ -331,7 +331,7 @@ public class LeaveService {
         }
 
         return pools.stream()
-                .mapToInt(pool -> pool.remainingDays)
+                .mapToDouble(pool -> pool.remainingDays)
                 .sum();
     }
 
@@ -347,6 +347,16 @@ public class LeaveService {
         return BALANCE_DEDUCTING_LEAVE_TYPES.contains(leaveType.trim());
     }
 
+    private String formatLeaveDays(Double days) {
+        if (days == null) {
+            return "0";
+        }
+        if (days.doubleValue() == Math.rint(days.doubleValue())) {
+            return String.valueOf(days.intValue());
+        }
+        return String.valueOf(days);
+    }
+
     private int getGrantDays(int index) {
         return GRANT_SCHEDULE[Math.min(index, GRANT_SCHEDULE.length - 1)];
     }
@@ -354,9 +364,9 @@ public class LeaveService {
     private static final class LeavePool {
         private final LocalDate grantDate;
         private final LocalDate expiryDate;
-        private int remainingDays;
+        private double remainingDays;
 
-        private LeavePool(LocalDate grantDate, LocalDate expiryDate, int remainingDays) {
+        private LeavePool(LocalDate grantDate, LocalDate expiryDate, double remainingDays) {
             this.grantDate = grantDate;
             this.expiryDate = expiryDate;
             this.remainingDays = remainingDays;

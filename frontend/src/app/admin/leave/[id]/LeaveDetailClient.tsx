@@ -20,6 +20,10 @@ const STATUS_COLOR: Record<string, string> = {
 };
 const CANCELLABLE_STATUSES = new Set<LeaveDto["status"]>(["待機中", "拒否"]);
 
+function formatLeaveDays(days: number): string {
+  return Number.isInteger(days) ? String(days) : days.toFixed(1);
+}
+
 export default function LeaveDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -218,7 +222,7 @@ export default function LeaveDetailPage() {
               </div>
               <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
                 <dt className="text-xs font-medium text-slate-500">日数</dt>
-                <dd className="mt-1 text-sm font-semibold text-slate-900">{leave.days}日</dd>
+                <dd className="mt-1 text-sm font-semibold text-slate-900">{formatLeaveDays(leave.days)}日</dd>
               </div>
               <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
                 <dt className="text-xs font-medium text-slate-500">開始日</dt>

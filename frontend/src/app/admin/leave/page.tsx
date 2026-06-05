@@ -38,8 +38,18 @@ type FilterStatus = "すべて" | "待機中" | "承認" | "拒否";
 type PageView = "list" | "apply";
 const CANCELLABLE_STATUSES = new Set<LeaveDto["status"]>(["待機中", "拒否"]);
 
-function calcDays(start: string, end: string): number {
-  if (!start || !end) return 0;
+function isHalfDayLeave(leaveType: string) {
+  return leaveType === "午前給(有給)" || leaveType === "午後給(有給)";
+}
+
+function formatLeaveDays(days: number): string {
+  return Number.isInteger(days) ? String(days) : days.toFixed(1);
+}
+
+function calcDays(leaveType: string, start: string, end: string): number {
+  if (!start) return 0;
+  if (isHalfDayLeave(leaveType)) return 0.5;
+  if (!end) return 0;
   const s = new Date(start).getTime();
   const e = new Date(end).getTime();
   if (e < s) return 0;
@@ -81,19 +91,33 @@ function ApplyForm({
     setToday(getTodayDateString());
   }, []);
 
-  const days = calcDays(startDate, endDate);
+  useEffect(() => {
+    if (isHalfDayLeave(leaveType) && startDate) {
+      setEndDate(startDate);
+    }
+  }, [leaveType, startDate]);
+
+  const days = calcDays(leaveType, startDate, endDate);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     if (!employee) { setError("現在のログイン情報に紐づく社員情報がありません。"); return; }
     if (!leaveType) { setError("休暇種類を選択してください。"); return; }
+    const actualEndDate = isHalfDayLeave(leaveType) ? startDate : endDate;
     if (today && startDate < today) { setError("開始日は本日以降を選択してください。"); return; }
-    if (endDate < startDate) { setError("終了日は開始日以降にしてください。"); return; }
+    if (actualEndDate < startDate) { setError("終了日は開始日以降にしてください。"); return; }
 
     setLoading(true);
     try {
-      await createLeave(token, { employeeId: employee.id, leaveType, startDate, endDate, days, reason });
+      await createLeave(token, {
+        employeeId: employee.id,
+        leaveType,
+        startDate,
+        endDate: actualEndDate,
+        days,
+        reason,
+      });
       onDone();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "申請に失敗しました。");
@@ -149,12 +173,12 @@ function ApplyForm({
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">開始日</label>
             <input type="date" value={startDate} min={today || undefined} required
-              onChange={(e) => { setStartDate(e.target.value); if (endDate && e.target.value > endDate) setEndDate(e.target.value); }}
+              onChange={(e) => { setStartDate(e.target.value); if ((endDate && e.target.value > endDate) || isHalfDayLeave(leaveType)) setEndDate(e.target.value); }}
               className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm" />
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">終了日</label>
-            <input type="date" value={endDate} min={startDate || today || undefined} required onChange={(e) => setEndDate(e.target.value)}
+            <input type="date" value={endDate} min={startDate || today || undefined} required disabled={isHalfDayLeave(leaveType)} onChange={(e) => setEndDate(e.target.value)}
               className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm" />
           </div>
         </div>
@@ -164,7 +188,7 @@ function ApplyForm({
             <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-            <span className="text-sm font-semibold text-orange-700">{days}日間</span>
+            <span className="text-sm font-semibold text-orange-700">{formatLeaveDays(days)}日間</span>
           </div>
         )}
 

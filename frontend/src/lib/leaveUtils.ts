@@ -1,5 +1,7 @@
 /** 부여 일수 시퀀스 (index = a차수, 상한 20일) */
 const GRANT_SCHEDULE = [10, 11, 12, 14, 16, 18, 20] as const;
+const BALANCE_DEDUCTING_LEAVE_TYPES = new Set(["有給", "午前給(有給)", "午後給(有給)", "代休"]);
+
 
 function getGrantDays(a: number): number {
   return GRANT_SCHEDULE[Math.min(a, GRANT_SCHEDULE.length - 1)];
@@ -23,6 +25,10 @@ export type NextGrant = {
   daysUntil: number; // 오늘부터 부여일까지 남은 일수
 };
 
+export function requiresLeaveBalance(leaveType: string | null | undefined): boolean {
+  return BALANCE_DEDUCTING_LEAVE_TYPES.has(leaveType?.trim() ?? "");
+}
+
 // ─────────────────────────────────────────────
 // Core functions
 // ─────────────────────────────────────────────
@@ -38,7 +44,7 @@ export type NextGrant = {
  */
 export function calcLeavePools(
   joinDateStr: string,
-  approvedLeaves: { startDate: string; days: number }[],
+  approvedLeaves: { leaveType?: string | null; startDate: string; days: number }[],
   today = new Date()
 ): LeavePool[] {
   const join = new Date(joinDateStr);
@@ -91,9 +97,9 @@ export function calcLeavePools(
   }
 
   // FIFO 차감: 승인 휴가를 startDate 오름차순으로 정렬 후 가장 오래된 풀부터 차감
-  const sorted = [...approvedLeaves].sort((a, b) =>
-    a.startDate.localeCompare(b.startDate)
-  );
+  const sorted = approvedLeaves
+    .filter((leave) => requiresLeaveBalance(leave.leaveType))
+    .sort((a, b) => a.startDate.localeCompare(b.startDate));
 
   for (const leave of sorted) {
     let daysLeft = leave.days;
