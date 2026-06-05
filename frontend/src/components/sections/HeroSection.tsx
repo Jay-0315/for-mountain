@@ -214,14 +214,6 @@ export default function HeroSection() {
           <span className="block text-amber-100">お客様のビジネス成長を支援します。</span>
         </p>
 
-        <div className="flex justify-center gap-4 sm:flex-row">
-          <a
-            href="#partners"
-            className="hero-cta-1 public-elevated inline-flex items-center justify-center gap-3 rounded-xl border border-orange-400/18 bg-[linear-gradient(135deg,rgba(251,146,60,0.2),rgba(249,115,22,0.1))] px-8 py-4 font-semibold text-orange-50 shadow-[0_18px_40px_rgba(249,115,22,0.14)] backdrop-blur-md transition-[transform,box-shadow,border-color,background] duration-300 hover:-translate-y-0.5 hover:border-orange-300/28 hover:bg-[linear-gradient(135deg,rgba(251,146,60,0.24),rgba(249,115,22,0.14))] hover:shadow-[0_24px_48px_rgba(249,115,22,0.18)]"
-          >
-            株式会社MOUNTAIN Partners
-          </a>
-        </div>
       </div>
 
       <div className="hero-scroll absolute bottom-8 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2 text-slate-500">
