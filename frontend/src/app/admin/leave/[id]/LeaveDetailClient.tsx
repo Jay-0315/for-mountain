@@ -8,8 +8,10 @@ import {
   fetchEmployees,
   fetchGroups,
   fetchLeaves,
+  resolveApprovalLeaderId,
   resolveLeaderMemberIds,
   type EmployeeDto,
+  type GroupDto,
   type LeaveDto,
   updateLeaveStatus,
 } from "@/lib/api";
@@ -36,6 +38,7 @@ export default function LeaveDetailPage() {
   const [loading, setLoading] = useState(true);
   const [leave, setLeave] = useState<LeaveDto | null>(null);
   const [employees, setEmployees] = useState<EmployeeDto[]>([]);
+  const [groups, setGroups] = useState<GroupDto[]>([]);
   const [leaderMemberIds, setLeaderMemberIds] = useState<number[] | null>(null);
   const [error, setError] = useState("");
 
@@ -52,6 +55,7 @@ export default function LeaveDetailPage() {
       const [leaves, employees, groups] = await Promise.all([fetchLeaves(undefined, t), fetchEmployees(), fetchGroups()]);
       const currentEmployee = employees.find((employee) => employee.employeeNumber === subject) ?? null;
       setEmployees(employees);
+      setGroups(groups);
       setLeaderMemberIds(currentEmployee ? resolveLeaderMemberIds(groups, currentEmployee.id) : null);
       setLeave(leaves.find((item) => item.id === leaveId) ?? null);
     } catch (err: unknown) {
@@ -79,8 +83,13 @@ export default function LeaveDetailPage() {
     leave && currentEmployee && leave.employeeId === currentEmployee.id && CANCELLABLE_STATUSES.has(leave.status)
   );
 
+  const applicant = leave ? employees.find((employee) => employee.id === leave.employeeId) : null;
   const canManageLeave = Boolean(
-    leave && (isAdmin || leaderMemberIds?.includes(leave.employeeId))
+    leave && currentEmployee && (
+      isAdmin
+      || leaderMemberIds?.includes(leave.employeeId)
+      || resolveApprovalLeaderId(applicant, groups) === currentEmployee.id
+    )
   );
 
   const handleStatusUpdate = async (status: LeaveDto["status"]) => {

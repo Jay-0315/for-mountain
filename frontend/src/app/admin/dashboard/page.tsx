@@ -7,8 +7,10 @@ import {
   fetchEmployees,
   fetchGroups,
   fetchLeaves,
+  resolveApprovalLeaderId,
   resolveLeaderMemberIds,
   type EmployeeDto,
+  type GroupDto,
   type LeaveDto,
 } from "@/lib/api";
 import { isMockAdminSession } from "../mock-store";
@@ -350,6 +352,7 @@ export default function DashboardPage() {
   const [loadingPeople, setLoadingPeople] = useState(true);
   const [deptNotices, setDeptNotices] = useState<DeptNotice[]>([]);
   const [employees, setEmployees] = useState<EmployeeDto[]>([]);
+  const [groups, setGroups] = useState<GroupDto[]>([]);
   const [leaves, setLeaves] = useState<LeaveDto[]>([]);
   const [leaderMemberIds, setLeaderMemberIds] = useState<number[] | null | undefined>(undefined);
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
@@ -372,6 +375,7 @@ export default function DashboardPage() {
     ])
       .then(([employees, leaves, groups]) => {
         setEmployees(employees);
+        setGroups(groups);
         setLeaves(leaves);
         const token = typeof window !== "undefined" ? window.sessionStorage.getItem("admin_token") : null;
         const payload = token ? parseJwtPayload(token) : null;
@@ -382,20 +386,25 @@ export default function DashboardPage() {
       .finally(() => setLoadingPeople(false));
   }, []);
   const viewer = useMemo(() => resolveViewer(employees), [employees]);
+  const employeeById = useMemo(() => new Map(employees.map((employee) => [employee.id, employee])), [employees]);
+  const canApproveLeave = (leave: LeaveDto) => {
+    if (viewer.canViewAll) return true;
+    if (!viewer.employee) return false;
+    if (leaderMemberIds?.includes(leave.employeeId)) return true;
+    return resolveApprovalLeaderId(employeeById.get(leave.employeeId), groups) === viewer.employee.id;
+  };
 
   const pendingLeavesForViewer = leaderMemberIds === undefined ? [] : leaves.filter((leave) => {
     if (leave.status !== "待機中") return false;
-    if (leaderMemberIds !== null) return leaderMemberIds.includes(leave.employeeId);
-    if (viewer.canViewAll) return true;
+    if (canApproveLeave(leave)) return true;
     return leave.employeeId === viewer.employee?.id;
   });
   const pendingLeave = pendingLeavesForViewer.length;
   const effectiveDepartment = viewer.canViewAll ? "全部門" : viewer.employee?.department ?? "全部門";
 
   const visibleLeaves = leaderMemberIds === undefined ? [] : leaves.filter((leave) => {
-    if (leaderMemberIds !== null) return leaderMemberIds.includes(leave.employeeId);
     if (effectiveDepartment === "全部門") return true;
-    return leave.employeeId === viewer.employee?.id;
+    return leave.employeeId === viewer.employee?.id || canApproveLeave(leave);
   });
 
   const monthDays = useMemo(() => buildCalendarDays(currentMonth), [currentMonth]);

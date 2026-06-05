@@ -322,6 +322,28 @@ export function resolveLeaderMemberIds(groups: GroupDto[], employeeId: number): 
   return Array.from(allIds);
 }
 
+export function resolveApprovalLeaderId(
+  employee: Pick<EmployeeDto, "id" | "department"> | null | undefined,
+  groups: GroupDto[]
+): number | null {
+  if (!employee) return null;
+
+  let current = groups.find((group) => group.name === employee.department);
+  const visited = new Set<number>();
+
+  while (current && !visited.has(current.id)) {
+    visited.add(current.id);
+    if (current.leaderId != null && current.leaderId !== employee.id) {
+      return current.leaderId;
+    }
+    current = current.parentGroupId == null
+      ? undefined
+      : groups.find((group) => group.id === current?.parentGroupId);
+  }
+
+  return null;
+}
+
 export async function createGroup(
   token: string,
   data: { name: string; description: string; leaderId: number | null; memberIds: number[]; parentGroupId?: number | null; color?: string | null }

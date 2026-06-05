@@ -8,6 +8,7 @@ import {
   fetchEmployees,
   fetchGroups,
   fetchLeaves,
+  resolveApprovalLeaderId,
   resolveLeaderMemberIds,
   type EmployeeDto,
   type GroupDto,
@@ -65,21 +66,34 @@ function getTodayDateString() {
   return `${year}-${month}-${day}`;
 }
 
-function resolveApprover(employee: EmployeeDto | null, employees: EmployeeDto[], groups: GroupDto[]): EmployeeDto | null {
+function resolveEmployeeGroup(employee: EmployeeDto | null, groups: GroupDto[]): GroupDto | null {
   if (!employee) return null;
+  return groups.find((group) => group.name === employee.department) ?? null;
+}
+
+function resolveGroupLeader(employee: EmployeeDto | null, employees: EmployeeDto[], groups: GroupDto[]): EmployeeDto | null {
+  const group = resolveEmployeeGroup(employee, groups);
+  if (group?.leaderId == null) return null;
+  const byId = new Map(employees.map((item) => [item.id, item]));
+  return byId.get(group.leaderId) ?? null;
+}
+
+function resolveUpperApprover(employee: EmployeeDto | null, employees: EmployeeDto[], groups: GroupDto[]): EmployeeDto | null {
+  const group = resolveEmployeeGroup(employee, groups);
+  if (!group?.parentGroupId) return null;
 
   const byId = new Map(employees.map((item) => [item.id, item]));
-  let current = groups.find((group) => group.name === employee.department);
+  let current = groups.find((item) => item.id === group.parentGroupId);
   const visited = new Set<number>();
 
   while (current && !visited.has(current.id)) {
     visited.add(current.id);
-    if (current.leaderId != null && current.leaderId !== employee.id) {
+    if (current.leaderId != null && current.leaderId !== group.leaderId) {
       return byId.get(current.leaderId) ?? null;
     }
     current = current.parentGroupId == null
       ? undefined
-      : groups.find((group) => group.id === current?.parentGroupId);
+      : groups.find((item) => item.id === current?.parentGroupId);
   }
 
   return null;
@@ -123,7 +137,8 @@ function ApplyForm({
   }, [leaveType, startDate]);
 
   const days = calcDays(leaveType, startDate, endDate);
-  const approver = resolveApprover(employee, employees, groups);
+  const groupLeader = resolveGroupLeader(employee, employees, groups);
+  const upperApprover = resolveUpperApprover(employee, employees, groups);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -164,31 +179,33 @@ function ApplyForm({
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5">
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1.5">申請者</label>
-          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">
-            {employee ? (
-              <>
-                <p className="font-medium">{employee.name}（{employee.department} / {employee.position}）</p>
-                <p className="mt-1.5 text-xs text-slate-400">{employee.nameKana} — {employee.employeeNumber}</p>
-              </>
-            ) : (
-              <p className="text-sm text-red-500">현재 로그인 사용자에 연결된 사원 정보가 없습니다.</p>
-            )}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">グループ長</label>
+            <div className="min-h-[76px] rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">
+              {groupLeader ? (
+                <>
+                  <p className="font-medium">{groupLeader.name}（{groupLeader.department} / {groupLeader.position}）</p>
+                  <p className="mt-1.5 text-xs text-slate-400">{groupLeader.nameKana} — {groupLeader.employeeNumber}</p>
+                </>
+              ) : (
+                <p className="text-sm text-slate-400">グループ長が設定されていません。</p>
+              )}
+            </div>
           </div>
-        </div>
 
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1.5">承認者</label>
-          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">
-            {approver ? (
-              <>
-                <p className="font-medium">{approver.name}（{approver.department} / {approver.position}）</p>
-                <p className="mt-1.5 text-xs text-slate-400">{approver.nameKana} — {approver.employeeNumber}</p>
-              </>
-            ) : (
-              <p className="text-sm text-slate-400">承認者が設定されていません。</p>
-            )}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">上位承認者</label>
+            <div className="min-h-[76px] rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">
+              {upperApprover ? (
+                <>
+                  <p className="font-medium">{upperApprover.name}（{upperApprover.department} / {upperApprover.position}）</p>
+                  <p className="mt-1.5 text-xs text-slate-400">{upperApprover.nameKana} — {upperApprover.employeeNumber}</p>
+                </>
+              ) : (
+                <p className="text-sm text-slate-400">上位承認者が設定されていません。</p>
+              )}
+            </div>
           </div>
         </div>
 
@@ -313,13 +330,17 @@ function LeavePageContent() {
     return employee.employeeNumber === currentEmployeeNumber;
   }) ?? null;
 
-  const isLeader = leaderMemberIds !== null && leaderMemberIds !== undefined;
+  const employeeById = new Map(employees.map((employee) => [employee.id, employee]));
+  const canApproveLeave = (leave: LeaveDto) => {
+    if (isAdmin) return true;
+    if (!currentEmployee) return false;
+    if (leaderMemberIds?.includes(leave.employeeId)) return true;
+    return resolveApprovalLeaderId(employeeById.get(leave.employeeId), groups) === currentEmployee.id;
+  };
 
-  const visibleRecords = isLeader
-    ? records.filter((r) => leaderMemberIds.includes(r.employeeId))
-    : isAdmin
+  const visibleRecords = isAdmin
       ? records
-      : records.filter((r) => r.employeeId === currentEmployee?.id);
+      : records.filter((r) => r.employeeId === currentEmployee?.id || canApproveLeave(r));
 
   const pendingCount = visibleRecords.filter((r) => r.status === "待機中").length;
 
@@ -468,7 +489,7 @@ function LeavePageContent() {
             </div>
 
             <div className="mt-4 border-t border-slate-100 pt-4">
-              {(isAdmin || isLeader) ? (
+              {canApproveLeave(req) ? (
                 req.status === "待機中" ? (
                   <div className="flex gap-2">
                     <button
@@ -582,7 +603,7 @@ function LeavePageContent() {
                       </span>
                     </td>
                     <td className="hidden px-5 py-3.5 sm:table-cell">
-                      {(isAdmin || isLeader) ? (
+                      {canApproveLeave(req) ? (
                         req.status === "待機中" ? (
                           <div className="flex items-center gap-2 justify-end">
                             <button onClick={(event) => {
