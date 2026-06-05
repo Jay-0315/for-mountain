@@ -10,6 +10,7 @@ import {
   fetchLeaves,
   resolveLeaderMemberIds,
   type EmployeeDto,
+  type GroupDto,
   type LeaveDto,
   updateLeaveStatus,
 } from "@/lib/api";
@@ -64,14 +65,38 @@ function getTodayDateString() {
   return `${year}-${month}-${day}`;
 }
 
+function resolveApprover(employee: EmployeeDto | null, employees: EmployeeDto[], groups: GroupDto[]): EmployeeDto | null {
+  if (!employee) return null;
+
+  const byId = new Map(employees.map((item) => [item.id, item]));
+  let current = groups.find((group) => group.name === employee.department);
+  const visited = new Set<number>();
+
+  while (current && !visited.has(current.id)) {
+    visited.add(current.id);
+    if (current.leaderId != null && current.leaderId !== employee.id) {
+      return byId.get(current.leaderId) ?? null;
+    }
+    current = current.parentGroupId == null
+      ? undefined
+      : groups.find((group) => group.id === current?.parentGroupId);
+  }
+
+  return null;
+}
+
 function ApplyForm({
   employee,
+  employees,
+  groups,
   onDone,
   onCancel,
   initialStartDate,
   initialEndDate,
 }: {
   employee: EmployeeDto | null;
+  employees: EmployeeDto[];
+  groups: GroupDto[];
   onDone: () => void;
   onCancel: () => void;
   initialStartDate?: string;
@@ -98,6 +123,7 @@ function ApplyForm({
   }, [leaveType, startDate]);
 
   const days = calcDays(leaveType, startDate, endDate);
+  const approver = resolveApprover(employee, employees, groups);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -148,6 +174,20 @@ function ApplyForm({
               </>
             ) : (
               <p className="text-sm text-red-500">현재 로그인 사용자에 연결된 사원 정보가 없습니다.</p>
+            )}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1.5">承認者</label>
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">
+            {approver ? (
+              <>
+                <p className="font-medium">{approver.name}（{approver.department} / {approver.position}）</p>
+                <p className="mt-1.5 text-xs text-slate-400">{approver.nameKana} — {approver.employeeNumber}</p>
+              </>
+            ) : (
+              <p className="text-sm text-slate-400">承認者が設定されていません。</p>
             )}
           </div>
         </div>
@@ -223,6 +263,7 @@ function LeavePageContent() {
   const searchParams = useSearchParams();
   const [records, setRecords]           = useState<LeaveDto[]>([]);
   const [employees, setEmployees]       = useState<EmployeeDto[]>([]);
+  const [groups, setGroups]             = useState<GroupDto[]>([]);
   const [loading, setLoading]           = useState(true);
   const [token, setToken]               = useState("");
   const [isAdmin, setIsAdmin]           = useState(false);
@@ -246,11 +287,13 @@ function LeavePageContent() {
       const [leaves, employees, groups] = await Promise.all([fetchLeaves(undefined, token), fetchEmployees(), fetchGroups()]);
       setRecords(leaves);
       setEmployees(employees);
+      setGroups(groups);
       const sub = getSessionPayload(sessionStorage.getItem("admin_token")).sub;
       const currentEmp = employees.find((e) => e.employeeNumber === sub) ?? null;
       setLeaderMemberIds(currentEmp ? resolveLeaderMemberIds(groups, currentEmp.id) : null);
     } catch {
       setRecords([]);
+      setGroups([]);
       setLeaderMemberIds(null);
     } finally {
       setLoading(false);
@@ -305,6 +348,8 @@ function LeavePageContent() {
   if (view === "apply") {
     return (
       <ApplyForm employee={currentEmployee}
+        employees={employees}
+        groups={groups}
         initialStartDate={prefilledStartDate}
         initialEndDate={prefilledEndDate}
         onDone={() => { setView("list"); load(); }}
