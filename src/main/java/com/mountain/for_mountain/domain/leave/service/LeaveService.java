@@ -38,6 +38,7 @@ import java.util.Set;
 public class LeaveService {
 
     private static final List<String> CANCELLABLE_STATUSES = List.of("待機中", "拒否", "却下", "否認");
+    private static final Set<String> BALANCE_DEDUCTING_LEAVE_TYPES = Set.of("有給", "午前給(有給)", "午後給(有給)", "代休");
     private static final int[] GRANT_SCHEDULE = {10, 11, 12, 14, 16, 18, 20};
 
     private final LeaveRepository leaveRepository;
@@ -343,9 +344,7 @@ public class LeaveService {
             return false;
         }
 
-        return leaveType.contains("有給")
-                || leaveType.contains("公休")
-                || leaveType.contains("代休");
+        return BALANCE_DEDUCTING_LEAVE_TYPES.contains(leaveType.trim());
     }
 
     private int getGrantDays(int index) {
