@@ -6,7 +6,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   cancelLeave,
   fetchEmployees,
+  fetchGroups,
   fetchLeaves,
+  resolveLeaderMemberIds,
   type EmployeeDto,
   type LeaveDto,
   updateLeaveStatus,
@@ -33,20 +35,23 @@ export default function LeaveDetailPage() {
   const [loading, setLoading] = useState(true);
   const [leave, setLeave] = useState<LeaveDto | null>(null);
   const [employees, setEmployees] = useState<EmployeeDto[]>([]);
+  const [leaderMemberIds, setLeaderMemberIds] = useState<number[] | null>(null);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    const t = sessionStorage.getItem("admin_token") ?? "";
-    setToken(t);
-    setIsAdmin(getSessionRole(t) === "ADMIN");
-  }, []);
-
   const load = useCallback(async () => {
+    const t = sessionStorage.getItem("admin_token") ?? "";
+    const role = getSessionRole(t);
+    const subject = getSessionPayload(t).sub;
+
+    setToken(t);
+    setIsAdmin(role === "ADMIN");
     setLoading(true);
     setError("");
     try {
-      const [leaves, employees] = await Promise.all([fetchLeaves(undefined, token), fetchEmployees()]);
+      const [leaves, employees, groups] = await Promise.all([fetchLeaves(undefined, t), fetchEmployees(), fetchGroups()]);
+      const currentEmployee = employees.find((employee) => employee.employeeNumber === subject) ?? null;
       setEmployees(employees);
+      setLeaderMemberIds(currentEmployee ? resolveLeaderMemberIds(groups, currentEmployee.id) : null);
       setLeave(leaves.find((item) => item.id === leaveId) ?? null);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "休暇詳細を読み込めませんでした。");
@@ -73,12 +78,9 @@ export default function LeaveDetailPage() {
     leave && currentEmployee && leave.employeeId === currentEmployee.id && CANCELLABLE_STATUSES.has(leave.status)
   );
 
-  useEffect(() => {
-    if (!leave || isAdmin) return;
-    if (!currentEmployee || leave.employeeId !== currentEmployee.id) {
-      setError("本人の休暇申請のみ閲覧できます。");
-    }
-  }, [currentEmployee, isAdmin, leave]);
+  const canManageLeave = Boolean(
+    leave && (isAdmin || leaderMemberIds?.includes(leave.employeeId))
+  );
 
   const handleStatusUpdate = async (status: LeaveDto["status"]) => {
     if (!leave) return;
@@ -144,22 +146,6 @@ export default function LeaveDetailPage() {
     );
   }
 
-  if (!isAdmin && leave.employeeId !== currentEmployee?.id) {
-    return (
-      <div className="max-w-4xl space-y-4">
-        <Link href="/admin/leave" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-orange-500">
-          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          休暇管理へ戻る
-        </Link>
-        <div className="rounded-2xl border border-red-100 bg-red-50 px-5 py-4 text-sm text-red-600">
-          本人の休暇申請のみ閲覧できます。
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="max-w-4xl space-y-5">
       <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
@@ -175,7 +161,7 @@ export default function LeaveDetailPage() {
         </div>
 
         <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4">
-          {isAdmin ? (
+          {canManageLeave ? (
             leave.status === "待機中" ? (
               <>
                 <button onClick={() => handleStatusUpdate("拒否")} className="admin-btn-danger px-4 py-2">
