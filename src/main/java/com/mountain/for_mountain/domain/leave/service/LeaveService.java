@@ -148,7 +148,7 @@ public class LeaveService {
 
         if (STATUS_APPROVED.equals(status)) {
             if (STATUS_PENDING.equals(leave.getStatus())) {
-                if (!isAdmin && !firstApprover.map(approver -> approver.getId().equals(caller.getId())).orElse(false)) {
+                if (!isAdmin && !isSameEmployee(firstApprover, caller)) {
                     throw new CustomException(ErrorCode.ACCESS_DENIED);
                 }
                 if (upperApprover.isPresent()) {
@@ -161,7 +161,7 @@ public class LeaveService {
             }
 
             if (STATUS_UPPER_PENDING.equals(leave.getStatus())) {
-                if (!isAdmin && !upperApprover.map(approver -> approver.getId().equals(caller.getId())).orElse(false)) {
+                if (!isAdmin && !isSameEmployee(upperApprover, caller)) {
                     throw new CustomException(ErrorCode.ACCESS_DENIED);
                 }
                 leave.updateStatus(STATUS_APPROVED);
@@ -199,6 +199,10 @@ public class LeaveService {
         return toResponse(leave);
     }
 
+    private boolean isSameEmployee(java.util.Optional<Employee> approver, Employee caller) {
+        return caller != null && approver.map(employee -> employee.getId().equals(caller.getId())).orElse(false);
+    }
+
     private boolean canActOnCurrentApprovalStage(
             Leave leave,
             Employee caller,
@@ -209,13 +213,12 @@ public class LeaveService {
             return false;
         }
         if (STATUS_PENDING.equals(leave.getStatus())) {
-            return firstApprover.map(approver -> approver.getId().equals(caller.getId())).orElse(false);
+            return isSameEmployee(firstApprover, caller);
         }
         if (STATUS_UPPER_PENDING.equals(leave.getStatus())) {
-            return upperApprover.map(approver -> approver.getId().equals(caller.getId())).orElse(false);
+            return isSameEmployee(upperApprover, caller);
         }
-        return firstApprover.map(approver -> approver.getId().equals(caller.getId())).orElse(false)
-                || upperApprover.map(approver -> approver.getId().equals(caller.getId())).orElse(false);
+        return isSameEmployee(firstApprover, caller) || isSameEmployee(upperApprover, caller);
     }
 
     private Set<Long> resolveLeaderMemberIds(List<Group> allGroups, Long employeeId) {
