@@ -9,6 +9,7 @@ import {
   fetchLeaves,
   resolveApprovalLeaderId,
   resolveLeaderMemberIds,
+  resolveUpperApprovalLeaderId,
   type EmployeeDto,
   type GroupDto,
   type LeaveDto,
@@ -27,6 +28,7 @@ const NOTICE_PARENT_MAP: Partial<Record<Department, Department>> = {
 const WEEK_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
 const LEAVE_BADGE: Record<LeaveDto["status"], string> = {
   "待機中": "bg-yellow-100 text-yellow-700 ring-yellow-200",
+  "上位承認待ち": "bg-sky-100 text-sky-700 ring-sky-200",
   "承認": "bg-green-100 text-green-700 ring-green-200",
   "拒否": "bg-red-100 text-red-600 ring-red-200",
 };
@@ -390,12 +392,21 @@ export default function DashboardPage() {
   const canApproveLeave = (leave: LeaveDto) => {
     if (viewer.canViewAll) return true;
     if (!viewer.employee) return false;
-    if (leaderMemberIds?.includes(leave.employeeId)) return true;
-    return resolveApprovalLeaderId(employeeById.get(leave.employeeId), groups) === viewer.employee.id;
+    const applicant = employeeById.get(leave.employeeId);
+    if (leave.status === "待機中") {
+      return resolveApprovalLeaderId(applicant, groups) === viewer.employee.id;
+    }
+    if (leave.status === "上位承認待ち") {
+      return resolveUpperApprovalLeaderId(applicant, groups) === viewer.employee.id;
+    }
+    return (
+      resolveApprovalLeaderId(applicant, groups) === viewer.employee.id
+      || resolveUpperApprovalLeaderId(applicant, groups) === viewer.employee.id
+    );
   };
 
   const pendingLeavesForViewer = leaderMemberIds === undefined ? [] : leaves.filter((leave) => {
-    if (leave.status !== "待機中") return false;
+    if (leave.status !== "待機中" && leave.status !== "上位承認待ち") return false;
     if (canApproveLeave(leave)) return true;
     return leave.employeeId === viewer.employee?.id;
   });
@@ -521,7 +532,7 @@ export default function DashboardPage() {
                       </p>
                     </div>
                     <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-green-600">
-                      待機中
+                      {leave.status}
                     </span>
                   </div>
                 </button>
@@ -536,11 +547,11 @@ export default function DashboardPage() {
           subtitle={`${currentMonth.toLocaleDateString("ja-JP", { month: "long" })} の承認済み休暇一覧`}
           onClose={() => setSummaryModal(null)}
         >
-          {monthLeaves.filter((l) => l.status !== "待機中").length === 0 ? (
+          {monthLeaves.filter((l) => l.status !== "待機中" && l.status !== "上位承認待ち").length === 0 ? (
             <p className="py-6 text-center text-sm text-slate-400">今月の休暇申請はありません。</p>
           ) : (
             <div className="space-y-2">
-              {monthLeaves.filter((l) => l.status !== "待機中").map((leave) => (
+              {monthLeaves.filter((l) => l.status !== "待機中" && l.status !== "上位承認待ち").map((leave) => (
                 <button
                   key={`monthleave-summary-${leave.id}`}
                   type="button"
@@ -614,7 +625,7 @@ export default function DashboardPage() {
         />
         <StatChip
           label="承認済み休暇"
-          value={loadingPeople ? "-" : monthLeaves.filter((l) => l.status !== "待機中").length}
+          value={loadingPeople ? "-" : monthLeaves.filter((l) => l.status !== "待機中" && l.status !== "上位承認待ち").length}
           sub="件"
           color="bg-orange-50"
           onClick={() => !loadingPeople && setSummaryModal("monthLeaves")}
@@ -643,7 +654,7 @@ export default function DashboardPage() {
         />
         <StatCard
           label="承認済み休暇"
-          value={loadingPeople ? "-" : monthLeaves.filter((l) => l.status !== "待機中").length}
+          value={loadingPeople ? "-" : monthLeaves.filter((l) => l.status !== "待機中" && l.status !== "上位承認待ち").length}
           sub="件"
           color="bg-orange-50"
           onClick={() => !loadingPeople && setSummaryModal("monthLeaves")}

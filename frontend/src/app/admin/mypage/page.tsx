@@ -12,6 +12,7 @@ import {
 
 const STATUS_COLOR: Record<string, string> = {
   待機中: "bg-yellow-100 text-yellow-700",
+  上位承認待ち: "bg-sky-100 text-sky-700",
   承認:   "bg-green-100 text-green-700",
   拒否:   "bg-red-100 text-red-600",
 };
@@ -57,7 +58,7 @@ export default function MyPage() {
 
     return {
       total:    leaves.length,
-      pending:  leaves.filter((l) => l.status === "待機中").length,
+      pending:  leaves.filter((l) => l.status === "待機中" || l.status === "上位承認待ち").length,
       approved: leaves.filter((l) => l.status === "承認").length,
       pools,
       nextGrant,

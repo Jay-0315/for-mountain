@@ -62,7 +62,7 @@ export interface AttendanceRecord {
   status: "出勤" | "欠勤" | "半休" | "有休" | "休日";
 }
 
-export type LeaveStatus = "待機中" | "承認" | "拒否";
+export type LeaveStatus = "待機中" | "上位承認待ち" | "承認" | "拒否";
 export type LeaveType =
   | "有給"
   | "午前給(有給)"

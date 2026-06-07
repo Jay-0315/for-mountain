@@ -37,7 +37,11 @@ import java.util.Set;
 @Transactional(readOnly = true)
 public class LeaveService {
 
-    private static final List<String> CANCELLABLE_STATUSES = List.of("待機中", "拒否", "却下", "否認");
+    private static final String STATUS_PENDING = "待機中";
+    private static final String STATUS_UPPER_PENDING = "上位承認待ち";
+    private static final String STATUS_APPROVED = "承認";
+    private static final String STATUS_REJECTED = "拒否";
+    private static final List<String> CANCELLABLE_STATUSES = List.of(STATUS_PENDING, STATUS_REJECTED, "却下", "否認");
     private static final Set<String> BALANCE_DEDUCTING_LEAVE_TYPES = Set.of("有給", "午前給(有給)", "午後給(有給)", "代休");
     private static final int[] GRANT_SCHEDULE = {10, 11, 12, 14, 16, 18, 20};
 
@@ -104,7 +108,7 @@ public class LeaveService {
         Employee leaveEmployee = employeeRepository.findById(leave.getEmployeeId())
                 .orElseThrow(() -> new CustomException(ErrorCode.ACCOUNT_NOT_FOUND));
 
-        if (!leaveEmployee.getId().equals(currentEmployee.getId()) || !"待機中".equals(leave.getStatus())) {
+        if (!leaveEmployee.getId().equals(currentEmployee.getId()) || !STATUS_PENDING.equals(leave.getStatus())) {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
 
@@ -126,21 +130,92 @@ public class LeaveService {
 
         boolean isAdmin = authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-
+        Employee caller = null;
         if (!isAdmin) {
-            Employee caller = employeeRepository.findByEmployeeNumber(authentication.getName())
+            caller = employeeRepository.findByEmployeeNumber(authentication.getName())
                     .orElseThrow(() -> new CustomException(ErrorCode.ACCOUNT_NOT_FOUND));
-            List<Group> allGroups = groupRepository.findAllByOrderByCreatedAtAsc();
-            Set<Long> memberIds = resolveLeaderMemberIds(allGroups, caller.getId());
-            boolean canApproveAsGroupLeader = memberIds != null && memberIds.contains(leave.getEmployeeId());
-            boolean canApproveAsApprovalLeader = isApprovalLeader(leave, caller);
-            if (!canApproveAsGroupLeader && !canApproveAsApprovalLeader) {
+        }
+
+        Employee applicant = employeeRepository.findById(leave.getEmployeeId())
+                .orElseThrow(() -> new CustomException(ErrorCode.ACCOUNT_NOT_FOUND));
+        Group applicantGroup = groupRepository.findByName(applicant.getDepartment()).orElse(null);
+        java.util.Optional<Employee> firstApprover = applicantGroup == null
+                ? java.util.Optional.empty()
+                : resolveApprovalLeader(applicantGroup, applicant.getId());
+        java.util.Optional<Employee> upperApprover = applicantGroup == null || firstApprover.isEmpty()
+                ? java.util.Optional.empty()
+                : resolveNextApprovalLeader(applicantGroup, applicant.getId(), firstApprover.get().getId());
+
+        if (STATUS_APPROVED.equals(status)) {
+            if (STATUS_PENDING.equals(leave.getStatus())) {
+                if (!isAdmin && !firstApprover.map(approver -> approver.getId().equals(caller.getId())).orElse(false)) {
+                    throw new CustomException(ErrorCode.ACCESS_DENIED);
+                }
+                if (upperApprover.isPresent()) {
+                    leave.updateStatus(STATUS_UPPER_PENDING);
+                    sendLeaveRequestMail(applicant, leave, upperApprover.get());
+                } else {
+                    leave.updateStatus(STATUS_APPROVED);
+                }
+                return toResponse(leave);
+            }
+
+            if (STATUS_UPPER_PENDING.equals(leave.getStatus())) {
+                if (!isAdmin && !upperApprover.map(approver -> approver.getId().equals(caller.getId())).orElse(false)) {
+                    throw new CustomException(ErrorCode.ACCESS_DENIED);
+                }
+                leave.updateStatus(STATUS_APPROVED);
+                return toResponse(leave);
+            }
+
+            if (!isAdmin) {
                 throw new CustomException(ErrorCode.ACCESS_DENIED);
             }
+            leave.updateStatus(STATUS_APPROVED);
+            return toResponse(leave);
+        }
+
+        if (STATUS_REJECTED.equals(status)) {
+            if (!isAdmin && !canActOnCurrentApprovalStage(leave, caller, firstApprover, upperApprover)) {
+                throw new CustomException(ErrorCode.ACCESS_DENIED);
+            }
+            leave.updateStatus(STATUS_REJECTED);
+            return toResponse(leave);
+        }
+
+        if (STATUS_PENDING.equals(status)) {
+            if (!isAdmin && !canActOnCurrentApprovalStage(leave, caller, firstApprover, upperApprover)) {
+                throw new CustomException(ErrorCode.ACCESS_DENIED);
+            }
+            leave.updateStatus(STATUS_PENDING);
+            return toResponse(leave);
+        }
+
+        if (!isAdmin) {
+            throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
 
         leave.updateStatus(status);
         return toResponse(leave);
+    }
+
+    private boolean canActOnCurrentApprovalStage(
+            Leave leave,
+            Employee caller,
+            java.util.Optional<Employee> firstApprover,
+            java.util.Optional<Employee> upperApprover
+    ) {
+        if (leave == null || caller == null) {
+            return false;
+        }
+        if (STATUS_PENDING.equals(leave.getStatus())) {
+            return firstApprover.map(approver -> approver.getId().equals(caller.getId())).orElse(false);
+        }
+        if (STATUS_UPPER_PENDING.equals(leave.getStatus())) {
+            return upperApprover.map(approver -> approver.getId().equals(caller.getId())).orElse(false);
+        }
+        return firstApprover.map(approver -> approver.getId().equals(caller.getId())).orElse(false)
+                || upperApprover.map(approver -> approver.getId().equals(caller.getId())).orElse(false);
     }
 
     private Set<Long> resolveLeaderMemberIds(List<Group> allGroups, Long employeeId) {
@@ -216,17 +291,22 @@ public class LeaveService {
         groupRepository.findByName(employee.getDepartment())
                 .flatMap(group -> resolveApprovalLeader(group, employee.getId()))
                 .filter(leader -> leader.getEmail() != null && !leader.getEmail().isBlank())
-                .ifPresent(leader -> {
-                    try {
-                        SimpleMailMessage message = new SimpleMailMessage();
-                        message.setTo(leader.getEmail());
-                        message.setSubject("【休暇申請】" + employee.getName() + " さん");
-                        message.setText(buildLeaveRequestMailBody(employee, leave, leader));
-                        mailSender.send(message);
-                    } catch (Exception e) {
-                        log.error("Failed to send leave request mail for employee {}", employee.getEmployeeNumber(), e);
-                    }
-                });
+                .ifPresent(leader -> sendLeaveRequestMail(employee, leave, leader));
+    }
+
+    private void sendLeaveRequestMail(Employee employee, Leave leave, Employee leader) {
+        if (leader == null || leader.getEmail() == null || leader.getEmail().isBlank()) {
+            return;
+        }
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(leader.getEmail());
+            message.setSubject("【休暇申請】" + employee.getName() + " さん");
+            message.setText(buildLeaveRequestMailBody(employee, leave, leader));
+            mailSender.send(message);
+        } catch (Exception e) {
+            log.error("Failed to send leave request mail for employee {}", employee.getEmployeeNumber(), e);
+        }
     }
 
     private java.util.Optional<Employee> resolveApprovalLeader(Group group, Long applicantId) {
@@ -235,6 +315,27 @@ public class LeaveService {
 
         while (current != null && visited.add(current.getId())) {
             if (current.getLeaderId() != null && !current.getLeaderId().equals(applicantId)) {
+                return employeeRepository.findById(current.getLeaderId());
+            }
+
+            if (current.getParentGroupId() == null) {
+                break;
+            }
+
+            current = groupRepository.findById(current.getParentGroupId()).orElse(null);
+        }
+
+        return java.util.Optional.empty();
+    }
+
+    private java.util.Optional<Employee> resolveNextApprovalLeader(Group group, Long applicantId, Long firstApproverId) {
+        Group current = group;
+        Set<Long> visited = new HashSet<>();
+
+        while (current != null && visited.add(current.getId())) {
+            if (current.getLeaderId() != null
+                    && !current.getLeaderId().equals(applicantId)
+                    && !current.getLeaderId().equals(firstApproverId)) {
                 return employeeRepository.findById(current.getLeaderId());
             }
 
@@ -324,7 +425,7 @@ public class LeaveService {
 
         List<Leave> approvedLeaves = leaveRepository.findAllByOrderByCreatedAtDesc().stream()
                 .filter(leave -> leave.getEmployeeId().equals(employee.getId()))
-                .filter(leave -> "承認".equals(leave.getStatus()))
+                .filter(leave -> STATUS_APPROVED.equals(leave.getStatus()))
                 .filter(this::requiresLeaveBalance)
                 .sorted(Comparator.comparing(Leave::getStartDate))
                 .toList();

@@ -9,7 +9,7 @@ import {
   fetchGroups,
   fetchLeaves,
   resolveApprovalLeaderId,
-  resolveLeaderMemberIds,
+  resolveUpperApprovalLeaderId,
   type EmployeeDto,
   type GroupDto,
   type LeaveDto,
@@ -19,6 +19,7 @@ import { getSessionPayload, getSessionRole } from "@/lib/session";
 
 const STATUS_COLOR: Record<string, string> = {
   待機中: "bg-yellow-100 text-yellow-700",
+  上位承認待ち: "bg-sky-100 text-sky-700",
   承認:   "bg-green-100 text-green-700",
   拒否:   "bg-red-100 text-red-600",
 };
@@ -36,7 +37,7 @@ const LEAVE_TYPES = [
   "その他",
 ] as const;
 type LeaveType = "" | (typeof LEAVE_TYPES)[number];
-type FilterStatus = "すべて" | "待機中" | "承認" | "拒否";
+type FilterStatus = "すべて" | "待機中" | "上位承認待ち" | "承認" | "拒否";
 type PageView = "list" | "apply";
 const CANCELLABLE_STATUSES = new Set<LeaveDto["status"]>(["待機中", "拒否"]);
 
@@ -290,7 +291,6 @@ function LeavePageContent() {
     setToken(t);
     setIsAdmin(getSessionRole(t) === "ADMIN");
   }, []);
-  const [leaderMemberIds, setLeaderMemberIds] = useState<number[] | null | undefined>(undefined);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("すべて");
   const [view, setView]                 = useState<PageView>("list");
   const requestedView = searchParams?.get("view");
@@ -305,13 +305,9 @@ function LeavePageContent() {
       setRecords(leaves);
       setEmployees(employees);
       setGroups(groups);
-      const sub = getSessionPayload(sessionStorage.getItem("admin_token")).sub;
-      const currentEmp = employees.find((e) => e.employeeNumber === sub) ?? null;
-      setLeaderMemberIds(currentEmp ? resolveLeaderMemberIds(groups, currentEmp.id) : null);
     } catch {
       setRecords([]);
       setGroups([]);
-      setLeaderMemberIds(null);
     } finally {
       setLoading(false);
     }
@@ -334,15 +330,24 @@ function LeavePageContent() {
   const canApproveLeave = (leave: LeaveDto) => {
     if (isAdmin) return true;
     if (!currentEmployee) return false;
-    if (leaderMemberIds?.includes(leave.employeeId)) return true;
-    return resolveApprovalLeaderId(employeeById.get(leave.employeeId), groups) === currentEmployee.id;
+    const applicant = employeeById.get(leave.employeeId);
+    if (leave.status === "待機中") {
+      return resolveApprovalLeaderId(applicant, groups) === currentEmployee.id;
+    }
+    if (leave.status === "上位承認待ち") {
+      return resolveUpperApprovalLeaderId(applicant, groups) === currentEmployee.id;
+    }
+    return (
+      resolveApprovalLeaderId(applicant, groups) === currentEmployee.id
+      || resolveUpperApprovalLeaderId(applicant, groups) === currentEmployee.id
+    );
   };
 
   const visibleRecords = isAdmin
       ? records
       : records.filter((r) => r.employeeId === currentEmployee?.id || canApproveLeave(r));
 
-  const pendingCount = visibleRecords.filter((r) => r.status === "待機中").length;
+  const pendingCount = visibleRecords.filter((r) => r.status === "待機中" || r.status === "上位承認待ち").length;
 
   const handleStatusUpdate = async (id: number, status: LeaveDto["status"]) => {
     try {
@@ -401,19 +406,19 @@ function LeavePageContent() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        {(["待機中", "承認", "拒否"] as const).map((status) => {
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
+        {(["待機中", "上位承認待ち", "承認", "拒否"] as const).map((status) => {
           const count = visibleRecords.filter((r) => r.status === status).length;
           const color =
-            status === "待機中" ? "bg-orange-100" : status === "承認" ? "bg-green-100" : "bg-red-100";
+            status === "待機中" ? "bg-orange-100" : status === "上位承認待ち" ? "bg-sky-100" : status === "承認" ? "bg-green-100" : "bg-red-100";
           const iconColor =
-            status === "待機中" ? "text-orange-500" : status === "承認" ? "text-green-500" : "text-red-500";
+            status === "待機中" ? "text-orange-500" : status === "上位承認待ち" ? "text-sky-500" : status === "承認" ? "text-green-500" : "text-red-500";
           return (
             <div key={status} className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
               <div className="flex items-start gap-4">
                 <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${color}`}>
                   <svg className={`h-6 w-6 ${iconColor}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    {status === "待機中" ? (
+                    {status === "待機中" || status === "上位承認待ち" ? (
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     ) : status === "承認" ? (
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m5 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -434,7 +439,7 @@ function LeavePageContent() {
 
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
         <div className="flex gap-2 flex-wrap">
-          {(["すべて", "待機中", "承認", "拒否"] as FilterStatus[]).map((s) => (
+          {(["すべて", "待機中", "上位承認待ち", "承認", "拒否"] as FilterStatus[]).map((s) => (
             <button key={s} onClick={() => setFilterStatus(s)}
               className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-colors
                 ${filterStatus === s ? "admin-pill-active" : "admin-pill"}`}>
@@ -490,7 +495,7 @@ function LeavePageContent() {
 
             <div className="mt-4 border-t border-slate-100 pt-4">
               {canApproveLeave(req) ? (
-                req.status === "待機中" ? (
+                req.status === "待機中" || req.status === "上位承認待ち" ? (
                   <div className="flex gap-2">
                     <button
                       onClick={(event) => {
@@ -604,7 +609,7 @@ function LeavePageContent() {
                     </td>
                     <td className="hidden px-5 py-3.5 sm:table-cell">
                       {canApproveLeave(req) ? (
-                        req.status === "待機中" ? (
+                        req.status === "待機中" || req.status === "上位承認待ち" ? (
                           <div className="flex items-center gap-2 justify-end">
                             <button onClick={(event) => {
                                 event.stopPropagation();

@@ -9,7 +9,7 @@ import {
   fetchGroups,
   fetchLeaves,
   resolveApprovalLeaderId,
-  resolveLeaderMemberIds,
+  resolveUpperApprovalLeaderId,
   type EmployeeDto,
   type GroupDto,
   type LeaveDto,
@@ -19,6 +19,7 @@ import { getSessionPayload, getSessionRole } from "@/lib/session";
 
 const STATUS_COLOR: Record<string, string> = {
   待機中: "bg-yellow-100 text-yellow-700",
+  上位承認待ち: "bg-sky-100 text-sky-700",
   承認: "bg-green-100 text-green-700",
   拒否: "bg-red-100 text-red-600",
 };
@@ -39,13 +40,11 @@ export default function LeaveDetailPage() {
   const [leave, setLeave] = useState<LeaveDto | null>(null);
   const [employees, setEmployees] = useState<EmployeeDto[]>([]);
   const [groups, setGroups] = useState<GroupDto[]>([]);
-  const [leaderMemberIds, setLeaderMemberIds] = useState<number[] | null>(null);
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
     const t = sessionStorage.getItem("admin_token") ?? "";
     const role = getSessionRole(t);
-    const subject = getSessionPayload(t).sub;
 
     setToken(t);
     setIsAdmin(role === "ADMIN");
@@ -53,10 +52,8 @@ export default function LeaveDetailPage() {
     setError("");
     try {
       const [leaves, employees, groups] = await Promise.all([fetchLeaves(undefined, t), fetchEmployees(), fetchGroups()]);
-      const currentEmployee = employees.find((employee) => employee.employeeNumber === subject) ?? null;
       setEmployees(employees);
       setGroups(groups);
-      setLeaderMemberIds(currentEmployee ? resolveLeaderMemberIds(groups, currentEmployee.id) : null);
       setLeave(leaves.find((item) => item.id === leaveId) ?? null);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "休暇詳細を読み込めませんでした。");
@@ -87,8 +84,14 @@ export default function LeaveDetailPage() {
   const canManageLeave = Boolean(
     leave && currentEmployee && (
       isAdmin
-      || leaderMemberIds?.includes(leave.employeeId)
-      || resolveApprovalLeaderId(applicant, groups) === currentEmployee.id
+      || (
+        leave.status === "待機中"
+          ? resolveApprovalLeaderId(applicant, groups) === currentEmployee.id
+          : leave.status === "上位承認待ち"
+            ? resolveUpperApprovalLeaderId(applicant, groups) === currentEmployee.id
+            : resolveApprovalLeaderId(applicant, groups) === currentEmployee.id
+              || resolveUpperApprovalLeaderId(applicant, groups) === currentEmployee.id
+      )
     )
   );
 
@@ -172,7 +175,7 @@ export default function LeaveDetailPage() {
 
         <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4">
           {canManageLeave ? (
-            leave.status === "待機中" ? (
+            leave.status === "待機中" || leave.status === "上位承認待ち" ? (
               <>
                 <button onClick={() => handleStatusUpdate("拒否")} className="admin-btn-danger px-4 py-2">
                   拒否

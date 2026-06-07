@@ -154,7 +154,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         const memberIds = emp ? resolveLeaderMemberIds(groups, emp.id) : null;
         setLeaderMemberIds(memberIds);
 
-        const pending = leaves.filter((l) => l.status === "待機中");
+        const pending = leaves.filter((l) => l.status === "待機中" || l.status === "上位承認待ち");
         if (memberIds !== null) {
           setPendingCount(pending.filter((l) => memberIds.includes(l.employeeId)).length);
         } else if (role === "ADMIN") {

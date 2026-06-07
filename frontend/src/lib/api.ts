@@ -344,6 +344,33 @@ export function resolveApprovalLeaderId(
   return null;
 }
 
+export function resolveUpperApprovalLeaderId(
+  employee: Pick<EmployeeDto, "id" | "department"> | null | undefined,
+  groups: GroupDto[]
+): number | null {
+  const firstLeaderId = resolveApprovalLeaderId(employee, groups);
+  if (!employee || firstLeaderId == null) return null;
+
+  let current = groups.find((group) => group.name === employee.department);
+  const visited = new Set<number>();
+
+  while (current && !visited.has(current.id)) {
+    visited.add(current.id);
+    if (
+      current.leaderId != null &&
+      current.leaderId !== employee.id &&
+      current.leaderId !== firstLeaderId
+    ) {
+      return current.leaderId;
+    }
+    current = current.parentGroupId == null
+      ? undefined
+      : groups.find((group) => group.id === current?.parentGroupId);
+  }
+
+  return null;
+}
+
 export async function createGroup(
   token: string,
   data: { name: string; description: string; leaderId: number | null; memberIds: number[]; parentGroupId?: number | null; color?: string | null }
