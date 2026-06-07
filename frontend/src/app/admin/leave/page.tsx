@@ -139,6 +139,15 @@ function ApplyForm({
   const days = calcDays(leaveType, startDate, endDate);
   const groupLeader = resolveGroupLeader(employee, employees, groups);
   const upperApprover = resolveUpperApprover(employee, employees, groups);
+  const approvers = upperApprover
+    ? [
+        { label: "グループ長", employee: upperApprover },
+        { label: "パート長", employee: groupLeader },
+      ]
+    : [
+        { label: "グループ長", employee: groupLeader },
+        { label: "パート長", employee: null },
+      ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -179,37 +188,24 @@ function ApplyForm({
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">承認者</label>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">グループ長</label>
-            <div className="min-h-[76px] rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">
-              {groupLeader ? (
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">承認者</label>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {approvers.map(({ label, employee: approver }) => (
+              <div key={label} className="min-h-[82px] rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">
+                <p className="mb-1.5 text-xs font-semibold text-slate-500">{label}</p>
+                {approver ? (
                   <>
-                    <p className="font-medium">{groupLeader.name}（{groupLeader.department} / {groupLeader.position}）</p>
-                    <p className="mt-1.5 text-xs text-slate-400">{groupLeader.nameKana} — {groupLeader.employeeNumber}</p>
+                    <p className="font-medium">
+                      {approver.name}（{approver.department} / {approver.position}）
+                    </p>
+                    <p className="mt-1.5 text-xs text-slate-400">{approver.nameKana} — {approver.employeeNumber}</p>
                   </>
-              ) : (
-                  <p className="text-sm text-slate-400">グループ長が設定されていません。</p>
-              )}
-            </div>
-          </div>
-
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">上位承認者</label>
-            <div className="min-h-[76px] rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">
-              {upperApprover ? (
-                <>
-                  <p className="font-medium">{upperApprover.name}（{upperApprover.department} / {upperApprover.position}）</p>
-                  <p className="mt-1.5 text-xs text-slate-400">{upperApprover.nameKana} — {upperApprover.employeeNumber}</p>
-                </>
-              ) : (
-                <p className="text-sm text-slate-400">上位承認者が設定されていません。</p>
-              )}
-            </div>
+                ) : (
+                  <p className="text-sm text-slate-400">{label}が設定されていません。</p>
+                )}
+              </div>
+            ))}
           </div>
         </div>
 

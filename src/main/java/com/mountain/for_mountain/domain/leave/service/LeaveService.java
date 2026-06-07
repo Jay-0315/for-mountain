@@ -67,7 +67,8 @@ public class LeaveService {
         return leaveRepository.findAllByOrderByCreatedAtDesc().stream()
                 .filter(leave -> {
                     if (isAdmin) return true;
-                    if (leaderMemberIds != null) return leaderMemberIds.contains(leave.getEmployeeId());
+                    if (leaderMemberIds != null && leaderMemberIds.contains(leave.getEmployeeId())) return true;
+                    if (isApprovalLeader(leave, caller)) return true;
                     return leave.getEmployeeId().equals(caller.getId());
                 })
                 .map(this::toResponse)
@@ -131,7 +132,9 @@ public class LeaveService {
                     .orElseThrow(() -> new CustomException(ErrorCode.ACCOUNT_NOT_FOUND));
             List<Group> allGroups = groupRepository.findAllByOrderByCreatedAtAsc();
             Set<Long> memberIds = resolveLeaderMemberIds(allGroups, caller.getId());
-            if (memberIds == null || !memberIds.contains(leave.getEmployeeId())) {
+            boolean canApproveAsGroupLeader = memberIds != null && memberIds.contains(leave.getEmployeeId());
+            boolean canApproveAsApprovalLeader = isApprovalLeader(leave, caller);
+            if (!canApproveAsGroupLeader && !canApproveAsApprovalLeader) {
                 throw new CustomException(ErrorCode.ACCESS_DENIED);
             }
         }
@@ -161,6 +164,18 @@ public class LeaveService {
                     .forEach(queue::add);
         }
         return memberIds;
+    }
+
+    private boolean isApprovalLeader(Leave leave, Employee caller) {
+        if (leave == null || caller == null) {
+            return false;
+        }
+        Employee applicant = employeeRepository.findById(leave.getEmployeeId())
+                .orElseThrow(() -> new CustomException(ErrorCode.ACCOUNT_NOT_FOUND));
+        return groupRepository.findByName(applicant.getDepartment())
+                .flatMap(group -> resolveApprovalLeader(group, applicant.getId()))
+                .map(leader -> leader.getId().equals(caller.getId()))
+                .orElse(false);
     }
 
     @Transactional
@@ -263,7 +278,7 @@ public class LeaveService {
         String normalizedBaseUrl = frontendBaseUrl.endsWith("/")
                 ? frontendBaseUrl.substring(0, frontendBaseUrl.length() - 1)
                 : frontendBaseUrl;
-        return normalizedBaseUrl + "/admin/leave/" + leaveId;
+        return normalizedBaseUrl + "/admin/leave/detail?id=" + leaveId;
     }
 
     private void validateLeaveDaysWithinBalance(Employee employee, String leaveType, Double requestedDays) {
