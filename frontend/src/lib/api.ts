@@ -322,53 +322,43 @@ export function resolveLeaderMemberIds(groups: GroupDto[], employeeId: number): 
   return Array.from(allIds);
 }
 
+/**
+ * 신청자의 부서 그룹부터 상위 그룹으로 올라가며 승인자(각 그룹의 리더) ID 목록을 만든다.
+ * 신청자 본인이 리더인 그룹은 건너뛰어 본인 승인을 방지한다.
+ * 예) 파트장 신청 → [그룹장, 사장], 그룹장 신청 → [사장]
+ */
+export function resolveApprovalChain(
+  employee: Pick<EmployeeDto, "id" | "department"> | null | undefined,
+  groups: GroupDto[]
+): number[] {
+  if (!employee) return [];
+  const chain: number[] = [];
+  const visited = new Set<number>();
+  let group = groups.find((g) => g.name === employee.department) ?? null;
+  while (group && !visited.has(group.id)) {
+    visited.add(group.id);
+    const leaderId = group.leaderId;
+    if (leaderId != null && leaderId !== employee.id && !chain.includes(leaderId)) {
+      chain.push(leaderId);
+    }
+    const parentId = group.parentGroupId;
+    group = parentId == null ? null : groups.find((g) => g.id === parentId) ?? null;
+  }
+  return chain;
+}
+
 export function resolveApprovalLeaderId(
   employee: Pick<EmployeeDto, "id" | "department"> | null | undefined,
   groups: GroupDto[]
 ): number | null {
-  if (!employee) return null;
-
-  let current = groups.find((group) => group.name === employee.department);
-  const visited = new Set<number>();
-
-  while (current && !visited.has(current.id)) {
-    visited.add(current.id);
-    if (current.leaderId != null && current.leaderId !== employee.id) {
-      return current.leaderId;
-    }
-    current = current.parentGroupId == null
-      ? undefined
-      : groups.find((group) => group.id === current?.parentGroupId);
-  }
-
-  return null;
+  return resolveApprovalChain(employee, groups)[0] ?? null;
 }
 
 export function resolveUpperApprovalLeaderId(
   employee: Pick<EmployeeDto, "id" | "department"> | null | undefined,
   groups: GroupDto[]
 ): number | null {
-  const firstLeaderId = resolveApprovalLeaderId(employee, groups);
-  if (!employee || firstLeaderId == null) return null;
-
-  let current = groups.find((group) => group.name === employee.department);
-  const visited = new Set<number>();
-
-  while (current && !visited.has(current.id)) {
-    visited.add(current.id);
-    if (
-      current.leaderId != null &&
-      current.leaderId !== employee.id &&
-      current.leaderId !== firstLeaderId
-    ) {
-      return current.leaderId;
-    }
-    current = current.parentGroupId == null
-      ? undefined
-      : groups.find((group) => group.id === current?.parentGroupId);
-  }
-
-  return null;
+  return resolveApprovalChain(employee, groups)[1] ?? null;
 }
 
 export async function createGroup(

@@ -38,6 +38,7 @@ const LEAVE_TYPES = [
 ] as const;
 type LeaveType = "" | (typeof LEAVE_TYPES)[number];
 type FilterStatus = "すべて" | "待機中" | "上位承認待ち" | "承認" | "拒否";
+type ScopeFilter = "全て" | "自分の申請" | "承認対象";
 type PageView = "list" | "apply";
 const CANCELLABLE_STATUSES = new Set<LeaveDto["status"]>(["待機中", "拒否"]);
 
@@ -65,39 +66,6 @@ function getTodayDateString() {
   const month = `${now.getMonth() + 1}`.padStart(2, "0");
   const day = `${now.getDate()}`.padStart(2, "0");
   return `${year}-${month}-${day}`;
-}
-
-function resolveEmployeeGroup(employee: EmployeeDto | null, groups: GroupDto[]): GroupDto | null {
-  if (!employee) return null;
-  return groups.find((group) => group.name === employee.department) ?? null;
-}
-
-function resolveGroupLeader(employee: EmployeeDto | null, employees: EmployeeDto[], groups: GroupDto[]): EmployeeDto | null {
-  const group = resolveEmployeeGroup(employee, groups);
-  if (group?.leaderId == null) return null;
-  const byId = new Map(employees.map((item) => [item.id, item]));
-  return byId.get(group.leaderId) ?? null;
-}
-
-function resolveUpperApprover(employee: EmployeeDto | null, employees: EmployeeDto[], groups: GroupDto[]): EmployeeDto | null {
-  const group = resolveEmployeeGroup(employee, groups);
-  if (!group?.parentGroupId) return null;
-
-  const byId = new Map(employees.map((item) => [item.id, item]));
-  let current = groups.find((item) => item.id === group.parentGroupId);
-  const visited = new Set<number>();
-
-  while (current && !visited.has(current.id)) {
-    visited.add(current.id);
-    if (current.leaderId != null && current.leaderId !== group.leaderId) {
-      return byId.get(current.leaderId) ?? null;
-    }
-    current = current.parentGroupId == null
-      ? undefined
-      : groups.find((item) => item.id === current?.parentGroupId);
-  }
-
-  return null;
 }
 
 function ApplyForm({
@@ -138,17 +106,15 @@ function ApplyForm({
   }, [leaveType, startDate]);
 
   const days = calcDays(leaveType, startDate, endDate);
-  const groupLeader = resolveGroupLeader(employee, employees, groups);
-  const upperApprover = resolveUpperApprover(employee, employees, groups);
-  const approvers = upperApprover
-    ? [
-        { label: "グループ長", employee: upperApprover },
-        { label: "パート長", employee: groupLeader },
-      ]
-    : [
-        { label: "グループ長", employee: groupLeader },
-        { label: "パート長", employee: null },
-      ];
+  const employeeById = new Map(employees.map((item) => [item.id, item]));
+  const firstApproverId = resolveApprovalLeaderId(employee, groups);
+  const upperApproverId = resolveUpperApprovalLeaderId(employee, groups);
+  const firstApprover = firstApproverId != null ? employeeById.get(firstApproverId) ?? null : null;
+  const upperApprover = upperApproverId != null ? employeeById.get(upperApproverId) ?? null : null;
+  const approvers = [
+    { label: "承認者", employee: firstApprover },
+    { label: "上位承認者", employee: upperApprover },
+  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -227,17 +193,17 @@ function ApplyForm({
           </select>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          <div className="min-w-0">
             <label className="block text-sm font-medium text-slate-700 mb-1.5">開始日</label>
             <input type="date" value={startDate} min={today || undefined} required
               onChange={(e) => { setStartDate(e.target.value); if ((endDate && e.target.value > endDate) || isHalfDayLeave(leaveType)) setEndDate(e.target.value); }}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm" />
+              className="w-full min-w-0 px-2.5 py-3 sm:px-4 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm" />
           </div>
-          <div>
+          <div className="min-w-0">
             <label className="block text-sm font-medium text-slate-700 mb-1.5">終了日</label>
             <input type="date" value={endDate} min={startDate || today || undefined} required disabled={isHalfDayLeave(leaveType)} onChange={(e) => setEndDate(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm" />
+              className="w-full min-w-0 px-2.5 py-3 sm:px-4 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm" />
           </div>
         </div>
 
@@ -292,6 +258,7 @@ function LeavePageContent() {
     setIsAdmin(getSessionRole(t) === "ADMIN");
   }, []);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("すべて");
+  const [scopeFilter, setScopeFilter]   = useState<ScopeFilter>("全て");
   const [view, setView]                 = useState<PageView>("list");
   const requestedView = searchParams?.get("view");
   const prefilledStartDate = searchParams?.get("startDate") ?? "";
@@ -327,6 +294,15 @@ function LeavePageContent() {
   }) ?? null;
 
   const employeeById = new Map(employees.map((employee) => [employee.id, employee]));
+  const canViewManagedLeave = (leave: LeaveDto) => {
+    if (!currentEmployee) return false;
+    const applicant = employeeById.get(leave.employeeId);
+    return (
+      resolveApprovalLeaderId(applicant, groups) === currentEmployee.id
+      || resolveUpperApprovalLeaderId(applicant, groups) === currentEmployee.id
+    );
+  };
+
   const canApproveLeave = (leave: LeaveDto) => {
     if (isAdmin) return true;
     if (!currentEmployee) return false;
@@ -345,9 +321,23 @@ function LeavePageContent() {
 
   const visibleRecords = isAdmin
       ? records
-      : records.filter((r) => r.employeeId === currentEmployee?.id || canApproveLeave(r));
+      : records.filter((r) => r.employeeId === currentEmployee?.id || canViewManagedLeave(r));
 
-  const pendingCount = visibleRecords.filter((r) => r.status === "待機中" || r.status === "上位承認待ち").length;
+  const isOwnLeave = (leave: LeaveDto) =>
+    currentEmployee != null && leave.employeeId === currentEmployee.id;
+
+  const ownCount = visibleRecords.filter(isOwnLeave).length;
+  const approvalCount = visibleRecords.length - ownCount;
+  // 承認対象（自分以外の申請）が存在する場合のみ区分タブを表示する
+  const hasApprovalScope = approvalCount > 0;
+
+  const scopedRecords = visibleRecords.filter((r) => {
+    if (scopeFilter === "自分の申請") return isOwnLeave(r);
+    if (scopeFilter === "承認対象") return !isOwnLeave(r);
+    return true;
+  });
+
+  const pendingCount = scopedRecords.filter((r) => r.status === "待機中" || r.status === "上位承認待ち").length;
 
   const handleStatusUpdate = async (id: number, status: LeaveDto["status"]) => {
     try {
@@ -366,7 +356,7 @@ function LeavePageContent() {
     }
   };
 
-  const filtered = visibleRecords.filter((r) => {
+  const filtered = scopedRecords.filter((r) => {
     if (filterStatus !== "すべて" && r.status !== filterStatus) return false;
     return true;
   });
@@ -406,16 +396,24 @@ function LeavePageContent() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {(["待機中", "上位承認待ち", "承認", "拒否"] as const).map((status) => {
-          const count = visibleRecords.filter((r) => r.status === status).length;
+          const count = scopedRecords.filter((r) => r.status === status).length;
           const color =
             status === "待機中" ? "bg-orange-100" : status === "上位承認待ち" ? "bg-sky-100" : status === "承認" ? "bg-green-100" : "bg-red-100";
           const iconColor =
             status === "待機中" ? "text-orange-500" : status === "上位承認待ち" ? "text-sky-500" : status === "承認" ? "text-green-500" : "text-red-500";
+          const isActive = filterStatus === status;
           return (
-            <div key={status} className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-              <div className="flex items-start gap-4">
+            <button
+              key={status}
+              type="button"
+              onClick={() => setFilterStatus(isActive ? "すべて" : status)}
+              aria-pressed={isActive}
+              className={`rounded-2xl border bg-white p-4 text-left shadow-sm transition-all hover:shadow-md sm:p-5
+                ${isActive ? "border-rose-300 ring-2 ring-rose-200" : "border-slate-100 hover:border-slate-200"}`}
+            >
+              <div className="flex items-start gap-3 sm:gap-4">
                 <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${color}`}>
                   <svg className={`h-6 w-6 ${iconColor}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     {status === "待機中" || status === "上位承認待ち" ? (
@@ -432,10 +430,26 @@ function LeavePageContent() {
                   <p className="mt-1 text-2xl font-bold text-slate-900">{count}</p>
                 </div>
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
+
+      {hasApprovalScope && (
+        <div className="inline-flex w-full rounded-xl border border-slate-200 bg-slate-50 p-1 sm:w-auto">
+          {(["全て", "自分の申請", "承認対象"] as ScopeFilter[]).map((s) => {
+            const scopeCount = s === "自分の申請" ? ownCount : s === "承認対象" ? approvalCount : visibleRecords.length;
+            return (
+              <button key={s} onClick={() => setScopeFilter(s)}
+                className={`flex-1 whitespace-nowrap rounded-lg px-4 py-2 text-xs font-semibold transition-colors sm:flex-none
+                  ${scopeFilter === s ? "bg-white text-rose-600 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
+                {s}
+                <span className={`ml-1.5 ${scopeFilter === s ? "text-rose-400" : "text-slate-400"}`}>{scopeCount}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
         <div className="flex gap-2 flex-wrap">

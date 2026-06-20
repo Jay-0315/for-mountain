@@ -65,14 +65,10 @@ public class LeaveService {
         Employee caller = employeeRepository.findByEmployeeNumber(authentication.getName())
                 .orElseThrow(() -> new CustomException(ErrorCode.ACCOUNT_NOT_FOUND));
 
-        List<Group> allGroups = groupRepository.findAllByOrderByCreatedAtAsc();
-        Set<Long> leaderMemberIds = resolveLeaderMemberIds(allGroups, caller.getId());
-
         return leaveRepository.findAllByOrderByCreatedAtDesc().stream()
                 .filter(leave -> {
                     if (isAdmin) return true;
-                    if (leaderMemberIds != null && leaderMemberIds.contains(leave.getEmployeeId())) return true;
-                    if (isApprovalLeader(leave, caller)) return true;
+                    if (isLeaveApprover(leave, caller)) return true;
                     return leave.getEmployeeId().equals(caller.getId());
                 })
                 .map(this::toResponse)
@@ -138,13 +134,13 @@ public class LeaveService {
 
         Employee applicant = employeeRepository.findById(leave.getEmployeeId())
                 .orElseThrow(() -> new CustomException(ErrorCode.ACCOUNT_NOT_FOUND));
-        Group applicantGroup = groupRepository.findByName(applicant.getDepartment()).orElse(null);
-        java.util.Optional<Employee> firstApprover = applicantGroup == null
+        List<Employee> approvalChain = resolveApprovalChain(applicant);
+        java.util.Optional<Employee> firstApprover = approvalChain.isEmpty()
                 ? java.util.Optional.empty()
-                : resolveApprovalLeader(applicantGroup, applicant.getId());
-        java.util.Optional<Employee> upperApprover = applicantGroup == null || firstApprover.isEmpty()
+                : java.util.Optional.of(approvalChain.get(0));
+        java.util.Optional<Employee> upperApprover = approvalChain.size() < 2
                 ? java.util.Optional.empty()
-                : resolveNextApprovalLeader(applicantGroup, applicant.getId(), firstApprover.get().getId());
+                : java.util.Optional.of(approvalChain.get(1));
 
         if (STATUS_APPROVED.equals(status)) {
             if (STATUS_PENDING.equals(leave.getStatus())) {
@@ -244,16 +240,15 @@ public class LeaveService {
         return memberIds;
     }
 
-    private boolean isApprovalLeader(Leave leave, Employee caller) {
+    private boolean isLeaveApprover(Leave leave, Employee caller) {
         if (leave == null || caller == null) {
             return false;
         }
         Employee applicant = employeeRepository.findById(leave.getEmployeeId())
                 .orElseThrow(() -> new CustomException(ErrorCode.ACCOUNT_NOT_FOUND));
-        return groupRepository.findByName(applicant.getDepartment())
-                .flatMap(group -> resolveApprovalLeader(group, applicant.getId()))
-                .map(leader -> leader.getId().equals(caller.getId()))
-                .orElse(false);
+        return resolveApprovalChain(applicant).stream()
+                .limit(2)
+                .anyMatch(approver -> approver.getId().equals(caller.getId()));
     }
 
     @Transactional
@@ -291,10 +286,40 @@ public class LeaveService {
     }
 
     private void sendLeaveRequestMail(Employee employee, Leave leave) {
-        groupRepository.findByName(employee.getDepartment())
-                .flatMap(group -> resolveApprovalLeader(group, employee.getId()))
+        resolveApprovalChain(employee).stream()
+                .findFirst()
                 .filter(leader -> leader.getEmail() != null && !leader.getEmail().isBlank())
                 .ifPresent(leader -> sendLeaveRequestMail(employee, leave, leader));
+    }
+
+    /**
+     * 신청자의 부서 그룹부터 상위 그룹으로 올라가며 승인자(각 그룹 리더)를 순서대로 모은다.
+     * 신청자 본인이 리더인 그룹은 건너뛰어 본인 승인을 방지한다.
+     * 예) 파트장 신청 → [그룹장, 사장], 그룹장 신청 → [사장]
+     */
+    private List<Employee> resolveApprovalChain(Employee applicant) {
+        List<Employee> chain = new ArrayList<>();
+        if (applicant == null) {
+            return chain;
+        }
+        Group group = groupRepository.findByName(applicant.getDepartment()).orElse(null);
+        Set<Long> visitedGroups = new HashSet<>();
+        while (group != null && !visitedGroups.contains(group.getId())) {
+            visitedGroups.add(group.getId());
+            java.util.Optional<Employee> leaderOpt = resolveDirectGroupLeader(group);
+            if (leaderOpt.isPresent()) {
+                Employee leader = leaderOpt.get();
+                boolean isSelf = leader.getId().equals(applicant.getId());
+                boolean alreadyAdded = chain.stream().anyMatch(e -> e.getId().equals(leader.getId()));
+                if (!isSelf && !alreadyAdded) {
+                    chain.add(leader);
+                }
+            }
+            group = group.getParentGroupId() == null
+                    ? null
+                    : groupRepository.findById(group.getParentGroupId()).orElse(null);
+        }
+        return chain;
     }
 
     private void sendLeaveRequestMail(Employee employee, Leave leave, Employee leader) {
@@ -312,44 +337,11 @@ public class LeaveService {
         }
     }
 
-    private java.util.Optional<Employee> resolveApprovalLeader(Group group, Long applicantId) {
-        Group current = group;
-        Set<Long> visited = new HashSet<>();
-
-        while (current != null && visited.add(current.getId())) {
-            if (current.getLeaderId() != null && !current.getLeaderId().equals(applicantId)) {
-                return employeeRepository.findById(current.getLeaderId());
-            }
-
-            if (current.getParentGroupId() == null) {
-                break;
-            }
-
-            current = groupRepository.findById(current.getParentGroupId()).orElse(null);
+    private java.util.Optional<Employee> resolveDirectGroupLeader(Group group) {
+        if (group == null || group.getLeaderId() == null) {
+            return java.util.Optional.empty();
         }
-
-        return java.util.Optional.empty();
-    }
-
-    private java.util.Optional<Employee> resolveNextApprovalLeader(Group group, Long applicantId, Long firstApproverId) {
-        Group current = group;
-        Set<Long> visited = new HashSet<>();
-
-        while (current != null && visited.add(current.getId())) {
-            if (current.getLeaderId() != null
-                    && !current.getLeaderId().equals(applicantId)
-                    && !current.getLeaderId().equals(firstApproverId)) {
-                return employeeRepository.findById(current.getLeaderId());
-            }
-
-            if (current.getParentGroupId() == null) {
-                break;
-            }
-
-            current = groupRepository.findById(current.getParentGroupId()).orElse(null);
-        }
-
-        return java.util.Optional.empty();
+        return employeeRepository.findById(group.getLeaderId());
     }
 
     private String buildLeaveRequestMailBody(Employee employee, Leave leave, Employee leader) {
