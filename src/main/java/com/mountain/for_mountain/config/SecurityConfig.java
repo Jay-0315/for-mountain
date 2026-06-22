@@ -93,11 +93,12 @@ public class SecurityConfig {
                 // Leave APIs
                 .requestMatchers(HttpMethod.POST, "/api/v1/leaves").hasAnyRole("ADMIN", "USER")
                 .requestMatchers(HttpMethod.PUT, "/api/v1/leaves").hasAnyRole("ADMIN", "USER")
-                .requestMatchers(HttpMethod.PATCH, "/api/v1/leaves").hasRole("ADMIN")
+                // 승인/거부는 서비스에서 "지정 승인자"만 허용하므로 역할은 둘 다 통과시킨다.
+                .requestMatchers(HttpMethod.PATCH, "/api/v1/leaves").hasAnyRole("ADMIN", "USER")
                 .requestMatchers(HttpMethod.DELETE, "/api/v1/leaves").hasAnyRole("ADMIN", "USER")
                 .requestMatchers(HttpMethod.POST, "/api/v1/leaves/**").hasAnyRole("ADMIN", "USER")
                 .requestMatchers(HttpMethod.PUT, "/api/v1/leaves/**").hasAnyRole("ADMIN", "USER")
-                .requestMatchers(HttpMethod.PATCH, "/api/v1/leaves/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PATCH, "/api/v1/leaves/**").hasAnyRole("ADMIN", "USER")
                 .requestMatchers(HttpMethod.DELETE, "/api/v1/leaves/**").hasAnyRole("ADMIN", "USER")
                 // Internal announcement APIs
                 .requestMatchers(HttpMethod.POST, "/api/v1/announcements").hasRole("ADMIN")

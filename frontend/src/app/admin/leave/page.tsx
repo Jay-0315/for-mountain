@@ -157,6 +157,11 @@ function ApplyForm({
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">承認者</label>
+          {!firstApprover && !upperApprover ? (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+              承認者がいないため、申請と同時に自動承認されます。
+            </div>
+          ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             {approvers.map(({ label, employee: approver }) => (
               <div key={label} className="min-h-[82px] rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">
@@ -174,6 +179,7 @@ function ApplyForm({
               </div>
             ))}
           </div>
+          )}
         </div>
 
         <div>
@@ -304,7 +310,7 @@ function LeavePageContent() {
   };
 
   const canApproveLeave = (leave: LeaveDto) => {
-    if (isAdmin) return true;
+    // 각 단계의 지정 승인자만 승인/거부 가능 (ADMIN 역할이어도 우회 불가).
     if (!currentEmployee) return false;
     const applicant = employeeById.get(leave.employeeId);
     if (leave.status === "待機中") {

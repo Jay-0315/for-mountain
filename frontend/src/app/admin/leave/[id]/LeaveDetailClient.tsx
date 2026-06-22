@@ -81,17 +81,15 @@ export default function LeaveDetailPage() {
   );
 
   const applicant = leave ? employees.find((employee) => employee.id === leave.employeeId) : null;
+  // 각 단계의 지정 승인자만 승인/거부 가능 (ADMIN 역할이어도 우회 불가).
   const canManageLeave = Boolean(
     leave && currentEmployee && (
-      isAdmin
-      || (
-        leave.status === "待機中"
-          ? resolveApprovalLeaderId(applicant, groups) === currentEmployee.id
-          : leave.status === "上位承認待ち"
-            ? resolveUpperApprovalLeaderId(applicant, groups) === currentEmployee.id
-            : resolveApprovalLeaderId(applicant, groups) === currentEmployee.id
-              || resolveUpperApprovalLeaderId(applicant, groups) === currentEmployee.id
-      )
+      leave.status === "待機中"
+        ? resolveApprovalLeaderId(applicant, groups) === currentEmployee.id
+        : leave.status === "上位承認待ち"
+          ? resolveUpperApprovalLeaderId(applicant, groups) === currentEmployee.id
+          : resolveApprovalLeaderId(applicant, groups) === currentEmployee.id
+            || resolveUpperApprovalLeaderId(applicant, groups) === currentEmployee.id
     )
   );
 

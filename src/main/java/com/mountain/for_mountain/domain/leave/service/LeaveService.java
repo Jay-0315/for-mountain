@@ -91,7 +91,12 @@ public class LeaveService {
                 request.getReason()
         );
         Leave saved = leaveRepository.save(leave);
-        sendLeaveRequestMail(employee, saved);
+        // 승인자가 없는 신청(대표 등 최상위)은 자동 승인한다.
+        if (resolveApprovalChain(employee).isEmpty()) {
+            saved.updateStatus(STATUS_APPROVED);
+        } else {
+            sendLeaveRequestMail(employee, saved);
+        }
         return toResponse(saved);
     }
 
@@ -124,13 +129,8 @@ public class LeaveService {
         Leave leave = leaveRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.LEAVE_NOT_FOUND));
 
-        boolean isAdmin = authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-        Employee caller = null;
-        if (!isAdmin) {
-            caller = employeeRepository.findByEmployeeNumber(authentication.getName())
-                    .orElseThrow(() -> new CustomException(ErrorCode.ACCOUNT_NOT_FOUND));
-        }
+        // 승인/거부/되돌리기는 각 단계의 "지정 승인자"만 가능 (ADMIN 역할이어도 우회 불가).
+        Employee caller = employeeRepository.findByEmployeeNumber(authentication.getName()).orElse(null);
 
         Employee applicant = employeeRepository.findById(leave.getEmployeeId())
                 .orElseThrow(() -> new CustomException(ErrorCode.ACCOUNT_NOT_FOUND));
@@ -140,7 +140,7 @@ public class LeaveService {
 
         if (STATUS_APPROVED.equals(status)) {
             if (STATUS_PENDING.equals(leave.getStatus())) {
-                if (!isAdmin && !isSameEmployee(firstApprover, caller)) {
+                if (!isSameEmployee(firstApprover, caller)) {
                     throw new CustomException(ErrorCode.ACCESS_DENIED);
                 }
                 if (upperApprover.isPresent()) {
@@ -153,22 +153,18 @@ public class LeaveService {
             }
 
             if (STATUS_UPPER_PENDING.equals(leave.getStatus())) {
-                if (!isAdmin && !isSameEmployee(upperApprover, caller)) {
+                if (!isSameEmployee(upperApprover, caller)) {
                     throw new CustomException(ErrorCode.ACCESS_DENIED);
                 }
                 leave.updateStatus(STATUS_APPROVED);
                 return toResponse(leave);
             }
 
-            if (!isAdmin) {
-                throw new CustomException(ErrorCode.ACCESS_DENIED);
-            }
-            leave.updateStatus(STATUS_APPROVED);
-            return toResponse(leave);
+            throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
 
         if (STATUS_REJECTED.equals(status)) {
-            if (!isAdmin && !canActOnCurrentApprovalStage(leave, caller, firstApprover, upperApprover)) {
+            if (!canActOnCurrentApprovalStage(leave, caller, firstApprover, upperApprover)) {
                 throw new CustomException(ErrorCode.ACCESS_DENIED);
             }
             leave.updateStatus(STATUS_REJECTED);
@@ -176,19 +172,14 @@ public class LeaveService {
         }
 
         if (STATUS_PENDING.equals(status)) {
-            if (!isAdmin && !canActOnCurrentApprovalStage(leave, caller, firstApprover, upperApprover)) {
+            if (!canActOnCurrentApprovalStage(leave, caller, firstApprover, upperApprover)) {
                 throw new CustomException(ErrorCode.ACCESS_DENIED);
             }
             leave.updateStatus(STATUS_PENDING);
             return toResponse(leave);
         }
 
-        if (!isAdmin) {
-            throw new CustomException(ErrorCode.ACCESS_DENIED);
-        }
-
-        leave.updateStatus(status);
-        return toResponse(leave);
+        throw new CustomException(ErrorCode.ACCESS_DENIED);
     }
 
     private boolean isSameEmployee(java.util.Optional<Employee> approver, Employee caller) {
