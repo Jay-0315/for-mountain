@@ -23,4 +23,7 @@ public class GroupRequest {
     private Long parentGroupId;
 
     private String color;
+
+    /** 휴가 승인 라인에서 제외할 그룹(예: 本部) 여부. */
+    private Boolean excludeFromApproval;
 }

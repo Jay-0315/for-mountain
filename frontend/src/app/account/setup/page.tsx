@@ -8,6 +8,7 @@ function AccountSetupPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
+  const isReset = searchParams?.get("mode") === "reset";
   const [username, setUsername] = useState(searchParams?.get("username") ?? "");
   const [setupToken, setSetupToken] = useState(searchParams?.get("token") ?? "");
   const [newPassword, setNewPassword] = useState("");
@@ -56,9 +57,11 @@ function AccountSetupPageContent() {
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-10 flex items-center justify-center">
       <div className="w-full max-w-md bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-        <h1 className="text-xl font-bold text-slate-900">初回パスワード設定</h1>
+        <h1 className="text-xl font-bold text-slate-900">{isReset ? "パスワード再設定" : "初回パスワード設定"}</h1>
         <p className="text-sm text-slate-500 mt-1">
-          管理者から共有されたトークンでパスワードを設定します。
+          {isReset
+            ? "メールに記載されたリンクから新しいパスワードを設定します。"
+            : "管理者から共有されたトークンでパスワードを設定します。"}
         </p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
@@ -74,7 +77,7 @@ function AccountSetupPageContent() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">初期設定トークン</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">{isReset ? "再設定トークン" : "初期設定トークン"}</label>
             <textarea
               value={setupToken}
               onChange={(e) => setSetupToken(e.target.value)}

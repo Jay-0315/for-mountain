@@ -192,6 +192,34 @@ export async function setupInitialPassword(params: {
   }
 }
 
+export async function requestPasswordReset(username: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/v1/auth/password/reset-request`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username }),
+  });
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    throw new Error((json as { message?: string }).message ?? "Failed to request password reset");
+  }
+}
+
+export async function changePassword(
+  token: string,
+  currentPassword: string,
+  newPassword: string
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/v1/auth/password/change`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    throw new Error((json as { message?: string }).message ?? "Failed to change password");
+  }
+}
+
 // ── Employee ─────────────────────────────────────────────────
 export type EmployeeDto = {
   id: number;
@@ -292,6 +320,8 @@ export type GroupDto = {
   memberIds: number[];
   parentGroupId: number | null;
   color?: string | null;
+  /** 휴가 승인 라인에서 제외할 그룹(예: 本部) 여부. */
+  excludeFromApproval?: boolean | null;
 };
 
 export async function fetchGroups(): Promise<GroupDto[]> {
@@ -337,7 +367,8 @@ export function resolveApprovalChain(
   let group = groups.find((g) => g.name === employee.department) ?? null;
   while (group && !visited.has(group.id)) {
     visited.add(group.id);
-    const leaderId = group.leaderId;
+    // 승인 라인에서 제외된 그룹(예: 本部)은 리더를 건너뛰고 상위로 통과시킨다.
+    const leaderId = group.excludeFromApproval ? null : group.leaderId;
     if (leaderId != null && leaderId !== employee.id && !chain.includes(leaderId)) {
       chain.push(leaderId);
     }
@@ -358,12 +389,17 @@ export function resolveUpperApprovalLeaderId(
   employee: Pick<EmployeeDto, "id" | "department"> | null | undefined,
   groups: GroupDto[]
 ): number | null {
-  return resolveApprovalChain(employee, groups)[1] ?? null;
+  const chain = resolveApprovalChain(employee, groups);
+  if (chain.length < 2) return null;
+  // 신청자가 그룹 리더(파트장/그룹장 등)이면 상위 승인자는 항상 최상위(대표).
+  // 일반 직원이면 직속 상급의 상급(그룹장 = chain[1]).
+  const isLeader = employee != null && groups.some((g) => g.leaderId === employee.id);
+  return isLeader ? chain[chain.length - 1] : chain[1];
 }
 
 export async function createGroup(
   token: string,
-  data: { name: string; description: string; leaderId: number | null; memberIds: number[]; parentGroupId?: number | null; color?: string | null }
+  data: { name: string; description: string; leaderId: number | null; memberIds: number[]; parentGroupId?: number | null; color?: string | null; excludeFromApproval?: boolean | null }
 ): Promise<GroupDto> {
   const res = await fetch(`${API_BASE}/api/v1/groups`, {
     method: "POST",
@@ -377,7 +413,7 @@ export async function createGroup(
 export async function updateGroup(
   token: string,
   id: number,
-  data: { name: string; description: string; leaderId: number | null; memberIds: number[]; parentGroupId?: number | null; color?: string | null }
+  data: { name: string; description: string; leaderId: number | null; memberIds: number[]; parentGroupId?: number | null; color?: string | null; excludeFromApproval?: boolean | null }
 ): Promise<GroupDto> {
   const res = await fetch(`${API_BASE}/api/v1/groups/${id}`, {
     method: "PUT",

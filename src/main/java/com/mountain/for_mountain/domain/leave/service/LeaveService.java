@@ -135,12 +135,8 @@ public class LeaveService {
         Employee applicant = employeeRepository.findById(leave.getEmployeeId())
                 .orElseThrow(() -> new CustomException(ErrorCode.ACCOUNT_NOT_FOUND));
         List<Employee> approvalChain = resolveApprovalChain(applicant);
-        java.util.Optional<Employee> firstApprover = approvalChain.isEmpty()
-                ? java.util.Optional.empty()
-                : java.util.Optional.of(approvalChain.get(0));
-        java.util.Optional<Employee> upperApprover = approvalChain.size() < 2
-                ? java.util.Optional.empty()
-                : java.util.Optional.of(approvalChain.get(1));
+        java.util.Optional<Employee> firstApprover = resolveFirstApprover(approvalChain);
+        java.util.Optional<Employee> upperApprover = resolveUpperApprover(applicant, approvalChain);
 
         if (STATUS_APPROVED.equals(status)) {
             if (STATUS_PENDING.equals(leave.getStatus())) {
@@ -246,9 +242,32 @@ public class LeaveService {
         }
         Employee applicant = employeeRepository.findById(leave.getEmployeeId())
                 .orElseThrow(() -> new CustomException(ErrorCode.ACCOUNT_NOT_FOUND));
-        return resolveApprovalChain(applicant).stream()
-                .limit(2)
-                .anyMatch(approver -> approver.getId().equals(caller.getId()));
+        List<Employee> chain = resolveApprovalChain(applicant);
+        return isSameEmployee(resolveFirstApprover(chain), caller)
+                || isSameEmployee(resolveUpperApprover(applicant, chain), caller);
+    }
+
+    /** 1차 승인자 = 신청자 직속 상급 그룹 리더 (체인의 첫 번째). */
+    private java.util.Optional<Employee> resolveFirstApprover(List<Employee> chain) {
+        return chain.isEmpty() ? java.util.Optional.empty() : java.util.Optional.of(chain.get(0));
+    }
+
+    /**
+     * 상위 승인자.
+     * - 신청자가 그룹 리더(파트장/그룹장 등)이면 → 체인 최상위 = 대표
+     * - 일반 직원이면 → 체인의 두 번째(직속 상급의 상급 = 그룹장)
+     */
+    private java.util.Optional<Employee> resolveUpperApprover(Employee applicant, List<Employee> chain) {
+        if (chain.size() < 2) {
+            return java.util.Optional.empty();
+        }
+        int index = isGroupLeader(applicant) ? chain.size() - 1 : 1;
+        return java.util.Optional.of(chain.get(index));
+    }
+
+    /** 신청자가 어떤 그룹이든 리더로 지정되어 있는지 여부. */
+    private boolean isGroupLeader(Employee employee) {
+        return employee != null && !groupRepository.findByLeaderId(employee.getId()).isEmpty();
     }
 
     @Transactional
@@ -306,7 +325,10 @@ public class LeaveService {
         Set<Long> visitedGroups = new HashSet<>();
         while (group != null && !visitedGroups.contains(group.getId())) {
             visitedGroups.add(group.getId());
-            java.util.Optional<Employee> leaderOpt = resolveDirectGroupLeader(group);
+            // 승인 라인에서 제외된 그룹(예: 本部)은 리더를 승인자로 넣지 않고 상위로 통과시킨다.
+            java.util.Optional<Employee> leaderOpt = Boolean.TRUE.equals(group.getExcludeFromApproval())
+                    ? java.util.Optional.empty()
+                    : resolveDirectGroupLeader(group);
             if (leaderOpt.isPresent()) {
                 Employee leader = leaderOpt.get();
                 boolean isSelf = leader.getId().equals(applicant.getId());

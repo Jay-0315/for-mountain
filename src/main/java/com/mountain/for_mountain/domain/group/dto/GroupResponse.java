@@ -16,4 +16,5 @@ public class GroupResponse {
     private List<Long> memberIds;
     private Long parentGroupId;
     private String color;
+    private Boolean excludeFromApproval;
 }

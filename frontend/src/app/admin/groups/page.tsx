@@ -96,6 +96,7 @@ function GroupModal({
   const [selectedMemberId, setSelectedMemberId] = useState<number | "">("");
   const [description, setDescription] = useState(group?.description ?? "");
   const [color, setColor] = useState<GroupColorKey>(resolveGroupColorKey(group));
+  const [excludeFromApproval, setExcludeFromApproval] = useState<boolean>(group?.excludeFromApproval ?? false);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const parentOptions = useMemo(() => {
@@ -158,6 +159,7 @@ function GroupModal({
         description: description.trim(),
         parentGroupId: createMode === "subgroup" ? Number(parentGroupId) : null,
         color,
+        excludeFromApproval,
       };
 
       if (isEdit && group) {
@@ -317,6 +319,21 @@ function GroupModal({
               ))}
             </div>
           </div>
+
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-white p-4">
+            <input
+              type="checkbox"
+              checked={excludeFromApproval}
+              onChange={(e) => setExcludeFromApproval(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-orange-500 focus:ring-orange-400"
+            />
+            <span className="min-w-0">
+              <span className="block text-sm font-medium text-slate-900">休暇承認ラインから除外</span>
+              <span className="mt-0.5 block text-xs text-slate-400">
+                本部など、休暇承認の段階に含めないグループはチェックしてください。承認はこのグループを飛ばして上位（代表）へ進みます。
+              </span>
+            </span>
+          </label>
 
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
             <div className="flex items-center justify-between gap-3">

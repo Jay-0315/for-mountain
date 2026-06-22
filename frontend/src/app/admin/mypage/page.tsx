@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { fetchEmployees, fetchLeaves, type EmployeeDto, type LeaveDto } from "@/lib/api";
+import { PasswordChangeCard } from "@/components/PasswordChangeCard";
 import { getSessionPayload } from "@/lib/session";
 import {
   calcLeavePools,
@@ -97,6 +98,9 @@ export default function MyPage() {
           <p className="text-sm text-red-500">현재 로그인 정보와 연결된 사원 정보가 없습니다.</p>
         )}
       </div>
+
+      {/* ── 비밀번호 변경 ── */}
+      <PasswordChangeCard />
 
       {/* ── 잔여 휴가 카드 ── */}
       <div className="rounded-2xl border border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50 p-5 shadow-sm">

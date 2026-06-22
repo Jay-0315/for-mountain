@@ -1,8 +1,10 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { adminLogin } from "@/lib/api";
+import { PasswordInput } from "@/components/PasswordInput";
 import { setMockAdminSession } from "./mock-store";
 
 const REMEMBERED_USERNAME_KEY = "remembered_admin_username";
@@ -93,8 +95,7 @@ function AdminPageContent() {
             <label className="block text-sm font-medium text-slate-700 mb-1.5">
               パスワード
             </label>
-            <input
-              type="password"
+            <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="パスワードを入力"
@@ -104,6 +105,11 @@ function AdminPageContent() {
                          focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent
                          placeholder:text-slate-300 text-base md:text-sm"
             />
+            <div className="mt-1.5 text-right">
+              <Link href="/account/forgot" className="text-xs font-medium text-slate-400 hover:text-orange-500">
+                パスワードをお忘れですか？
+              </Link>
+            </div>
           </div>
 
           <label className="flex items-center gap-2 text-sm text-slate-500">

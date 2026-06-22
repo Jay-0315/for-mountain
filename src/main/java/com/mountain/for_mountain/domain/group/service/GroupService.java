@@ -44,7 +44,8 @@ public class GroupService {
                 request.getDescription(),
                 request.getLeaderId(),
                 request.getParentGroupId(),
-                request.getColor()
+                request.getColor(),
+                request.getExcludeFromApproval()
         ));
         List<Long> syncedMemberIds = saveMembers(group.getId(), request.getLeaderId(), request.getMemberIds());
         syncEmployeeDepartments(syncedMemberIds, group.getName());
@@ -64,7 +65,8 @@ public class GroupService {
                 request.getDescription(),
                 request.getLeaderId(),
                 request.getParentGroupId(),
-                request.getColor()
+                request.getColor(),
+                request.getExcludeFromApproval()
         );
         groupMemberRepository.deleteByGroupId(id);
         groupMemberRepository.flush();
@@ -127,7 +129,8 @@ public class GroupService {
                 leaderName,
                 memberIds,
                 group.getParentGroupId(),
-                group.getColor()
+                group.getColor(),
+                group.getExcludeFromApproval()
         );
     }
 
@@ -255,6 +258,7 @@ public class GroupService {
                 .orElseGet(() -> groupRepository.save(Group.create(
                         PENDING_ASSIGNMENT_GROUP_NAME,
                         "임시 소속 그룹",
+                        null,
                         null,
                         null,
                         null

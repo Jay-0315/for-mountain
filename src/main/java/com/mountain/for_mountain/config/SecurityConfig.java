@@ -53,6 +53,8 @@ public class SecurityConfig {
                     "/swagger-ui.html",
                     "/error"
                 ).permitAll()
+                // Password change requires authentication (must precede the public /auth/** rule)
+                .requestMatchers(HttpMethod.POST, "/api/v1/auth/password/change").authenticated()
                 // Auth endpoint (public)
                 .requestMatchers("/api/v1/auth/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/password/setup").permitAll()
