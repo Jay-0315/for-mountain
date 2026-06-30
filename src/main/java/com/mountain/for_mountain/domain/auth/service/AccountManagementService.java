@@ -30,7 +30,7 @@ public class AccountManagementService {
     private final PasswordEncoder passwordEncoder;
     private final JavaMailSender mailSender;
 
-    @Value("${app.admin.setup-token-expiration-minutes:1440}")
+    @Value("${app.admin.setup-token-expiration-minutes:10080}")
     private long setupTokenExpirationMinutes;
 
     @Value("${app.admin.reset-token-expiration-minutes:30}")
