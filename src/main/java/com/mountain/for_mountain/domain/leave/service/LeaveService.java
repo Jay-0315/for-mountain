@@ -412,23 +412,18 @@ public class LeaveService {
         }
 
         LocalDate today = LocalDate.now();
-        LocalDate firstGrant = employee.getJoinDate().plusMonths(6);
+        LocalDate joinDate = employee.getJoinDate();
         List<LeavePool> pools = new ArrayList<>();
 
-        if (today.isBefore(firstGrant)) {
-            pools.add(new LeavePool(employee.getJoinDate(), firstGrant.plusYears(2), 5));
-        } else {
-            int grantIndex = 0;
-            LocalDate grantDate = firstGrant;
-
-            while (!grantDate.isAfter(today)) {
-                LocalDate expiryDate = grantDate.plusYears(2);
-                if (expiryDate.isAfter(today)) {
-                    pools.add(new LeavePool(grantDate, expiryDate, getGrantDays(grantIndex)));
-                }
-                grantIndex += 1;
-                grantDate = firstGrant.plusYears(grantIndex);
+        // 입사일 5일 + 입사 6개월 5일(초기 10일), 이후 매 입사 기념일마다 11/12/14/16/18/20일 누적(시효 2년).
+        addLeavePoolIfActive(pools, joinDate, 5, today);
+        addLeavePoolIfActive(pools, joinDate.plusMonths(6), 5, today);
+        for (int year = 1; ; year++) {
+            LocalDate grantDate = joinDate.plusYears(year);
+            if (grantDate.isAfter(today)) {
+                break;
             }
+            addLeavePoolIfActive(pools, grantDate, getGrantDays(year), today);
         }
 
         List<Leave> approvedLeaves = leaveRepository.findAllByOrderByCreatedAtDesc().stream()
@@ -483,6 +478,18 @@ public class LeaveService {
 
     private int getGrantDays(int index) {
         return GRANT_SCHEDULE[Math.min(index, GRANT_SCHEDULE.length - 1)];
+    }
+
+    /** 부여일이 지났고(부여됨) 아직 만료(부여일+2년)되지 않은 풀만 추가한다. */
+    private void addLeavePoolIfActive(List<LeavePool> pools, LocalDate grantDate, int days, LocalDate today) {
+        if (grantDate.isAfter(today)) {
+            return; // 아직 부여 전
+        }
+        LocalDate expiryDate = grantDate.plusYears(2);
+        if (!expiryDate.isAfter(today)) {
+            return; // 이미 만료
+        }
+        pools.add(new LeavePool(grantDate, expiryDate, days));
     }
 
     private static final class LeavePool {

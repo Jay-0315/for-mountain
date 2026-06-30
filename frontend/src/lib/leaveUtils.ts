@@ -7,6 +7,36 @@ function getGrantDays(a: number): number {
   return GRANT_SCHEDULE[Math.min(a, GRANT_SCHEDULE.length - 1)];
 }
 
+type GrantEvent = { date: Date; days: number };
+
+function addMonthsTo(d: Date, months: number): Date {
+  const r = new Date(d);
+  r.setMonth(r.getMonth() + months);
+  return r;
+}
+
+function addYearsTo(d: Date, years: number): Date {
+  const r = new Date(d);
+  r.setFullYear(r.getFullYear() + years);
+  return r;
+}
+
+/**
+ * 입사일 기준 부여 이벤트 목록(시간순).
+ *  - 입사일: +5일, 입사 6개월: +5일 (초기 10일)
+ *  - 입사 N주년(N≥1): +11 / +12 / +14 / +16 / +18 / +20일
+ */
+function buildGrantEvents(join: Date, maxYears = 60): GrantEvent[] {
+  const events: GrantEvent[] = [
+    { date: new Date(join), days: 5 },
+    { date: addMonthsTo(join, 6), days: 5 },
+  ];
+  for (let n = 1; n <= maxYears; n++) {
+    events.push({ date: addYearsTo(join, n), days: getGrantDays(n) });
+  }
+  return events;
+}
+
 // ─────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────
@@ -37,9 +67,9 @@ export function requiresLeaveBalance(leaveType: string | null | undefined): bool
  * 입사일과 승인된 휴가 목록을 받아 현재 활성 휴가 풀 목록을 반환합니다.
  *
  * 규칙:
- *  - 0~6개월 미만: 5일 preview (만료 = firstGrant + 2년)
- *  - 6개월 이후 매년: 10/11/12/14/16/18/20일 (만료 = 각 부여일 + 2년)
- *  - FIFO 차감: 만료가 가장 빠른 풀부터 소진
+ *  - 입사일 +5일, 입사 6개월 +5일 (초기 10일)
+ *  - 입사 N주년마다 +11/12/14/16/18/20일 (만료 = 각 부여일 + 2년)
+ *  - FIFO 차감: 부여일이 오래된 풀부터 소진
  *  - 잔여일수 > 0 인 풀만 반환
  */
 export function calcLeavePools(
@@ -49,52 +79,17 @@ export function calcLeavePools(
 ): LeavePool[] {
   const join = new Date(joinDateStr);
 
-  // firstGrant = 입사 + 6개월
-  const firstGrant = new Date(join);
-  firstGrant.setMonth(firstGrant.getMonth() + 6);
-
-  const addTwoYears = (d: Date): Date => {
-    const r = new Date(d);
-    r.setFullYear(r.getFullYear() + 2);
-    return r;
-  };
-
-  let pools: LeavePool[];
-
-  if (today < firstGrant) {
-    // ① 0~6개월 미만: 5일 preview
-    pools = [
-      {
-        grantDate:     join,
-        expiryDate:    addTwoYears(firstGrant),
-        grantDays:     5,
-        usedDays:      0,
-        remainingDays: 5,
-      },
-    ];
-  } else {
-    // ② firstGrant 이후: 연간 부여 풀 생성
-    pools = [];
-    let a = 0;
-    let grantDate = new Date(firstGrant);
-
-    while (grantDate <= today) {
-      const expiryDate = addTwoYears(grantDate);
-      // 만료되지 않은 풀만 포함
-      if (expiryDate > today) {
-        pools.push({
-          grantDate:     new Date(grantDate),
-          expiryDate,
-          grantDays:     getGrantDays(a),
-          usedDays:      0,
-          remainingDays: getGrantDays(a),
-        });
-      }
-      a++;
-      grantDate = new Date(firstGrant);
-      grantDate.setFullYear(firstGrant.getFullYear() + a);
-    }
-  }
+  // 부여일이 지났고(부여됨) 아직 만료되지 않은 풀만 생성 (시간순)
+  const pools: LeavePool[] = buildGrantEvents(join)
+    .filter((e) => e.date <= today)
+    .map((e) => ({
+      grantDate:     e.date,
+      expiryDate:    addYearsTo(e.date, 2),
+      grantDays:     e.days,
+      usedDays:      0,
+      remainingDays: e.days,
+    }))
+    .filter((p) => p.expiryDate > today);
 
   // FIFO 차감: 승인 휴가를 startDate 오름차순으로 정렬 후 가장 오래된 풀부터 차감
   const sorted = approvedLeaves
@@ -125,34 +120,20 @@ export function calcLeavePools(
 
 /**
  * 다음 휴가 부여 정보를 반환합니다 (모든 직원 대상).
- *
- * - 0~6개월: firstGrant 에서 10일 부여 예정
- * - 6개월~: 다음 연간 갱신일
+ * 입사일 기준 부여 이벤트(입사일·6개월·매 주년) 중 오늘 이후 가장 가까운 것.
  */
 export function calcNextGrant(
   joinDateStr: string,
   today = new Date()
 ): NextGrant {
   const join = new Date(joinDateStr);
-  const firstGrant = new Date(join);
-  firstGrant.setMonth(firstGrant.getMonth() + 6);
-
-  let a = 0;
-  let grantDate = new Date(firstGrant);
-
-  while (grantDate <= today) {
-    a++;
-    grantDate = new Date(firstGrant);
-    grantDate.setFullYear(firstGrant.getFullYear() + a);
-  }
-
-  // 0~6개월 미만(a=0): preview 5일이 이미 부여돼 있으므로 추가 부여는 5일
-  const days = a === 0 ? 5 : getGrantDays(a);
+  const events = buildGrantEvents(join);
+  const next = events.find((e) => e.date > today) ?? events[events.length - 1];
 
   return {
-    date:      grantDate,
-    days,
-    daysUntil: daysBetween(today, grantDate),
+    date:      next.date,
+    days:      next.days,
+    daysUntil: daysBetween(today, next.date),
   };
 }
 
