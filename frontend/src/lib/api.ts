@@ -32,6 +32,7 @@ export type UploadResponse = {
 
 export type CreateEmployeeAccountResponse = {
   username: string;
+  name: string;
   setupToken: string;
   setupTokenExpiresAt: string;
 };

@@ -53,7 +53,7 @@ public class AccountManagementService {
         AdminAccount account = AdminAccount.pending(username, resolveRole(employee.getPosition(), employee.getDepartment()), setupToken, expiresAt);
         adminAccountRepository.save(account);
 
-        return new CreateEmployeeAccountResponse(username, setupToken, expiresAt);
+        return new CreateEmployeeAccountResponse(username, employee.getName(), setupToken, expiresAt);
     }
 
     @Transactional

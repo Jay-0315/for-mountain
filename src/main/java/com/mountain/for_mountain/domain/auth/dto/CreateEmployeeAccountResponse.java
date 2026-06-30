@@ -13,6 +13,9 @@ public class CreateEmployeeAccountResponse {
     @Schema(description = "Employee username (employee number)", example = "M26031025")
     private String username;
 
+    @Schema(description = "Employee name")
+    private String name;
+
     @Schema(description = "One-time setup token", example = "d5e9dfb8f12f4bb0ab2e3aef523a70ce")
     private String setupToken;
 

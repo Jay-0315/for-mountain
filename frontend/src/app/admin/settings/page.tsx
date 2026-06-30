@@ -1,10 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createEmployeeAccount, type CreateEmployeeAccountResponse } from "@/lib/api";
 import { getSessionRole } from "@/lib/session";
 import { getCompanySettings, saveCompanySettings } from "../mock-store";
+
+type AccountResult = {
+  employeeNumber: string;
+  ok: boolean;
+  data?: CreateEmployeeAccountResponse;
+  error?: string;
+};
 
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -19,10 +26,10 @@ function SectionCard({ title, children }: { title: string; children: React.React
 
 export default function SettingsPage() {
   const router = useRouter();
-  const [employeeNumber, setEmployeeNumber] = useState("");
+  const [rows, setRows] = useState<string[]>([""]);
   const [accountSaving, setAccountSaving] = useState(false);
   const [accountMsg, setAccountMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
-  const [issued, setIssued] = useState<CreateEmployeeAccountResponse | null>(null);
+  const [results, setResults] = useState<AccountResult[]>([]);
   const [token] = useState(() =>
     typeof window === "undefined" ? "" : sessionStorage.getItem("admin_token") ?? ""
   );
@@ -47,11 +54,11 @@ export default function SettingsPage() {
     }
   }, [isAdmin, router]);
 
-  const setupUrl = useMemo(() => {
-    if (!issued || typeof window === "undefined") return "";
-    const q = new URLSearchParams({ username: issued.username, token: issued.setupToken });
+  const buildSetupUrl = (resp: CreateEmployeeAccountResponse) => {
+    if (typeof window === "undefined") return "";
+    const q = new URLSearchParams({ username: resp.username, token: resp.setupToken });
     return `${window.location.origin}/account/setup?${q.toString()}`;
-  }, [issued]);
+  };
 
   const legacyCopyText = (text: string) => {
     const textarea = document.createElement("textarea");
@@ -89,22 +96,48 @@ export default function SettingsPage() {
     }
   };
 
+  const copyAllSetupUrls = () => {
+    const lines = results
+      .filter((r) => r.ok && r.data)
+      .map((r) => `${r.data!.username}\t${r.data!.name}\t${buildSetupUrl(r.data!)}`);
+    if (lines.length > 0) void copyText(lines.join("\n"));
+  };
+
+  const addRow = () => setRows((prev) => [...prev, ""]);
+  const removeRow = (idx: number) => setRows((prev) => (prev.length <= 1 ? prev : prev.filter((_, i) => i !== idx)));
+  const updateRow = (idx: number, value: string) => setRows((prev) => prev.map((v, i) => (i === idx ? value : v)));
+
   const handleIssueAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     setAccountMsg(null);
-    setIssued(null);
+    setResults([]);
+
+    const numbers = Array.from(new Set(rows.map((s) => s.trim()).filter(Boolean)));
+    if (numbers.length === 0) {
+      setAccountMsg({ type: "err", text: "社員番号を入力してください。" });
+      return;
+    }
 
     setAccountSaving(true);
-    try {
-      const response = await createEmployeeAccount(token, employeeNumber.trim());
-      setIssued(response);
-      setAccountMsg({ type: "ok", text: "社員アカウントを発行しました。" });
-      setEmployeeNumber("");
-    } catch (err: unknown) {
-      setAccountMsg({ type: "err", text: err instanceof Error ? err.message : "発行に失敗しました。" });
-    } finally {
-      setAccountSaving(false);
+    const out: AccountResult[] = [];
+    for (const num of numbers) {
+      try {
+        const data = await createEmployeeAccount(token, num);
+        out.push({ employeeNumber: num, ok: true, data });
+      } catch (err: unknown) {
+        out.push({ employeeNumber: num, ok: false, error: err instanceof Error ? err.message : "発行に失敗しました。" });
+      }
     }
+    setResults(out);
+
+    const okCount = out.filter((r) => r.ok).length;
+    const failCount = out.length - okCount;
+    setAccountMsg({
+      type: failCount === 0 ? "ok" : "err",
+      text: `発行 ${okCount}件成功${failCount > 0 ? ` / ${failCount}件失敗` : ""}`,
+    });
+    if (failCount === 0) setRows([""]);
+    setAccountSaving(false);
   };
 
   const handleCompanySave = async (e: React.FormEvent) => {
@@ -135,16 +168,42 @@ export default function SettingsPage() {
         <form onSubmit={handleIssueAccount} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">社員番号（ID）</label>
-            <input
-              type="text"
-              value={employeeNumber}
-              onChange={(e) => setEmployeeNumber(e.target.value)}
-              required
-              placeholder="M26031025"
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-slate-900
-                         focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
-            />
-            <p className="mt-1 text-xs text-slate-400">IDは社員番号で固定されます。パスワードは本人が初回設定します。</p>
+            <div className="space-y-2">
+              {rows.map((value, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={value}
+                    onChange={(e) => updateRow(idx, e.target.value)}
+                    placeholder="M26031025"
+                    className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-900 font-mono
+                               focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeRow(idx)}
+                    disabled={rows.length <= 1}
+                    aria-label="削除"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-600 disabled:opacity-40"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={addRow}
+              className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              社員番号を追加
+            </button>
+            <p className="mt-2 text-xs text-slate-400">「+」で複数の社員アカウントをまとめて発行できます。IDは社員番号で固定、パスワードは本人が初回設定します。</p>
           </div>
 
           {accountMsg && (
@@ -168,51 +227,57 @@ export default function SettingsPage() {
           </div>
         </form>
 
-        {issued && (
-          <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
-            <div className="text-xs">
-              <p className="text-slate-500">ID</p>
-              <p className="font-mono text-slate-900">{issued.username}</p>
-            </div>
-            <div className="text-xs">
-              <p className="text-slate-500">初期設定トークン</p>
-              <div className="flex items-start gap-2">
-                <textarea
-                  readOnly
-                  value={issued.setupToken}
-                  rows={3}
-                  className="font-mono text-slate-900 break-all flex-1 resize-none rounded border border-slate-200 bg-white px-3 py-2"
-                />
+        {results.length > 0 && (
+          <div className="mt-6 space-y-3">
+            {results.some((r) => r.ok) && (
+              <div className="flex justify-end">
                 <button
                   type="button"
-                  onClick={() => void copyText(issued.setupToken)}
-                  className="px-2 py-1 rounded border border-slate-200 text-slate-600 hover:bg-white"
+                  onClick={copyAllSetupUrls}
+                  className="px-3 py-1.5 rounded border border-slate-200 text-xs text-slate-600 hover:bg-slate-50"
                 >
-                  コピー
+                  全URLをコピー
                 </button>
               </div>
-            </div>
-            <div className="text-xs">
-              <p className="text-slate-500">初回パスワード設定URL</p>
-              <div className="flex items-start gap-2">
-                <textarea
-                  readOnly
-                  value={setupUrl}
-                  rows={4}
-                  className="font-mono text-slate-900 break-all flex-1 resize-none rounded border border-slate-200 bg-white px-3 py-2"
-                />
-                <button
-                  type="button"
-                  onClick={() => void copyText(setupUrl)}
-                  className="px-2 py-1 rounded border border-slate-200 text-slate-600 hover:bg-white"
-                >
-                  コピー
-                </button>
-              </div>
-            </div>
-            <p className="text-xs text-slate-500">
-              有効期限: {new Date(issued.setupTokenExpiresAt).toLocaleString("ja-JP")}
-            </p>
+            )}
+
+            {results.map((r) =>
+              r.ok && r.data ? (
+                <div key={r.employeeNumber} className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                  <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                    <span className="text-xs text-slate-500">社員番号</span>
+                    <span className="font-mono text-sm text-slate-900">{r.data.username}</span>
+                    <span className="text-xs text-slate-500">氏名</span>
+                    <span className="text-sm font-medium text-slate-900">{r.data.name}</span>
+                  </div>
+                  <div className="text-xs">
+                    <p className="text-slate-500">初回パスワード設定リンク</p>
+                    <div className="flex items-start gap-2">
+                      <textarea
+                        readOnly
+                        value={buildSetupUrl(r.data)}
+                        rows={3}
+                        className="font-mono text-slate-900 break-all flex-1 resize-none rounded border border-slate-200 bg-white px-3 py-2"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => void copyText(buildSetupUrl(r.data!))}
+                        className="px-2 py-1 rounded border border-slate-200 text-slate-600 hover:bg-white"
+                      >
+                        コピー
+                      </button>
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    有効期限: {new Date(r.data.setupTokenExpiresAt).toLocaleString("ja-JP")}
+                  </p>
+                </div>
+              ) : (
+                <div key={r.employeeNumber} className="rounded-xl border border-red-100 bg-red-50 px-4 py-2 text-xs text-red-600">
+                  <span className="font-mono">{r.employeeNumber}</span> — {r.error}
+                </div>
+              )
+            )}
           </div>
         )}
       </SectionCard>
