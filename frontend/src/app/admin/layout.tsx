@@ -4,7 +4,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { fetchEmployees, fetchLeaves, fetchGroups, resolveLeaderMemberIds, type EmployeeDto } from "@/lib/api";
+import { fetchEmployees, fetchLeaves, fetchGroups, resolveLeaderMemberIds, resolveApprovalLeaderId, resolveUpperApprovalLeaderId, type EmployeeDto } from "@/lib/api";
 import { getSessionPayload, getSessionRole } from "@/lib/session";
 
 const NAV_ITEMS = [
@@ -154,14 +154,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         const memberIds = emp ? resolveLeaderMemberIds(groups, emp.id) : null;
         setLeaderMemberIds(memberIds);
 
-        const pending = leaves.filter((l) => l.status === "待機中" || l.status === "上位承認待ち");
-        if (memberIds !== null) {
-          setPendingCount(pending.filter((l) => memberIds.includes(l.employeeId)).length);
-        } else if (role === "ADMIN") {
-          setPendingCount(pending.length);
-        } else if (emp) {
-          setPendingCount(pending.filter((l) => l.employeeId === emp.id).length);
-        }
+        // 내가 그 단계의 지정 승인자인 대기 건만 카운트
+        const byId = new Map(employees.map((e) => [e.id, e]));
+        const myApprovalCount = emp
+          ? leaves.filter((l) => {
+              if (l.status !== "待機中" && l.status !== "上位承認待ち") return false;
+              const applicant = byId.get(l.employeeId);
+              return l.status === "待機中"
+                ? resolveApprovalLeaderId(applicant, groups) === emp.id
+                : resolveUpperApprovalLeaderId(applicant, groups) === emp.id;
+            }).length
+          : 0;
+        setPendingCount(myApprovalCount);
       })
       .catch(() => {
         setCurrentEmployee(null);

@@ -405,10 +405,14 @@ export default function DashboardPage() {
     );
   };
 
+  // 내가 그 단계의 지정 승인자인 대기 건만 (본인 신청·열람 전용 제외)
   const pendingLeavesForViewer = leaderMemberIds === undefined ? [] : leaves.filter((leave) => {
     if (leave.status !== "待機中" && leave.status !== "上位承認待ち") return false;
-    if (canApproveLeave(leave)) return true;
-    return leave.employeeId === viewer.employee?.id;
+    if (!viewer.employee) return false;
+    const applicant = employeeById.get(leave.employeeId);
+    return leave.status === "待機中"
+      ? resolveApprovalLeaderId(applicant, groups) === viewer.employee.id
+      : resolveUpperApprovalLeaderId(applicant, groups) === viewer.employee.id;
   });
   const pendingLeave = pendingLeavesForViewer.length;
   const effectiveDepartment = viewer.canViewAll ? "全部門" : viewer.employee?.department ?? "全部門";

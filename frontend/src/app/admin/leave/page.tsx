@@ -343,7 +343,10 @@ function LeavePageContent() {
     return true;
   });
 
-  const pendingCount = scopedRecords.filter((r) => r.status === "待機中" || r.status === "上位承認待ち").length;
+  // 헤더 안내는 "내가 승인할 대기 건"만 카운트 (지정 승인자 기준)
+  const pendingCount = visibleRecords.filter(
+    (r) => (r.status === "待機中" || r.status === "上位承認待ち") && canApproveLeave(r)
+  ).length;
 
   const handleStatusUpdate = async (id: number, status: LeaveDto["status"]) => {
     try {
