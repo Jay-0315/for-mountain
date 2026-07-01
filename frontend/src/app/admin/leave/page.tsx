@@ -161,27 +161,27 @@ function ApplyForm({
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">承認者</label>
           {!firstApprover && !upperApprover ? (
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm text-emerald-700">
               承認者がいないため、申請と同時に自動承認されます。
             </div>
           ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {approvers.map(({ label, employee: approver }) => (
-              <div key={label} className="min-h-[82px] rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">
-                <p className="mb-1.5 text-xs font-semibold text-slate-500">{label}</p>
-                {approver ? (
-                  <>
-                    <p className="font-medium">
-                      {approver.name}（{approver.department} / {approver.position}）
+            <div className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+              {approvers.map(({ label, employee: approver }) => (
+                <div key={label} className="flex items-center gap-3 px-3 py-2.5">
+                  <span className="shrink-0 rounded-md bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-500 ring-1 ring-slate-200">
+                    {label}
+                  </span>
+                  {approver ? (
+                    <p className="min-w-0 truncate text-sm text-slate-900">
+                      <span className="font-medium">{approver.name}</span>
+                      <span className="ml-2 text-xs text-slate-400">{approver.department} / {approver.position}</span>
                     </p>
-                    <p className="mt-1.5 text-xs text-slate-400">{approver.nameKana} — {approver.employeeNumber}</p>
-                  </>
-                ) : (
-                  <p className="text-sm text-slate-400">{label}が設定されていません。</p>
-                )}
-              </div>
-            ))}
-          </div>
+                  ) : (
+                    <p className="text-sm text-slate-400">{label}が設定されていません</p>
+                  )}
+                </div>
+              ))}
+            </div>
           )}
         </div>
 

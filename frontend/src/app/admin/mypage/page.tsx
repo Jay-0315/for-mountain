@@ -95,7 +95,7 @@ export default function MyPage() {
             </div>
           </div>
         ) : (
-          <p className="text-sm text-red-500">현재 로그인 정보와 연결된 사원 정보가 없습니다.</p>
+          <p className="text-sm text-red-500">ログイン情報に紐づく社員情報がありません。</p>
         )}
       </div>
 

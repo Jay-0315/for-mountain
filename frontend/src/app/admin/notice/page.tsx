@@ -1352,7 +1352,7 @@ function PartnersTab() {
               placeholder="https://example.com"
               className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-400"
             />
-            <p className="mt-1.5 text-xs text-slate-400">公開サイト에서는 이미지만 보이고, 클릭 시 이 링크로 이동합니다.</p>
+            <p className="mt-1.5 text-xs text-slate-400">公開サイトでは画像のみ表示され、クリック時にこのリンクへ移動します。</p>
           </div>
 
           <div>
@@ -2194,7 +2194,7 @@ function ServiceItemsTab() {
               <tr className="border-b border-slate-100 bg-slate-50">
                 <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500">カテゴリ</th>
                 <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500">タイトル</th>
-                <th className="hidden px-5 py-3 text-left text-xs font-semibold text-slate-500 md:table-cell">이미지/첨부</th>
+                <th className="hidden px-5 py-3 text-left text-xs font-semibold text-slate-500 md:table-cell">画像/添付</th>
                 <th className="hidden px-5 py-3 text-left text-xs font-semibold text-slate-500 md:table-cell">日付</th>
                 <th className="px-5 py-3 text-right">
                   {isAdmin && (
