@@ -15,7 +15,7 @@ import {
   type LeaveDto,
   updateLeaveStatus,
 } from "@/lib/api";
-import { getSessionPayload, getSessionRole } from "@/lib/session";
+import { getSessionPayload } from "@/lib/session";
 
 const STATUS_COLOR: Record<string, string> = {
   待機中: "bg-yellow-100 text-yellow-700",
@@ -32,6 +32,8 @@ const LEAVE_TYPES = [
   "慶弔休暇",
   "病気休暇",
   "特別休暇",
+  "夏季休暇",
+  "年末年始休暇",
   "福利厚生休暇",
   "法定休暇(有給外)",
   "その他",
@@ -199,17 +201,17 @@ function ApplyForm({
           </select>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
           <div className="min-w-0">
             <label className="block text-sm font-medium text-slate-700 mb-1.5">開始日</label>
             <input type="date" value={startDate} min={today || undefined} required
               onChange={(e) => { setStartDate(e.target.value); if ((endDate && e.target.value > endDate) || isHalfDayLeave(leaveType)) setEndDate(e.target.value); }}
-              className="w-full min-w-0 px-2.5 py-3 sm:px-4 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm" />
+              className="block w-full min-w-0 max-w-full box-border px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm" />
           </div>
           <div className="min-w-0">
             <label className="block text-sm font-medium text-slate-700 mb-1.5">終了日</label>
             <input type="date" value={endDate} min={startDate || today || undefined} required disabled={isHalfDayLeave(leaveType)} onChange={(e) => setEndDate(e.target.value)}
-              className="w-full min-w-0 px-2.5 py-3 sm:px-4 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm" />
+              className="block w-full min-w-0 max-w-full box-border px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm" />
           </div>
         </div>
 
@@ -256,12 +258,10 @@ function LeavePageContent() {
   const [groups, setGroups]             = useState<GroupDto[]>([]);
   const [loading, setLoading]           = useState(true);
   const [token, setToken]               = useState("");
-  const [isAdmin, setIsAdmin]           = useState(false);
 
   useEffect(() => {
     const t = sessionStorage.getItem("admin_token") ?? "";
     setToken(t);
-    setIsAdmin(getSessionRole(t) === "ADMIN");
   }, []);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("すべて");
   const [scopeFilter, setScopeFilter]   = useState<ScopeFilter>("全て");
@@ -325,9 +325,8 @@ function LeavePageContent() {
     );
   };
 
-  const visibleRecords = isAdmin
-      ? records
-      : records.filter((r) => r.employeeId === currentEmployee?.id || canViewManagedLeave(r));
+  // 신청자 본인 + 지정 승인자만 (ADMIN 역할이어도 남의 파트 휴가는 안 보임). 백엔드도 동일하게 제한됨.
+  const visibleRecords = records.filter((r) => r.employeeId === currentEmployee?.id || canViewManagedLeave(r));
 
   const isOwnLeave = (leave: LeaveDto) =>
     currentEmployee != null && leave.employeeId === currentEmployee.id;

@@ -15,10 +15,10 @@ import com.mountain.for_mountain.domain.leave.repository.LeaveRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import org.springframework.security.core.Authentication;
 
@@ -49,7 +49,7 @@ public class LeaveService {
     private final EmployeeRepository employeeRepository;
     private final GroupRepository groupRepository;
     private final GroupMemberRepository groupMemberRepository;
-    private final JavaMailSender mailSender;
+    private final LeaveMailSender leaveMailSender;
 
     @Value("${app.frontend-base-url:}")
     private String frontendBaseUrl;
@@ -59,18 +59,12 @@ public class LeaveService {
             return List.of();
         }
 
-        boolean isAdmin = authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-
         Employee caller = employeeRepository.findByEmployeeNumber(authentication.getName())
                 .orElseThrow(() -> new CustomException(ErrorCode.ACCOUNT_NOT_FOUND));
 
+        // 휴가는 신청자 본인과 지정 승인자(1차/상위)만 열람 가능. ADMIN 역할이어도 전체 열람 불가.
         return leaveRepository.findAllByOrderByCreatedAtDesc().stream()
-                .filter(leave -> {
-                    if (isAdmin) return true;
-                    if (isLeaveApprover(leave, caller)) return true;
-                    return leave.getEmployeeId().equals(caller.getId());
-                })
+                .filter(leave -> leave.getEmployeeId().equals(caller.getId()) || isLeaveApprover(leave, caller))
                 .map(this::toResponse)
                 .filter(leave -> status == null || status.isBlank() || leave.getStatus().equals(status))
                 .filter(leave -> department == null || department.isBlank() || leave.getDepartment().equals(department))
@@ -339,14 +333,25 @@ public class LeaveService {
         if (leader == null || leader.getEmail() == null || leader.getEmail().isBlank()) {
             return;
         }
-        try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo(leader.getEmail());
-            message.setSubject("【休暇申請】" + employee.getName() + " さん");
-            message.setText(buildLeaveRequestMailBody(employee, leave, leader));
-            mailSender.send(message);
-        } catch (Exception e) {
-            log.error("Failed to send leave request mail for employee {}", employee.getEmployeeNumber(), e);
+        // 메일 내용은 트랜잭션 안에서 미리 구성하고, 실제 발송은 커밋 후 비동기로 1회만 수행한다.
+        // (커밋 전 발송 + 요청 재시도로 인한 중복 발송 방지)
+        String to = leader.getEmail();
+        String subject = "【休暇申請】" + employee.getName() + " さん";
+        String body = buildLeaveRequestMailBody(employee, leave, leader);
+        runAfterCommit(() -> leaveMailSender.send(to, subject, body));
+    }
+
+    /** 트랜잭션이 있으면 커밋 후에, 없으면 즉시 실행한다. */
+    private void runAfterCommit(Runnable action) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    action.run();
+                }
+            });
+        } else {
+            action.run();
         }
     }
 

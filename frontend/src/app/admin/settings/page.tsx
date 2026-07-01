@@ -203,7 +203,6 @@ export default function SettingsPage() {
               </svg>
               社員番号を追加
             </button>
-            <p className="mt-2 text-xs text-slate-400">「+」で複数の社員アカウントをまとめて発行できます。IDは社員番号で固定、パスワードは本人が初回設定します。</p>
           </div>
 
           {accountMsg && (
