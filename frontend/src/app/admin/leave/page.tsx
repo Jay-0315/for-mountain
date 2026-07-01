@@ -126,6 +126,7 @@ function ApplyForm({
     const actualEndDate = isHalfDayLeave(leaveType) ? startDate : endDate;
     if (today && startDate < today) { setError("開始日は本日以降を選択してください。"); return; }
     if (actualEndDate < startDate) { setError("終了日は開始日以降にしてください。"); return; }
+    if (!reason.trim()) { setError("申請理由を入力してください。"); return; }
 
     setLoading(true);
     try {
@@ -226,9 +227,9 @@ function ApplyForm({
 
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1.5">
-            申請理由 <span className="text-slate-400 font-normal">(任意)</span>
+            申請理由 <span className="text-rose-500 font-normal">(必須)</span>
           </label>
-          <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={3}
+          <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={3} required
             placeholder="例：私用のため、体調不良のため"
             className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder:text-slate-300 text-sm resize-none" />
         </div>
