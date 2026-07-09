@@ -10,7 +10,7 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD}
     hikari:
       minimum-idle: ${SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE:0}
-      maximum-pool-size: ${SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE:10}
+      maximum-pool-size: ${SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE:4}
       idle-timeout: ${SPRING_DATASOURCE_HIKARI_IDLE_TIMEOUT:60000}
       # Recycle pooled connections aggressively to avoid stale sockets on shared hosting.
       max-lifetime: ${SPRING_DATASOURCE_HIKARI_MAX_LIFETIME:240000}
@@ -50,6 +50,13 @@ spring:
 
 server:
   port: ${PORT:8080}
+  # 공유호스팅 메모리 절약: 스레드/커넥션 수를 줄여 스레드 스택 메모리 사용을 낮춘다.
+  tomcat:
+    threads:
+      max: ${SERVER_TOMCAT_THREADS_MAX:15}
+      min-spare: ${SERVER_TOMCAT_THREADS_MIN_SPARE:2}
+    max-connections: ${SERVER_TOMCAT_MAX_CONNECTIONS:50}
+    accept-count: ${SERVER_TOMCAT_ACCEPT_COUNT:20}
 
 app:
   jwt:
