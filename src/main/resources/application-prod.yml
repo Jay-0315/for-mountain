@@ -69,6 +69,9 @@ app:
   frontend-base-url: ${APP_FRONTEND_BASE_URL}
   mail:
     to: ${MAIL_TO}
+    # 표시용 발신 주소(From). 미설정 시 SMTP 인증 계정이 발신자가 된다.
+    # 예) MAIL_FROM=株式会社マウンテン <info@for-mountain.co.jp>
+    from: ${MAIL_FROM:}
   upload:
     dir: ${UPLOAD_DIR:/home/xs799946/mountain-info.com/uploads}
   s3:

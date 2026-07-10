@@ -2,6 +2,7 @@ package com.mountain.for_mountain.domain.leave.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
@@ -19,6 +20,10 @@ public class LeaveMailSender {
 
     private final JavaMailSender mailSender;
 
+    /** 표시용 발신 주소(From). 미설정 시 SMTP 인증 계정이 그대로 발신자가 된다. */
+    @Value("${app.mail.from:}")
+    private String mailFrom;
+
     @Async
     public void send(String to, String subject, String body) {
         if (to == null || to.isBlank()) {
@@ -26,6 +31,9 @@ public class LeaveMailSender {
         }
         try {
             SimpleMailMessage message = new SimpleMailMessage();
+            if (mailFrom != null && !mailFrom.isBlank()) {
+                message.setFrom(mailFrom);
+            }
             message.setTo(to);
             message.setSubject(subject);
             message.setText(body);

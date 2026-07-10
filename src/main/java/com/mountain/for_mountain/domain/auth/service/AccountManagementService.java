@@ -39,6 +39,9 @@ public class AccountManagementService {
     @Value("${app.frontend-base-url:}")
     private String frontendBaseUrl;
 
+    @Value("${app.mail.from:}")
+    private String mailFrom;
+
     @Transactional
     public CreateEmployeeAccountResponse createEmployeeAccount(String employeeNumber) {
         String username = employeeNumber.trim();
@@ -125,6 +128,9 @@ public class AccountManagementService {
     private void sendPasswordResetMail(String email, String username, String resetToken) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
+            if (mailFrom != null && !mailFrom.isBlank()) {
+                message.setFrom(mailFrom);
+            }
             message.setTo(email);
             message.setSubject("【パスワード再設定】");
             message.setText(buildPasswordResetMailBody(username, resetToken));
