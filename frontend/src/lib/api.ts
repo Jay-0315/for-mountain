@@ -1,5 +1,16 @@
 // 정적 배포: /api/v1/... → .htaccess → proxy.php → localhost:8081
 const API_BASE = "";
+const DEFAULT_BOARD_AUTHOR = "株式会社マウンテン";
+
+function withQuery(path: string, params: URLSearchParams) {
+  const query = params.toString();
+  return query ? `${path}?${query}` : path;
+}
+
+async function errorMessage(res: Response, fallback: string) {
+  const json = await res.json().catch(() => ({}));
+  return (json as { message?: string }).message ?? fallback;
+}
 
 // ── Types ───────────────────────────────────────────────────
 export type BoardPost = {
@@ -45,7 +56,7 @@ export async function fetchBoardList(
 ): Promise<BoardListResponse> {
   const params = new URLSearchParams({ page: String(page), size: String(size) });
   if (category) params.set("category", category);
-  const res = await fetch(`${API_BASE}/api/v1/board?${params}`);
+  const res = await fetch(`${API_BASE}${withQuery("/api/v1/board", params)}`);
   if (!res.ok) throw new Error("Failed to fetch board list");
   return res.json();
 }
@@ -102,9 +113,12 @@ export async function createBoardPost(
   const res = await fetch(`${API_BASE}/api/v1/board`, {
     method: "POST",
     headers: authHeaders(token),
-    body: JSON.stringify(data),
+    body: JSON.stringify({
+      ...data,
+      author: data.author.trim() || DEFAULT_BOARD_AUTHOR,
+    }),
   });
-  if (!res.ok) throw new Error("Failed to create post");
+  if (!res.ok) throw new Error(await errorMessage(res, "Failed to create post"));
   return res.json();
 }
 
@@ -270,7 +284,7 @@ export async function fetchEmployees(params?: {
   if (params?.status)     q.set("status", params.status);
   if (params?.department) q.set("department", params.department);
   if (params?.keyword)    q.set("keyword", params.keyword);
-  const res = await fetch(`${API_BASE}/api/v1/employees?${q}`);
+  const res = await fetch(`${API_BASE}${withQuery("/api/v1/employees", q)}`);
   if (!res.ok) throw new Error("Failed to fetch employees");
   const employees = (await res.json()) as EmployeeDto[];
   return employees.map(normalizeEmployee);
@@ -472,7 +486,7 @@ export async function fetchLeaves(params?: {
   const q = new URLSearchParams();
   if (params?.status)     q.set("status", params.status);
   if (params?.department) q.set("department", params.department);
-  const res = await fetch(`${API_BASE}/api/v1/leaves?${q}`, {
+  const res = await fetch(`${API_BASE}${withQuery("/api/v1/leaves", q)}`, {
     headers: authRequestHeaders(token),
   });
   if (!res.ok) throw new Error("Failed to fetch leaves");
@@ -641,7 +655,7 @@ export type ServiceItemDto = {
 export async function fetchDeptNotices(department?: string): Promise<DeptNoticeDto[]> {
   const q = new URLSearchParams();
   if (department) q.set("department", department);
-  const res = await fetch(`${API_BASE}/api/v1/dept-notices?${q}`);
+  const res = await fetch(`${API_BASE}${withQuery("/api/v1/dept-notices", q)}`);
   if (!res.ok) throw new Error("Failed to fetch dept notices");
   return res.json();
 }
@@ -735,7 +749,7 @@ export async function reorderPartnerCards(token: string, orderedIds: number[]): 
 export async function fetchServiceItems(category?: string): Promise<ServiceItemDto[]> {
   const q = new URLSearchParams();
   if (category) q.set("category", category);
-  const res = await fetch(`${API_BASE}/api/v1/service-items?${q}`);
+  const res = await fetch(`${API_BASE}${withQuery("/api/v1/service-items", q)}`);
   if (!res.ok) throw new Error("Failed to fetch service items");
   return res.json();
 }

@@ -34,7 +34,7 @@ function ArticleBody({ content }: { content: string }) {
 
 export default function NewsDetailClient() {
   const pathname = usePathname() ?? "";
-  const id = pathname.split("/").pop() ?? "";
+  const id = pathname.split("/").filter(Boolean).pop() ?? "";
   const router = useRouter();
 
   const [post, setPost] = useState<BoardPost | null>(null);

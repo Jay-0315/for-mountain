@@ -33,6 +33,12 @@ RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_URI} !^/admin/leave/__next\.
 RewriteRule ^admin/leave/([^/]+)/?$ /admin/leave/_.html [L]
 
+# news 상세
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} !^/news/__next\.
+RewriteRule ^news/([^/]+)/?$ /news/_/index.html [L]
+
 # SPA fallback
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
