@@ -43,6 +43,7 @@ public class LeaveService {
     private static final String STATUS_REJECTED = "拒否";
     private static final List<String> CANCELLABLE_STATUSES = List.of(STATUS_PENDING, STATUS_REJECTED, "却下", "否認");
     private static final Set<String> BALANCE_DEDUCTING_LEAVE_TYPES = Set.of("有給", "午前給(有給)", "午後給(有給)", "代休");
+    private static final Set<String> BALANCE_RESERVED_STATUSES = Set.of(STATUS_PENDING, STATUS_UPPER_PENDING, STATUS_APPROVED);
     private static final int[] GRANT_SCHEDULE = {10, 11, 12, 14, 16, 18, 20};
 
     private final LeaveRepository leaveRepository;
@@ -107,7 +108,7 @@ public class LeaveService {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
 
-        validateLeaveDaysWithinBalance(currentEmployee, request.getLeaveType(), request.getDays());
+        validateLeaveDaysWithinBalance(currentEmployee, request.getLeaveType(), request.getDays(), leave.getId());
         leave.updateDetails(
                 request.getLeaveType(),
                 LocalDate.parse(request.getStartDate()),
@@ -137,6 +138,7 @@ public class LeaveService {
                 if (!isSameEmployee(firstApprover, caller)) {
                     throw new CustomException(ErrorCode.ACCESS_DENIED);
                 }
+                validateLeaveDaysWithinBalance(applicant, leave.getLeaveType(), leave.getDays(), leave.getId());
                 if (upperApprover.isPresent()) {
                     leave.updateStatus(STATUS_UPPER_PENDING);
                     sendLeaveRequestMail(applicant, leave, upperApprover.get());
@@ -150,6 +152,7 @@ public class LeaveService {
                 if (!isSameEmployee(upperApprover, caller)) {
                     throw new CustomException(ErrorCode.ACCESS_DENIED);
                 }
+                validateLeaveDaysWithinBalance(applicant, leave.getLeaveType(), leave.getDays(), leave.getId());
                 leave.updateStatus(STATUS_APPROVED);
                 return toResponse(leave);
             }
@@ -396,6 +399,10 @@ public class LeaveService {
     }
 
     private void validateLeaveDaysWithinBalance(Employee employee, String leaveType, Double requestedDays) {
+        validateLeaveDaysWithinBalance(employee, leaveType, requestedDays, null);
+    }
+
+    private void validateLeaveDaysWithinBalance(Employee employee, String leaveType, Double requestedDays, Long excludedLeaveId) {
         double days = requestedDays == null ? 0 : requestedDays;
         if (days <= 0) {
             return;
@@ -405,13 +412,13 @@ public class LeaveService {
             return;
         }
 
-        double remainingDays = calculateRemainingLeaveDays(employee);
+        double remainingDays = calculateRemainingLeaveDays(employee, excludedLeaveId);
         if (days > remainingDays) {
             throw new CustomException(ErrorCode.INSUFFICIENT_LEAVE_BALANCE);
         }
     }
 
-    private double calculateRemainingLeaveDays(Employee employee) {
+    private double calculateRemainingLeaveDays(Employee employee, Long excludedLeaveId) {
         if (employee.getJoinDate() == null) {
             return employee.getAnnualLeaveDays() == null ? 0 : employee.getAnnualLeaveDays();
         }
@@ -431,14 +438,15 @@ public class LeaveService {
             addLeavePoolIfActive(pools, grantDate, getGrantDays(year), today);
         }
 
-        List<Leave> approvedLeaves = leaveRepository.findAllByOrderByCreatedAtDesc().stream()
+        List<Leave> reservedLeaves = leaveRepository.findAllByOrderByCreatedAtDesc().stream()
                 .filter(leave -> leave.getEmployeeId().equals(employee.getId()))
-                .filter(leave -> STATUS_APPROVED.equals(leave.getStatus()))
+                .filter(leave -> excludedLeaveId == null || !excludedLeaveId.equals(leave.getId()))
+                .filter(leave -> BALANCE_RESERVED_STATUSES.contains(leave.getStatus()))
                 .filter(this::requiresLeaveBalance)
                 .sorted(Comparator.comparing(Leave::getStartDate))
                 .toList();
 
-        for (Leave leave : approvedLeaves) {
+        for (Leave leave : reservedLeaves) {
             double daysLeft = leave.getDays() == null ? 0 : leave.getDays();
             for (LeavePool pool : pools) {
                 if (daysLeft <= 0) {
