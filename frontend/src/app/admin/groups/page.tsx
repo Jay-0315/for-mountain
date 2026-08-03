@@ -189,9 +189,9 @@ function GroupModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-xl">
-        <div className="flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4">
+      <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-white shadow-xl">
+        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
           <div>
             <h3 className="text-base font-semibold text-slate-900">
               {isEdit ? "グループ情報を編集" : "グループを追加"}
@@ -207,7 +207,8 @@ function GroupModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-5">
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700">
               {isEdit ? "グループ区分" : "追加方式"}
@@ -402,8 +403,9 @@ function GroupModal({
           </div>
 
           {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-500">{error}</p>}
+          </div>
 
-          <div className="flex justify-end gap-3 pt-1">
+          <div className="flex shrink-0 justify-end gap-3 border-t border-slate-100 bg-white px-6 py-4">
             <button
               type="button"
               onClick={onClose}
