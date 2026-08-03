@@ -12,6 +12,7 @@ export const metadata: Metadata = {
 };
 import Footer from "@/components/layout/Footer";
 import HeroSection from "@/components/sections/HeroSection";
+import NewsSection from "@/components/sections/NewsSection";
 import PartnersSection from "@/components/sections/PartnerSection";
 import ValuesStrip from "@/components/sections/ValuesStrip";
 import DarkCanvasBg from "@/components/ui/DarkCanvasBg";
@@ -28,6 +29,7 @@ export default function Home() {
           <ValuesStrip />
           <PartnersSection />
         </div>
+        <NewsSection />
       </main>
       <Footer />
     </>

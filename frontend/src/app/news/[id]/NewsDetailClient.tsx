@@ -192,14 +192,11 @@ export default function NewsDetailClient() {
 
               {relatedPosts.length > 0 && (
                 <div className="border-t border-slate-100 px-6 py-8 sm:px-8">
-                  <div className="mb-5 flex items-center justify-between gap-3">
+                  <div className="mb-5">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.24em] text-orange-500">More News</p>
                       <h2 className="mt-2 text-xl font-bold text-slate-900">その他のお知らせ</h2>
                     </div>
-                    <Link href="/#news" className="text-sm font-semibold text-slate-500 hover:text-orange-500">
-                      一覧を見る
-                    </Link>
                   </div>
                   <div className="grid gap-3">
                     {relatedPosts.map((item) => (
