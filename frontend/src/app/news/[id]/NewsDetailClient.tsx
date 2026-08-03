@@ -180,7 +180,7 @@ export default function NewsDetailClient() {
 
               <div className="border-t border-slate-100 bg-slate-50/70 px-6 py-5 sm:px-8">
                 <button
-                  onClick={() => router.push("/#news")}
+                  onClick={() => router.push("/news/")}
                   className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition-all hover:-translate-y-0.5 hover:border-orange-300 hover:text-orange-500 hover:shadow-sm hover:shadow-orange-100"
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
