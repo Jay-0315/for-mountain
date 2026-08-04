@@ -9,7 +9,9 @@ on:
       - ".github/workflows/deploy-frontend.yml"
 
 env:
-  PUBLIC_DIR: /home/xs799946/mountain-info.com/public_html
+  PUBLIC_DIRS: |
+    /home/xs799946/mountain-info.com/public_html
+    /home/xs799946/mountain-info.co.jp/public_html
   FRONTEND_TMP_DIR: /home/xs799946/mountain-info.com/.deploy_frontend
 
 jobs:
@@ -79,11 +81,17 @@ jobs:
           port: ${{ secrets.XSERVER_PORT }}
           script: |
             set -eu
-            mkdir -p "${{ env.PUBLIC_DIR }}"
 
-            find "${{ env.PUBLIC_DIR }}" -mindepth 1 -maxdepth 1 ! -name ".well-known" -exec rm -rf {} +
-            cp -R "${{ env.FRONTEND_TMP_DIR }}/"* "${{ env.PUBLIC_DIR }}/"
-            cp "${{ env.FRONTEND_TMP_DIR }}/proxy.php" "${{ env.PUBLIC_DIR }}/proxy.php"
-            cp "${{ env.FRONTEND_TMP_DIR }}/.htaccess" "${{ env.PUBLIC_DIR }}/.htaccess"
+            while IFS= read -r PUBLIC_DIR; do
+              [ -n "$PUBLIC_DIR" ] || continue
 
-            ls -la "${{ env.PUBLIC_DIR }}" | head
+              mkdir -p "$PUBLIC_DIR"
+              find "$PUBLIC_DIR" -mindepth 1 -maxdepth 1 ! -name ".well-known" -exec rm -rf {} +
+              cp -R "${{ env.FRONTEND_TMP_DIR }}/"* "$PUBLIC_DIR/"
+              cp "${{ env.FRONTEND_TMP_DIR }}/proxy.php" "$PUBLIC_DIR/proxy.php"
+              cp "${{ env.FRONTEND_TMP_DIR }}/.htaccess" "$PUBLIC_DIR/.htaccess"
+
+              ls -la "$PUBLIC_DIR" | head
+            done <<'EOF'
+            ${{ env.PUBLIC_DIRS }}
+            EOF
