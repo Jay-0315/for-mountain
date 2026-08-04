@@ -16,6 +16,7 @@ const companyInfo = [
   { label: "社名",         value: "株式会社 MOUNTAIN（Mountain Co.,Ltd）" },
   { label: "設立",         value: "2022年2月7日" },
   { label: "代表取締役",   value: "盧 鍾錫" },
+  { label: "特別顧問",     value: "伴浩明" },
   { label: "所在地",       value: "東京都千代田区岩本町二丁目１３番６号\nリアライズ岩本町ビル ５階" },
   { label: "電話・FAX",    value: "TEL：03-5829-6357\nFAX：03-5829-8032" },
   { label: "URL",          value: "mountain-info.co.jp" },
