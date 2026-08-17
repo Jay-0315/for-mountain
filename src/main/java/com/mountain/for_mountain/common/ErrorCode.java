@@ -17,7 +17,9 @@ public enum ErrorCode {
     INSUFFICIENT_LEAVE_BALANCE(HttpStatus.BAD_REQUEST, "申請日数が残りの休暇日数を超えています。"),
     INVALID_GROUP_PARENT(HttpStatus.BAD_REQUEST, "Invalid parent group."),
     INVALID_GROUP_MEMBER(HttpStatus.BAD_REQUEST, "Invalid group member."),
-    WEAK_PASSWORD(HttpStatus.BAD_REQUEST, "Password must be at least 4 characters."),
+    WEAK_PASSWORD(HttpStatus.BAD_REQUEST, "パスワードは8文字以上で設定してください。"),
+    TOO_MANY_LOGIN_ATTEMPTS(HttpStatus.TOO_MANY_REQUESTS,
+        "ログイン試行回数が上限を超えました。しばらくしてから再度お試しください。"),
     INVALID_SETUP_TOKEN(HttpStatus.BAD_REQUEST, "Invalid setup token."),
     SETUP_TOKEN_EXPIRED(HttpStatus.BAD_REQUEST, "Setup token has expired."),
 

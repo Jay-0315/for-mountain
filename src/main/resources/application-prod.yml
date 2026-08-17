@@ -28,7 +28,10 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      # 운영 스키마를 하이버네이트가 자동 변경하지 않도록 validate 를 기본값으로 둔다.
+      # 기존 스키마가 엔티티와 어긋나 부팅이 실패하면
+      # SPRING_JPA_HIBERNATE_DDL_AUTO=none 으로 우회한 뒤 마이그레이션으로 정렬할 것.
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:validate}
     properties:
       hibernate:
         show_sql: false

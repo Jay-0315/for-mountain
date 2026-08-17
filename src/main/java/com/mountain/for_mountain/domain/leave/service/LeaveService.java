@@ -72,9 +72,16 @@ public class LeaveService {
                 .toList();
     }
 
+    /**
+     * 휴가 신청. 신청자는 토큰 주체로만 결정한다.
+     * request.employeeId 는 신뢰하지 않는다(과거에는 이 값을 그대로 써서 대리 신청이 가능했다).
+     */
     @Transactional
-    public LeaveResponse create(LeaveCreateRequest request) {
-        Employee employee = employeeRepository.findById(request.getEmployeeId())
+    public LeaveResponse create(LeaveCreateRequest request, Authentication authentication) {
+        if (authentication == null || authentication.getName() == null || authentication.getName().isBlank()) {
+            throw new CustomException(ErrorCode.MISSING_TOKEN);
+        }
+        Employee employee = employeeRepository.findByEmployeeNumber(authentication.getName().trim())
                 .orElseThrow(() -> new CustomException(ErrorCode.ACCOUNT_NOT_FOUND));
         validateLeaveDaysWithinBalance(employee, request.getLeaveType(), request.getDays());
         Leave leave = Leave.create(

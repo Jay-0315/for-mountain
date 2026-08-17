@@ -131,7 +131,6 @@ function ApplyForm({
     setLoading(true);
     try {
       await createLeave(token, {
-        employeeId: employee.id,
         leaveType,
         startDate,
         endDate: actualEndDate,
@@ -275,7 +274,7 @@ function LeavePageContent() {
     setLoading(true);
     try {
       const token = sessionStorage.getItem("admin_token") ?? "";
-      const [leaves, employees, groups] = await Promise.all([fetchLeaves(undefined, token), fetchEmployees(), fetchGroups()]);
+      const [leaves, employees, groups] = await Promise.all([fetchLeaves(undefined, token), fetchEmployees(token), fetchGroups(token)]);
       setRecords(leaves);
       setEmployees(employees);
       setGroups(groups);

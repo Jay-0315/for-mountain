@@ -37,8 +37,11 @@ public class LeaveController {
 
     @Operation(summary = "Create leave", security = @SecurityRequirement(name = "bearerAuth"))
     @PostMapping
-    public ResponseEntity<LeaveResponse> create(@Valid @RequestBody LeaveCreateRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(leaveService.create(request));
+    public ResponseEntity<LeaveResponse> create(
+            @Valid @RequestBody LeaveCreateRequest request,
+            Authentication authentication
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(leaveService.create(request, authentication));
     }
 
     @Operation(summary = "Update own pending leave", security = @SecurityRequirement(name = "bearerAuth"))
