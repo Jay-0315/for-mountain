@@ -9,7 +9,6 @@ import GridRunnerBackdrop from "@/components/ui/GridRunnerBackdrop";
 // ── 데이터 ────────────────────────────────────────────────────
 const tabs = ["新卒採用", "中途採用"] as const;
 type Tab = (typeof tabs)[number];
-
 const jobTypes = [
   {
     title: "エンジニア職",
@@ -66,30 +65,36 @@ const steps = [
 
 const RECRUIT_EMAIL = "recruit@mountain-info.co.jp";
 
+type RecruitSectionProps = {
+  initialTab?: Tab;
+  showHeader?: boolean;
+};
+
 // ── コンポーネント ─────────────────────────────────────────────
-export default function RecruitSection() {
+export default function RecruitSection({ initialTab = "新卒採用", showHeader = true }: RecruitSectionProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const [activeTab, setActiveTab] = useState<Tab>("新卒採用");
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   const [copied, setCopied] = useState(false);
 
   useGSAP(
     () => {
       gsap.registerPlugin(ScrollTrigger);
 
-      // 헤더 애니메이션
-      gsap.from(".recruit-header > *", {
-        opacity: 0,
-        y: 40,
-        duration: 0.8,
-        stagger: 0.12,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: ".recruit-header",
-          start: "top 80%",
-          once: true,
-        },
-      });
+      if (showHeader) {
+        gsap.from(".recruit-header > *", {
+          opacity: 0,
+          y: 40,
+          duration: 0.8,
+          stagger: 0.12,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: ".recruit-header",
+            start: "top 80%",
+            once: true,
+          },
+        });
+      }
 
 
       // 테이블 행 stagger
@@ -272,22 +277,28 @@ export default function RecruitSection() {
   };
 
   return (
-    <section ref={sectionRef} id="recruit" className="pt-44 pb-[32rem] bg-gray-50 overflow-hidden">
+    <section
+      ref={sectionRef}
+      id="recruit"
+      className={`${showHeader ? "pt-28" : "pt-16 md:pt-20"} pb-[32rem] bg-gray-50 overflow-hidden`}
+    >
       <div className="max-w-6xl mx-auto px-6 sm:px-10 lg:px-6">
 
         {/* 섹션 헤더 */}
-        <div className="recruit-header text-center mb-24">
-          <p className="text-orange-600 text-sm font-semibold uppercase tracking-widest mb-3">
-            Recruit
-          </p>
-          <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
-            採用情報
-          </h2>
-          <p className="mx-auto max-w-xl text-lg font-semibold text-slate-500">
-            <span className="text-orange-500">株式会社マウンテン</span>
-            <span> &gt; Recruit</span>
-          </p>
-        </div>
+        {showHeader && (
+          <div className="recruit-header text-center mb-24">
+            <p className="text-orange-600 text-sm font-semibold uppercase tracking-widest mb-3">
+              Recruit
+            </p>
+            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
+              採用情報
+            </h2>
+            <p className="mx-auto max-w-xl text-lg font-semibold text-slate-500">
+              <span className="text-orange-500">株式会社MOUNTAIN</span>
+              <span> &gt; Recruit</span>
+            </p>
+          </div>
+        )}
 
         {/* 탭 버튼 */}
         <div className="recruit-tabs flex gap-2 mb-8 justify-center">

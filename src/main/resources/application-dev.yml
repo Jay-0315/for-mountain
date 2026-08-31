@@ -54,3 +54,12 @@ app:
   frontend-base-url: ${APP_FRONTEND_BASE_URL:http://localhost:3000}
   mail:
     to: ${MAIL_TO:info@for-mountain.co.jp}
+
+line-works:
+  enabled: ${LINE_WORKS_ENABLED:false}
+  client-id: ${LINE_WORKS_CLIENT_ID:}
+  client-secret: ${LINE_WORKS_CLIENT_SECRET:}
+  service-account: ${LINE_WORKS_SERVICE_ACCOUNT:}
+  private-key: ${LINE_WORKS_PRIVATE_KEY:}
+  oauth-redirect-uri: ${LINE_WORKS_OAUTH_REDIRECT_URI:http://localhost:3000/oauth/lineworks/callback}
+  sync-cron: ${LINE_WORKS_SYNC_CRON:0 15 2 * * *}

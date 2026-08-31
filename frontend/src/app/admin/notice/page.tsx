@@ -377,7 +377,7 @@ function WebsitePostForm({
               type="text"
               value={author}
               onChange={(e) => setAuthor(e.target.value)}
-              placeholder="株式会社マウンテン"
+              placeholder="株式会社MOUNTAIN"
               className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder:text-slate-300 text-sm"
             />
           </div>
@@ -550,7 +550,7 @@ function WebsiteTab() {
         badge={selectedPost.category}
         title={selectedPost.title}
         content={selectedPost.content}
-        author={selectedPost.author || "株式会社マウンテン"}
+        author={selectedPost.author || "株式会社MOUNTAIN"}
         createdAt={selectedPost.createdAt}
         imageName={selectedPost.imageName}
         imageUrl={selectedPost.imageData}

@@ -6,6 +6,7 @@ import com.mountain.for_mountain.domain.employee.repository.EmployeeRepository;
 import com.mountain.for_mountain.domain.employee.model.entity.Employee;
 import com.mountain.for_mountain.domain.group.dto.GroupRequest;
 import com.mountain.for_mountain.domain.group.dto.GroupResponse;
+import com.mountain.for_mountain.domain.group.dto.GroupMoveRequest;
 import com.mountain.for_mountain.domain.group.model.entity.Group;
 import com.mountain.for_mountain.domain.group.model.entity.GroupMember;
 import com.mountain.for_mountain.domain.group.repository.GroupMemberRepository;
@@ -88,6 +89,30 @@ public class GroupService {
         restoreEmployeeDepartmentsAfterGroupChange(previousMemberIds, List.of(), group.getParentGroupId());
     }
 
+    @Transactional
+    public void move(Long id, GroupMoveRequest request) {
+        Group source = groupRepository.findById(id)
+                .orElseThrow(() -> new CustomException(ErrorCode.GROUP_NOT_FOUND));
+        if (id.equals(request.beforeGroupId())) {
+            return;
+        }
+        List<Group> siblings = groupRepository.findAllByOrderByCreatedAtAsc().stream()
+                .filter(group -> java.util.Objects.equals(group.getParentGroupId(), request.parentGroupId()))
+                .filter(group -> !group.getId().equals(id))
+                .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
+        int index = siblings.size();
+        if (request.beforeGroupId() != null) {
+            int beforeIndex = java.util.stream.IntStream.range(0, siblings.size())
+                    .filter(i -> siblings.get(i).getId().equals(request.beforeGroupId()))
+                    .findFirst().orElse(-1);
+            if (beforeIndex >= 0) index = beforeIndex;
+        }
+        source.moveToParent(request.parentGroupId());
+        source.syncDisplayOrder(index);
+        siblings.add(index, source);
+        for (int i = 0; i < siblings.size(); i++) siblings.get(i).syncDisplayOrder(i);
+    }
+
     private List<Long> saveMembers(Long groupId, Long leaderId, List<Long> memberIds) {
         List<Long> normalizedMemberIds = new ArrayList<>(memberIds);
         if (leaderId != null) {
@@ -129,8 +154,11 @@ public class GroupService {
                 leaderName,
                 memberIds,
                 group.getParentGroupId(),
+                group.getDisplayOrder(),
                 group.getColor(),
-                group.getExcludeFromApproval()
+                group.getExcludeFromApproval(),
+                group.getLineWorksOrgUnitId(),
+                group.getLineWorksExternalKey()
         );
     }
 

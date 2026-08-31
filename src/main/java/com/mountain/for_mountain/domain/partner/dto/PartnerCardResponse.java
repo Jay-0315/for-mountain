@@ -4,6 +4,8 @@ import com.mountain.for_mountain.domain.partner.model.entity.PartnerCard;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @AllArgsConstructor
 public class PartnerCardResponse {
@@ -20,8 +22,12 @@ public class PartnerCardResponse {
                 card.getImageSrc(),
                 card.getLinkUrl(),
                 card.getSortOrder(),
-                card.getCreatedAt().toString(),
-                card.getUpdatedAt().toString()
+                formatDateTime(card.getCreatedAt()),
+                formatDateTime(card.getUpdatedAt())
         );
+    }
+
+    private static String formatDateTime(LocalDateTime dateTime) {
+        return dateTime == null ? "" : dateTime.toString();
     }
 }

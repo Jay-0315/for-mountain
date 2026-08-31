@@ -57,6 +57,7 @@ public class SecurityConfig {
                     "/api/v1/service-items/**",
                     "/api/v1/service-categories/**",
                     "/api/v1/partner-cards/**",
+                    "/api/v1/product-cards/**",
                     // 공개 페이지에 삽입된 이미지·첨부를 서빙하는 경로
                     "/api/v1/uploads/files/**"
                 ).permitAll()
@@ -64,6 +65,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/v1/admin/accounts").hasRole("ADMIN")
                 // Contact (public)
                 .requestMatchers(HttpMethod.POST, "/api/v1/contact").permitAll()
+                // LINE WORKS sync (admin only)
+                .requestMatchers(HttpMethod.POST, "/api/v1/lineworks/**").hasRole("ADMIN")
                 // Board writes (admin only)
                 .requestMatchers(HttpMethod.POST,   "/api/v1/board/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT,    "/api/v1/board/**").hasRole("ADMIN")
@@ -116,6 +119,15 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/v1/partner-cards/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/api/v1/partner-cards/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/v1/partner-cards/**").hasRole("ADMIN")
+                // Product card APIs
+                .requestMatchers(HttpMethod.POST, "/api/v1/product-cards").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/v1/product-cards").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PATCH, "/api/v1/product-cards").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/product-cards").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/v1/product-cards/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/v1/product-cards/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PATCH, "/api/v1/product-cards/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/product-cards/**").hasRole("ADMIN")
                 // Service category APIs
                 .requestMatchers(HttpMethod.POST, "/api/v1/service-categories").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/api/v1/service-categories").hasRole("ADMIN")

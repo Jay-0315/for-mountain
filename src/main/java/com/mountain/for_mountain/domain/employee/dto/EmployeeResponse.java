@@ -19,7 +19,10 @@ public class EmployeeResponse {
     private final String jobTitle;
     private final String joinDate;
     private final String email;
+    private final String lineWorksUserId;
+    private final String lineWorksExternalKey;
     private final String status;
+    private final boolean profileComplete;
     private final Integer annualLeaveDays;
 
     public EmployeeResponse(Employee employee) {
@@ -34,7 +37,10 @@ public class EmployeeResponse {
         this.jobTitle = employee.getJobTitle();
         this.joinDate = employee.getJoinDate().toString();
         this.email = employee.getEmail();
+        this.lineWorksUserId = employee.getLineWorksUserId();
+        this.lineWorksExternalKey = employee.getLineWorksExternalKey();
         this.status = employee.getStatus();
+        this.profileComplete = employee.isProfileComplete();
         this.annualLeaveDays = employee.getAnnualLeaveDays();
     }
 }

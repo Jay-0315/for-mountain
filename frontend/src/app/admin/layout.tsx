@@ -232,7 +232,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Link href="/admin/dashboard" className="flex items-center gap-2.5 group">
             <Image
                 src="/mountain-logo.png"
-                alt="株式会社マウンテン symbol"
+                alt="株式会社MOUNTAIN symbol"
                 width={34}
                 height={34}
                 className="object-contain shrink-0 w-[34px] h-[34px]"

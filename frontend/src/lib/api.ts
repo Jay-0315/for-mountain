@@ -1,6 +1,6 @@
 // 정적 배포: /api/v1/... → .htaccess → proxy.php → localhost:8081
 const API_BASE = "";
-const DEFAULT_BOARD_AUTHOR = "株式会社マウンテン";
+const DEFAULT_BOARD_AUTHOR = "株式会社MOUNTAIN";
 
 function withQuery(path: string, params: URLSearchParams) {
   const query = params.toString();
@@ -80,6 +80,23 @@ export async function adminLogin(
   if (!res.ok) {
     const json = await res.json().catch(() => ({}));
     throw new Error((json as { message?: string }).message ?? "Login failed");
+  }
+  return res.json();
+}
+
+export async function getLineWorksAuthorizationUrl(): Promise<string> {
+  const res = await fetch(`${API_BASE}/api/v1/auth/lineworks/authorize`);
+  if (!res.ok) throw new Error("LINE WORKS OAuth is unavailable");
+  const data = await res.json() as { authorizationUrl: string };
+  return data.authorizationUrl;
+}
+
+export async function exchangeLineWorksOAuth(code: string, state: string): Promise<{ token: string; tokenType: string }> {
+  const params = new URLSearchParams({ code, state });
+  const res = await fetch(`${API_BASE}/api/v1/auth/lineworks/exchange?${params.toString()}`, { method: "POST" });
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    throw new Error((json as { message?: string }).message ?? "LINE WORKS login failed");
   }
   return res.json();
 }
@@ -248,7 +265,10 @@ export type EmployeeDto = {
   jobTitle: string;
   joinDate: string;
   email: string;
+  lineWorksUserId?: string | null;
+  lineWorksExternalKey?: string | null;
   status: string;
+  profileComplete?: boolean;
   annualLeaveDays: number | null;
 };
 
@@ -327,6 +347,81 @@ export async function deleteEmployee(token: string, id: number): Promise<void> {
   if (!res.ok) throw new Error("Failed to delete employee");
 }
 
+export type LineWorksSyncResponse = {
+  enabled: boolean;
+  mode: string;
+  usersFetched: number;
+  employeesLinked: number;
+  employeesAlreadyLinked: number;
+  employeesCreated: number;
+  employeesSkipped: number;
+  orgUnitsFetched: number;
+  groupsLinked: number;
+  groupsAlreadyLinked: number;
+  groupMembersSynced: number;
+  groupMembersSkipped: number;
+  message: string;
+};
+
+export type LineWorksDirectoryCompareResponse = {
+  enabled: boolean;
+  usersFetched: number;
+  orgUnitsFetched: number;
+  employeeDiffs: {
+    employeeId: number;
+    employeeNumber: string;
+    lineWorksUserId: string;
+    fields: { field: string; currentValue: string; lineWorksValue: string }[];
+  }[];
+  groupDiffs: {
+    groupId: number;
+    groupName: string;
+    lineWorksOrgUnitId: string;
+    fields: { field: string; currentValue: string; lineWorksValue: string }[];
+  }[];
+  groupMembershipDiffs: {
+    groupId: number;
+    groupName: string;
+    lineWorksOrgUnitId: string;
+    addedEmployees: { employeeId: number; employeeNumber: string; name: string; email: string }[];
+    removedEmployees: { employeeId: number; employeeNumber: string; name: string; email: string }[];
+    unmatchedMembers: { lineWorksUserId: string; externalKey: string }[];
+  }[];
+  unmatchedLineWorksUsers: {
+    userId: string;
+    externalKey: string;
+    email: string;
+    name: string;
+  }[];
+  unmatchedEmployees: {
+    employeeId: number;
+    employeeNumber: string;
+    email: string;
+    name: string;
+  }[];
+  unmatchedOrgUnits: { lineWorksOrgUnitId: string; externalKey: string; name: string }[];
+  unmatchedGroups: { groupId: number; name: string }[];
+  message: string;
+};
+
+export async function syncLineWorksDirectory(token: string): Promise<LineWorksSyncResponse> {
+  const res = await fetch(`${API_BASE}/api/v1/lineworks/sync/directory`, {
+    method: "POST",
+    headers: authHeaders(token),
+  });
+  if (!res.ok) throw new Error("Failed to sync LINE WORKS directory");
+  return res.json();
+}
+
+export async function compareLineWorksDirectory(token: string): Promise<LineWorksDirectoryCompareResponse> {
+  const res = await fetch(`${API_BASE}/api/v1/lineworks/sync/directory/compare`, {
+    method: "POST",
+    headers: authHeaders(token),
+  });
+  if (!res.ok) throw new Error("Failed to compare LINE WORKS directory");
+  return res.json();
+}
+
 // ── Group ────────────────────────────────────────────────────
 export type GroupDto = {
   id: number;
@@ -336,9 +431,12 @@ export type GroupDto = {
   leaderName: string;
   memberIds: number[];
   parentGroupId: number | null;
+  displayOrder?: number | null;
   color?: string | null;
   /** 휴가 승인 라인에서 제외할 그룹(예: 本部) 여부. */
   excludeFromApproval?: boolean | null;
+  lineWorksOrgUnitId?: string | null;
+  lineWorksExternalKey?: string | null;
 };
 
 export async function fetchGroups(token: string): Promise<GroupDto[]> {
@@ -454,6 +552,15 @@ export async function deleteGroup(token: string, id: number): Promise<void> {
   if (!res.ok) throw new Error("Failed to delete group");
 }
 
+export async function moveGroup(token: string, id: number, parentGroupId: number | null, beforeGroupId: number | null): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/v1/groups/${id}/move`, {
+    method: "PUT",
+    headers: authHeaders(token),
+    body: JSON.stringify({ parentGroupId, beforeGroupId }),
+  });
+  if (!res.ok) throw new Error("Failed to move group");
+}
+
 // ── Leave ────────────────────────────────────────────────────
 export type LeaveDto = {
   id: number;
@@ -465,6 +572,7 @@ export type LeaveDto = {
   endDate: string;
   days: number;
   reason: string;
+  rejectReason?: string | null;
   status: string;
   appliedAt: string;
 };
@@ -524,15 +632,28 @@ export async function createLeave(
 export async function updateLeaveStatus(
   token: string,
   id: number,
-  status: string
+  status: string,
+  rejectReason?: string
 ): Promise<LeaveDto> {
   const res = await fetch(`${API_BASE}/api/v1/leaves/${id}/status`, {
     method: "PATCH",
     headers: authHeaders(token),
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ status, rejectReason }),
   });
   if (!res.ok) throw new Error("Failed to update leave status");
   return normalizeLeave((await res.json()) as LeaveDto);
+}
+
+export async function calcLeaveDays(
+  token: string,
+  params: { leaveType: string; startDate: string; endDate: string }
+): Promise<{ days: number }> {
+  const q = new URLSearchParams(params);
+  const res = await fetch(`${API_BASE}/api/v1/leaves/calc-days?${q}`, {
+    headers: authRequestHeaders(token),
+  });
+  if (!res.ok) throw new Error("Failed to calculate leave days");
+  return res.json();
 }
 
 export async function cancelLeave(token: string, id: number): Promise<void> {
@@ -610,6 +731,19 @@ export type PartnerCardDto = {
   id: number;
   imageSrc: string;
   linkUrl: string;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ProductCardDto = {
+  id: number;
+  label: string;
+  title: string;
+  description: string;
+  metric: string;
+  accent: "orange" | "yellow" | "green" | "red";
+  icon: string;
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
@@ -752,6 +886,71 @@ export async function reorderPartnerCards(token: string, orderedIds: number[]): 
     body: JSON.stringify({ orderedIds }),
   });
   if (!res.ok) throw new Error("Failed to reorder partner cards");
+  return res.json();
+}
+
+export async function fetchProductCards(): Promise<ProductCardDto[]> {
+  const res = await fetch(`${API_BASE}/api/v1/product-cards`);
+  if (!res.ok) throw new Error("Failed to fetch product cards");
+  return res.json();
+}
+
+export async function createProductCard(
+  token: string,
+  data: {
+    label: string;
+    title: string;
+    description: string;
+    metric: string;
+    accent: ProductCardDto["accent"];
+    icon: string;
+  }
+): Promise<ProductCardDto> {
+  const res = await fetch(`${API_BASE}/api/v1/product-cards`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to create product card");
+  return res.json();
+}
+
+export async function updateProductCard(
+  token: string,
+  id: number,
+  data: {
+    label: string;
+    title: string;
+    description: string;
+    metric: string;
+    accent: ProductCardDto["accent"];
+    icon: string;
+  }
+): Promise<ProductCardDto> {
+  const res = await fetch(`${API_BASE}/api/v1/product-cards/${id}`, {
+    method: "PUT",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to update product card");
+  return res.json();
+}
+
+export async function deleteProductCard(token: string, id: number): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/v1/product-cards/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(token),
+  });
+  if (!res.ok) throw new Error("Failed to delete product card");
+}
+
+export async function reorderProductCards(token: string, orderedIds: number[]): Promise<ProductCardDto[]> {
+  const res = await fetch(`${API_BASE}/api/v1/product-cards/order`, {
+    method: "PATCH",
+    headers: authHeaders(token),
+    body: JSON.stringify({ orderedIds }),
+  });
+  if (!res.ok) throw new Error("Failed to reorder product cards");
   return res.json();
 }
 

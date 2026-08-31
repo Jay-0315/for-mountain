@@ -22,12 +22,14 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import org.springframework.security.core.Authentication;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
@@ -41,16 +43,18 @@ public class LeaveService {
     private static final String STATUS_UPPER_PENDING = "上位承認待ち";
     private static final String STATUS_APPROVED = "承認";
     private static final String STATUS_REJECTED = "拒否";
-    private static final List<String> CANCELLABLE_STATUSES = List.of(STATUS_PENDING, STATUS_REJECTED, "却下", "否認");
+    private static final List<String> CANCELLABLE_STATUSES = List.of(STATUS_PENDING);
     private static final Set<String> BALANCE_DEDUCTING_LEAVE_TYPES = Set.of("有給", "午前給(有給)", "午後給(有給)", "代休");
     private static final Set<String> BALANCE_RESERVED_STATUSES = Set.of(STATUS_PENDING, STATUS_UPPER_PENDING, STATUS_APPROVED);
     private static final int[] GRANT_SCHEDULE = {10, 11, 12, 14, 16, 18, 20};
+    private static final Set<String> HALF_DAY_TYPES = Set.of("午前給(有給)", "午後給(有給)");
 
     private final LeaveRepository leaveRepository;
     private final EmployeeRepository employeeRepository;
     private final GroupRepository groupRepository;
     private final GroupMemberRepository groupMemberRepository;
     private final LeaveMailSender leaveMailSender;
+    private final LeaveHoliday leaveHoliday;
 
     @Value("${app.frontend-base-url:}")
     private String frontendBaseUrl;
@@ -83,13 +87,22 @@ public class LeaveService {
         }
         Employee employee = employeeRepository.findByEmployeeNumber(authentication.getName().trim())
                 .orElseThrow(() -> new CustomException(ErrorCode.ACCOUNT_NOT_FOUND));
-        validateLeaveDaysWithinBalance(employee, request.getLeaveType(), request.getDays());
+        if (!employee.isProfileComplete()) {
+            throw new CustomException(ErrorCode.EMPLOYEE_PROFILE_INCOMPLETE);
+        }
+        LocalDate start = LocalDate.parse(request.getStartDate());
+        LocalDate end = HALF_DAY_TYPES.contains(request.getLeaveType())
+                ? start
+                : LocalDate.parse(request.getEndDate());
+        double days = calcDays(request.getLeaveType(), start, end);
+
+        validateLeaveDaysWithinBalance(employee, request.getLeaveType(), days);
         Leave leave = Leave.create(
                 employee.getId(),
                 request.getLeaveType(),
-                LocalDate.parse(request.getStartDate()),
-                LocalDate.parse(request.getEndDate()),
-                request.getDays(),
+                start,
+                end,
+                days,
                 request.getReason()
         );
         Leave saved = leaveRepository.save(leave);
@@ -115,19 +128,25 @@ public class LeaveService {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
 
-        validateLeaveDaysWithinBalance(currentEmployee, request.getLeaveType(), request.getDays(), leave.getId());
+        LocalDate start = LocalDate.parse(request.getStartDate());
+        LocalDate end = HALF_DAY_TYPES.contains(request.getLeaveType())
+                ? start
+                : LocalDate.parse(request.getEndDate());
+        double days = calcDays(request.getLeaveType(), start, end);
+
+        validateLeaveDaysWithinBalance(currentEmployee, request.getLeaveType(), days, leave.getId());
         leave.updateDetails(
                 request.getLeaveType(),
-                LocalDate.parse(request.getStartDate()),
-                LocalDate.parse(request.getEndDate()),
-                request.getDays(),
+                start,
+                end,
+                days,
                 request.getReason()
         );
         return toResponse(leave);
     }
 
     @Transactional
-    public LeaveResponse updateStatus(Long id, String status, Authentication authentication) {
+    public LeaveResponse updateStatus(Long id, String status, String rejectReason, Authentication authentication) {
         Leave leave = leaveRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.LEAVE_NOT_FOUND));
 
@@ -171,7 +190,7 @@ public class LeaveService {
             if (!canActOnCurrentApprovalStage(leave, caller, firstApprover, upperApprover)) {
                 throw new CustomException(ErrorCode.ACCESS_DENIED);
             }
-            leave.updateStatus(STATUS_REJECTED);
+            leave.updateStatus(STATUS_REJECTED, rejectReason);
             return toResponse(leave);
         }
 
@@ -294,6 +313,7 @@ public class LeaveService {
                 leave.getEndDate().toString(),
                 leave.getDays(),
                 leave.getReason(),
+                leave.getRejectReason(),
                 leave.getStatus(),
                 leave.getAppliedAt().toString()
         );
@@ -510,6 +530,32 @@ public class LeaveService {
             return; // 이미 만료
         }
         pools.add(new LeavePool(grantDate, expiryDate, days));
+    }
+
+    private double calcDays(String leaveType, LocalDate start, LocalDate end) {
+        if (HALF_DAY_TYPES.contains(leaveType)) {
+            return 0.5;
+        }
+        if (end.isBefore(start)) {
+            return 0;
+        }
+
+        Set<LocalDate> holidays = leaveHoliday.getHolidays(start, end);
+        double days = 0;
+        for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
+            DayOfWeek dayOfWeek = date.getDayOfWeek();
+            boolean weekend = dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY;
+            if (!weekend && !holidays.contains(date)) {
+                days++;
+            }
+        }
+        return days;
+    }
+
+    public Map<String, Object> calcDaysPreview(String leaveType, String startDate, String endDate) {
+        LocalDate start = LocalDate.parse(startDate);
+        LocalDate end = HALF_DAY_TYPES.contains(leaveType) ? start : LocalDate.parse(endDate);
+        return Map.of("days", calcDays(leaveType, start, end));
     }
 
     private static final class LeavePool {

@@ -73,8 +73,8 @@ export default function ServiceDetailQueryPage() {
   const description =
     currentItem
       ? stripMarkdown(currentItem.content).slice(0, 120) ||
-        "株式会社マウンテンの事業紹介詳細です。画像・動画・関連資料をご確認いただけます。"
-      : "株式会社マウンテンの事業紹介詳細です。";
+        "株式会社MOUNTAINの事業紹介詳細です。画像・動画・関連資料をご確認いただけます。"
+      : "株式会社MOUNTAINの事業紹介詳細です。";
   const canonicalUrl = currentItem ? `${withTrailingSlash("/services/detail")}?id=${currentItem.id}` : withTrailingSlash("/services/detail");
 
   const handleAttachmentDownload = async (asset: { name: string | null; url: string }) => {
@@ -179,7 +179,7 @@ export default function ServiceDetailQueryPage() {
                     {currentItem.title}
                   </h1>
                   <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
-                    株式会社マウンテンの事業紹介詳細です。画像・動画・関連資料をご確認いただけます。
+                    株式会社MOUNTAINの事業紹介詳細です。画像・動画・関連資料をご確認いただけます。
                   </p>
                 </>
               )}

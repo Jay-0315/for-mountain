@@ -128,7 +128,7 @@ export default function NewsDetailClient() {
                   {post.title}
                 </h1>
                 <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
-                  株式会社マウンテンからのお知らせを掲載しています。本文をご確認ください。
+                  株式会社MOUNTAINからのお知らせを掲載しています。本文をご確認ください。
                 </p>
               </>
             )}

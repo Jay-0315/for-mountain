@@ -12,4 +12,6 @@ public interface GroupRepository extends JpaRepository<Group, Long> {
     List<Group> findAllByOrderByCreatedAtAsc();
     List<Group> findByLeaderId(Long leaderId);
     Optional<Group> findByName(String name);
+    Optional<Group> findByLineWorksOrgUnitId(String lineWorksOrgUnitId);
+    Optional<Group> findByLineWorksExternalKey(String lineWorksExternalKey);
 }

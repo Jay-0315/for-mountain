@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import SubpageVideoHero from "@/components/ui/SubpageVideoHero";
 import { withTrailingSlash } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "事業内容",
   description:
-    "株式会社マウンテンの事業内容。システム開発、ソリューション販売・技術支援、インフラ構築・技術支援、コンサルなど幅広い事業をご紹介します。",
+    "株式会社MOUNTAINの事業内容。システム開発、ソリューション販売・技術支援、インフラ構築・技術支援、コンサルなど幅広い事業をご紹介します。",
   alternates: { canonical: withTrailingSlash("/services") },
 };
 
@@ -22,18 +23,14 @@ export default function ServicesPage() {
   return (
     <>
       <Header />
-      <main className="bg-gray-50 pt-20">
-        <section className="overflow-hidden py-24 md:py-32">
+      <main className="bg-gray-50">
+        <SubpageVideoHero
+          eyebrow="Services"
+          title="事業内容"
+          subtitle="株式会社MOUNTAIN > Services"
+        />
+        <section className="overflow-hidden pb-24 pt-16 md:pb-32 md:pt-20">
           <div className="mx-auto max-w-5xl px-6 sm:px-10 lg:px-6">
-            <div className="mb-14 text-center">
-              <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-orange-600">Services</p>
-              <h1 className="text-4xl font-bold text-slate-900 md:text-5xl">事業内容</h1>
-              <p className="mx-auto mt-4 max-w-xl text-lg font-semibold text-slate-500">
-                <span className="text-orange-500">株式会社マウンテン</span>
-                <span> &gt; Services</span>
-              </p>
-            </div>
-
             <div className="border-y border-slate-200 bg-white/70 px-0 py-10 shadow-[0_18px_50px_rgba(15,23,42,0.04)] sm:px-10">
               <div className="mx-auto max-w-4xl space-y-7 px-6 text-base leading-9 text-slate-700 sm:px-0 md:text-lg md:leading-10">
                 {serviceParagraphs.map((paragraph) => (

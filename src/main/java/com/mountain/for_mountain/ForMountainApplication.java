@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @OpenAPIDefinition(info = @Info(title = "For Mountain API", version = "v1"))
 @SecurityScheme(
@@ -16,6 +17,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
     bearerFormat = "JWT"
 )
 @EnableAsync
+@EnableScheduling
 @SpringBootApplication
 public class ForMountainApplication {
 

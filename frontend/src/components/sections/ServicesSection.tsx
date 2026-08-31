@@ -216,7 +216,7 @@ export default function ServicesSection({
           <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-orange-600">Services</p>
           <h2 className="mb-4 text-4xl font-bold text-slate-900 md:text-5xl">事業内容</h2>
           <p className="mx-auto max-w-xl text-lg font-semibold text-slate-500">
-            <span className="text-orange-500">株式会社マウンテン</span>
+            <span className="text-orange-500">株式会社MOUNTAIN</span>
             <span> &gt; Services</span>
           </p>
         </div>

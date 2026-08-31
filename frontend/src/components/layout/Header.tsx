@@ -5,12 +5,29 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const navItems = [
+type NavItem = {
+  label: string;
+  href: string;
+  children?: { label: string; href: string }[];
+};
+
+const navItems: NavItem[] = [
   { label: "トップ", href: "/" },
   { label: "企業情報", href: "/about/" },
-  { label: "事業内容", href: "/services/" },
+  {
+    label: "事業内容",
+    href: "/services/",
+    children: [{ label: "製品情報", href: "/services/list/#services" }],
+  },
   { label: "お知らせ", href: "/news/" },
-  { label: "採用情報", href: "/recruit/" },
+  {
+    label: "採用情報",
+    href: "/recruit/",
+    children: [
+      { label: "新卒採用", href: "/recruit/new-graduate/" },
+      { label: "中途採用", href: "/recruit/career/" },
+    ],
+  },
   { label: "お問い合わせ", href: "/contact/" },
 ];
 
@@ -22,14 +39,17 @@ export default function Header() {
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
+      const isScrolled = window.scrollY > 20;
+      setScrolled(isScrolled);
 
-      if (pathname !== "/") {
-        setInHero(false);
+      if (pathname === "/") {
+        setInHero(true);
         return;
       }
 
-      const hero = document.getElementById("top");
+      const hero =
+        document.querySelector<HTMLElement>("[data-transparent-header]") ??
+        null;
       if (!hero) {
         setInHero(false);
         return;
@@ -67,7 +87,7 @@ export default function Header() {
           <Link href="/" className="group flex min-w-0 items-center gap-2.5 sm:gap-3">
             <Image
                 src="/mountain-logo.png"
-                alt="株式会社マウンテン symbol"
+                alt="株式会社MOUNTAIN symbol"
                 width={42}
                 height={42}
                 className="object-contain"
@@ -88,19 +108,41 @@ export default function Header() {
           {/* 데스크톱 내비게이션 */}
           <nav className="hidden lg:flex items-center gap-8">
             {navItems.map((item) => (
+              <div key={item.href} className="group relative flex h-20 items-center">
                 <Link
-                    key={item.href}
                     href={item.href}
                     className={`whitespace-nowrap text-[15px] font-medium transition-colors ${
-                        isActive(item.href)
-                          ? "text-orange-600"
-                          : transparentHeader
-                            ? "text-white hover:text-orange-300"
+                        transparentHeader
+                          ? "text-white hover:text-orange-300"
+                          : isActive(item.href)
+                            ? "text-orange-600"
                             : "text-slate-800 hover:text-orange-600"
                     }`}
                 >
                   {item.label}
                 </Link>
+                {item.children && item.children.length > 0 && (
+                  <div className="invisible absolute left-1/2 top-full min-w-44 -translate-x-1/2 translate-y-2 pt-2 opacity-0 transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100">
+                    <div className="relative rounded-lg border border-slate-200/80 bg-white/95 p-1.5 shadow-[0_18px_45px_rgba(15,23,42,0.14)] backdrop-blur-md">
+                      <span className="absolute -top-1 left-1/2 h-2.5 w-2.5 -translate-x-1/2 rotate-45 border-l border-t border-slate-200/80 bg-white/95" />
+                      {item.children.map((child) => (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          className="flex items-center gap-2 rounded-md px-3.5 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-orange-50 hover:text-orange-600"
+                        >
+                          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-orange-50 text-orange-500">
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4.5 6.75h15M4.5 12h15M4.5 17.25h9" />
+                            </svg>
+                          </span>
+                          {child.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             ))}
           </nav>
 
@@ -124,8 +166,8 @@ export default function Header() {
         {menuOpen && (
             <div className="flex flex-col gap-1 border-t border-slate-100 bg-white px-6 py-4 shadow-lg lg:hidden">
               {navItems.map((item) => (
+                <div key={item.href}>
                   <Link
-                      key={item.href}
                       href={item.href}
                       className={`py-2.5 text-[15px] font-medium transition-colors ${
                           isActive(item.href)
@@ -136,6 +178,22 @@ export default function Header() {
                   >
                     {item.label}
                   </Link>
+                  {item.children && item.children.length > 0 && (
+                    <div className="pb-1 pl-4">
+                      {item.children.map((child) => (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          className="flex items-center gap-2 py-2 text-sm font-medium text-slate-500 transition-colors hover:text-orange-600"
+                          onClick={() => setMenuOpen(false)}
+                        >
+                          <span className="h-1.5 w-1.5 rounded-full bg-orange-400" />
+                          {child.label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
         )}

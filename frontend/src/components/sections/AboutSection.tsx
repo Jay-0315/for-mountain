@@ -139,7 +139,11 @@ const accessCards = [
 ];
 
 // ── コンポーネント ─────────────────────────────────────────────
-export default function AboutSection() {
+type AboutSectionProps = {
+  showHeader?: boolean;
+};
+
+export default function AboutSection({ showHeader = true }: AboutSectionProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const tabPanelRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState("philosophy");
@@ -218,22 +222,28 @@ export default function AboutSection() {
   const activeTabData = tabs.find((t) => t.id === activeTab)!;
 
   return (
-    <section ref={sectionRef} id="about" className="pt-44 pb-[32rem] bg-gray-50 overflow-hidden">
+    <section
+      ref={sectionRef}
+      id="about"
+      className={`${showHeader ? "pt-24 md:pt-28" : "pt-16 md:pt-20"} pb-[32rem] bg-gray-50 overflow-hidden`}
+    >
       <div className="max-w-6xl mx-auto px-6 sm:px-10 lg:px-6">
 
         {/* 섹션 헤더 */}
-        <div className="about-header text-center mb-24">
-          <p className="text-orange-600 text-sm font-semibold uppercase tracking-widest mb-3">
-            About Us
-          </p>
-          <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
-            企業情報
-          </h2>
-          <p className="mx-auto max-w-xl text-lg font-semibold text-slate-500">
-            <span className="text-orange-500">株式会社マウンテン</span>
-            <span> &gt; About Us</span>
-          </p>
-        </div>
+        {showHeader && (
+          <div className="about-header text-center mb-24">
+            <p className="text-orange-600 text-sm font-semibold uppercase tracking-widest mb-3">
+              About Us
+            </p>
+            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
+              企業情報
+            </h2>
+            <p className="mx-auto max-w-xl text-lg font-semibold text-slate-500">
+              <span className="text-orange-500">株式会社MOUNTAIN</span>
+              <span> &gt; About Us</span>
+            </p>
+          </div>
+        )}
 
         {/* 기업이념 / 기업목표 탭 */}
         <div className="about-tab-panel mb-24">
@@ -399,7 +409,7 @@ export default function AboutSection() {
           </div>
           <div className="h-[380px] bg-slate-100 md:h-[480px]">
             <iframe
-              title="株式会社マウンテンの所在地マップ"
+              title="株式会社MOUNTAINの所在地マップ"
               src={COMPANY_GOOGLE_MAPS_EMBED_URL}
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"

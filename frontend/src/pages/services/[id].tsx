@@ -67,7 +67,7 @@ export default function ServiceDetailPage({ item, categories }: Props) {
   const attachmentAssetsToShow = blockAttachmentAssets.length > 0 ? blockAttachmentAssets : legacyAttachmentAssets;
   const description =
     stripMarkdown(currentItem.content).slice(0, 120) ||
-    "株式会社マウンテンの事業紹介詳細です。画像・動画・関連資料をご確認いただけます。";
+    "株式会社MOUNTAINの事業紹介詳細です。画像・動画・関連資料をご確認いただけます。";
 
   const handleAttachmentDownload = async (asset: { name: string | null; url: string }) => {
     try {
@@ -161,7 +161,7 @@ export default function ServiceDetailPage({ item, categories }: Props) {
                 {currentItem.title}
               </h1>
               <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
-                株式会社マウンテンの事業紹介詳細です。画像・動画・関連資料をご確認いただけます。
+                株式会社MOUNTAINの事業紹介詳細です。画像・動画・関連資料をご確認いただけます。
               </p>
             </div>
           </div>

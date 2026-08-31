@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { createEmployee, deleteEmployee, fetchEmployees, fetchGroups, resolveLeaderMemberIds, type EmployeeDto, type GroupDto, updateEmployee } from "@/lib/api";
 import { getSessionPayload, getSessionRole } from "@/lib/session";
 
@@ -235,12 +236,14 @@ function EmployeeModal({
 
 // ── 메인 페이지 ───────────────────────────────────────────────
 export default function EmployeesPage() {
+  const router = useRouter();
   const [employees, setEmployees]   = useState<EmployeeDto[]>([]);
   const [groups, setGroups]         = useState<GroupDto[]>([]);
   const [token, setToken]           = useState("");
   const [isAdmin, setIsAdmin]       = useState(false);
   const [leaderMemberIds, setLeaderMemberIds] = useState<number[] | null>(null);
   const [loading, setLoading]       = useState(true);
+  const [loadError, setLoadError]   = useState("");
   const [statusFilter, setStatusFilter] = useState<FilterStatus>("すべて");
   const [deptFilter, setDeptFilter] = useState<FilterDept>("すべて");
   const [search, setSearch]         = useState("");
@@ -254,6 +257,7 @@ export default function EmployeesPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError("");
     try {
       const t = sessionStorage.getItem("admin_token") ?? "";
       const { sub } = getSessionPayload(t);
@@ -265,6 +269,7 @@ export default function EmployeesPage() {
       setEmployees(memberIds !== null ? allEmployees.filter((e) => memberIds.includes(e.id)) : allEmployees);
     } catch {
       setEmployees([]);
+      setLoadError("セッションの有効期限が切れたか、データの読み込みに失敗しました。再ログインしてください。");
     } finally {
       setLoading(false);
     }
@@ -301,6 +306,14 @@ export default function EmployeesPage() {
 
   return (
     <>
+      {loadError && (
+        <div className="mb-4 flex items-center justify-between gap-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <span>{loadError}</span>
+          <button className="shrink-0 font-semibold underline" onClick={() => { sessionStorage.removeItem("admin_token"); router.replace("/admin?redirect=/admin/employees"); }}>
+            再ログイン
+          </button>
+        </div>
+      )}
       {isModalOpen && (
         <EmployeeModal
           token={token}

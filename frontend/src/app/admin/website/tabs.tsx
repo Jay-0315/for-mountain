@@ -16,10 +16,15 @@ import {
   deleteBoardPost,
   type BoardPost,
   createPartnerCard,
+  createProductCard,
   updatePartnerCard,
+  updateProductCard,
   deletePartnerCard,
+  deleteProductCard,
   reorderPartnerCards,
+  reorderProductCards,
   type PartnerCardDto,
+  type ProductCardDto,
   createServiceCategory,
   createServiceItem,
   updateServiceCategory,
@@ -32,6 +37,7 @@ import {
   type ServiceContentBlock,
   type ServiceItemDto,
   fetchPartnerCards,
+  fetchProductCards,
   fetchServiceCategories,
   fetchServiceItems,
 } from "@/lib/api";
@@ -41,6 +47,7 @@ import { isMockAdminSession } from "../mock-store";
 const WEBSITE_CATEGORIES = ["お知らせ", "会社", "採用", "製品"];
 type WebsiteView = "list" | "form" | "detail";
 type LocalView = "list" | "form" | "detail";
+const PRODUCT_ACCENTS: ProductCardDto["accent"][] = ["orange", "yellow", "green", "red"];
 
 function formatDate(iso: string) {
   return iso.substring(0, 10).replaceAll("-", ".");
@@ -379,7 +386,7 @@ function WebsitePostForm({
               type="text"
               value={author}
               onChange={(e) => setAuthor(e.target.value)}
-              placeholder="株式会社マウンテン"
+              placeholder="株式会社MOUNTAIN"
               className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder:text-slate-300 text-sm"
             />
           </div>
@@ -581,7 +588,7 @@ export function WebsiteTab() {
         badge={selectedPost.category}
         title={selectedPost.title}
         content={selectedPost.content}
-        author={selectedPost.author || "株式会社マウンテン"}
+        author={selectedPost.author || "株式会社MOUNTAIN"}
         createdAt={selectedPost.createdAt}
         imageName={selectedPost.imageName}
         imageUrl={selectedPost.imageData}
@@ -739,6 +746,349 @@ export function WebsiteTab() {
               </div>
             )}
           </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function ProductCardsTab() {
+  const [token] = useState(() => (typeof window === "undefined" ? "" : sessionStorage.getItem("admin_token") ?? ""));
+  const isAdmin = hasAdminAccess(token);
+  const [view, setView] = useState<LocalView>("list");
+  const [items, setItems] = useState<ProductCardDto[]>([]);
+  const [selectedItem, setSelectedItem] = useState<ProductCardDto | null>(null);
+  const [editItem, setEditItem] = useState<ProductCardDto | null>(null);
+  const [label, setLabel] = useState("");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [metric, setMetric] = useState("");
+  const [accent, setAccent] = useState<ProductCardDto["accent"]>("orange");
+  const [icon, setIcon] = useState("M9.75 3.75h4.5m-7.5 3h10.5a2 2 0 012 2v8.5a2 2 0 01-2 2H6.75a2 2 0 01-2-2v-8.5a2 2 0 012-2zm3 5h.01m4.49 0h.01M9 15.25c1.9 1.3 4.1 1.3 6 0");
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [draggingId, setDraggingId] = useState<number | null>(null);
+  const [reordering, setReordering] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      setItems(await fetchProductCards());
+    } catch {
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const resetForm = () => {
+    setLabel("");
+    setTitle("");
+    setDescription("");
+    setMetric("");
+    setAccent("orange");
+    setIcon("M9.75 3.75h4.5m-7.5 3h10.5a2 2 0 012 2v8.5a2 2 0 01-2 2H6.75a2 2 0 01-2-2v-8.5a2 2 0 012-2zm3 5h.01m4.49 0h.01M9 15.25c1.9 1.3 4.1 1.3 6 0");
+  };
+
+  const openNew = () => {
+    setEditItem(null);
+    resetForm();
+    setError("");
+    setView("form");
+  };
+
+  const openEdit = (item: ProductCardDto) => {
+    setEditItem(item);
+    setLabel(item.label);
+    setTitle(item.title);
+    setDescription(item.description);
+    setMetric(item.metric);
+    setAccent(item.accent);
+    setIcon(item.icon);
+    setError("");
+    setView("form");
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload = {
+      label: label.trim(),
+      title: title.trim(),
+      description: description.trim(),
+      metric: metric.trim(),
+      accent,
+      icon: icon.trim(),
+    };
+
+    if (!payload.label || !payload.title || !payload.description || !payload.metric || !payload.icon) {
+      setError("すべての項目を入力してください。");
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+    try {
+      if (editItem) {
+        const updated = await updateProductCard(token, editItem.id, payload);
+        setItems((prev) => prev.map((item) => (item.id === editItem.id ? updated : item)));
+        setSelectedItem(updated);
+      } else {
+        const created = await createProductCard(token, payload);
+        setItems((prev) => [...prev, created]);
+        setSelectedItem(created);
+      }
+      setView("detail");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "保存に失敗しました。");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm("このプロダクトカードを削除しますか？")) return;
+    try {
+      await deleteProductCard(token, id);
+      setItems((prev) => prev.filter((item) => item.id !== id));
+    } catch {
+      alert("削除に失敗しました。");
+    }
+  };
+
+  const handleReorder = async (fromId: number, toId: number) => {
+    if (fromId === toId || reordering) return;
+    const fromIndex = items.findIndex((item) => item.id === fromId);
+    const toIndex = items.findIndex((item) => item.id === toId);
+    if (fromIndex < 0 || toIndex < 0) return;
+
+    const previous = items;
+    const next = [...items];
+    const [moved] = next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, moved);
+    setItems(next);
+    setReordering(true);
+    try {
+      setItems(await reorderProductCards(token, next.map((item) => item.id)));
+    } catch {
+      setItems(previous);
+      alert("並び替えに失敗しました。");
+    } finally {
+      setReordering(false);
+      setDraggingId(null);
+    }
+  };
+
+  if (view === "form") {
+    return (
+      <div className="max-w-3xl space-y-6">
+        <div className="flex items-center gap-3">
+          <button onClick={() => setView("list")} className="p-1.5 text-slate-400 hover:text-slate-900">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <h3 className="text-base font-semibold text-slate-900">{editItem ? "プロダクトカードを編集" : "プロダクトカードを追加"}</h3>
+        </div>
+
+        <form onSubmit={handleSave} className="space-y-5 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">ラベル</label>
+              <input value={label} onChange={(e) => setLabel(e.target.value)} required className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400" placeholder="AI Assistant" />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">メトリック</label>
+              <input value={metric} onChange={(e) => setMetric(e.target.value)} required className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400" placeholder="ChatOps" />
+            </div>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">タイトル</label>
+            <input value={title} onChange={(e) => setTitle(e.target.value)} required className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400" placeholder="AI 業務アシスタント" />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">説明</label>
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} required rows={4} className="w-full resize-none rounded-xl border border-slate-200 px-4 py-3 text-sm leading-relaxed text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400" placeholder="社内ナレッジと定型業務を支援する業務AI。" />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">カラー</label>
+            <div className="flex flex-wrap gap-2">
+              {PRODUCT_ACCENTS.map((option) => (
+                <button key={option} type="button" onClick={() => setAccent(option)} className={`rounded-xl border px-4 py-2 text-sm font-semibold capitalize ${accent === option ? "border-orange-300 bg-orange-50 text-orange-600" : "border-slate-200 text-slate-500 hover:bg-slate-50"}`}>
+                  {option}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">SVG path</label>
+            <textarea value={icon} onChange={(e) => setIcon(e.target.value)} required rows={4} className="w-full resize-none rounded-xl border border-slate-200 px-4 py-3 font-mono text-xs leading-relaxed text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+            <p className="mt-1.5 text-xs text-slate-400">公開カード左上のアイコンに使う SVG path の d 属性です。</p>
+          </div>
+          {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-500">{error}</p>}
+          <div className="flex justify-end gap-3">
+            <button type="button" onClick={() => setView("list")} className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">
+              キャンセル
+            </button>
+            <button type="submit" disabled={saving} className="admin-btn-primary px-5 py-2.5">
+              {saving ? "保存中..." : editItem ? "更新する" : "追加する"}
+            </button>
+          </div>
+        </form>
+      </div>
+    );
+  }
+
+  if (view === "detail" && selectedItem) {
+    return (
+      <div className="max-w-4xl space-y-6">
+        <div className="flex items-center gap-3">
+          <button onClick={() => setView("list")} className="p-1.5 text-slate-400 hover:text-slate-900">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <h3 className="text-base font-semibold text-slate-900">プロダクトカード詳細</h3>
+        </div>
+        <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+          <div className="border-b border-slate-100 bg-slate-50 px-6 py-5">
+            <span className="rounded-full bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-600">{selectedItem.label}</span>
+            <h4 className="mt-3 text-xl font-bold text-slate-900">{selectedItem.title}</h4>
+            <p className="mt-1 text-xs font-mono text-slate-400">{formatDate(selectedItem.createdAt)}</p>
+          </div>
+          <div className="space-y-4 px-6 py-6">
+            <p className="text-sm leading-7 text-slate-700">{selectedItem.description}</p>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                <p className="text-xs font-medium text-slate-400">メトリック</p>
+                <p className="mt-1 text-sm font-semibold text-slate-900">{selectedItem.metric}</p>
+              </div>
+              <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                <p className="text-xs font-medium text-slate-400">カラー</p>
+                <p className="mt-1 text-sm font-semibold capitalize text-slate-900">{selectedItem.accent}</p>
+              </div>
+            </div>
+            <pre className="max-h-40 overflow-auto rounded-xl bg-slate-950 p-4 text-xs leading-relaxed text-slate-100">{selectedItem.icon}</pre>
+          </div>
+          {isAdmin && (
+            <div className="flex justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4">
+              <button onClick={openNew} className="rounded-xl border border-orange-200 px-4 py-2 text-sm font-semibold text-orange-600 hover:bg-orange-50">新規追加</button>
+              <button onClick={() => openEdit(selectedItem)} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">編集</button>
+              <button
+                onClick={() => {
+                  handleDelete(selectedItem.id);
+                  setSelectedItem(null);
+                  setView("list");
+                }}
+                className="rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-500 hover:bg-red-50"
+              >
+                削除
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+        {loading ? (
+          <div className="p-8 text-center">
+            <div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-orange-400 border-t-transparent" />
+          </div>
+        ) : items.length === 0 ? (
+          <div className="p-12 text-center text-slate-400">
+            <p className="text-sm">プロダクトカードがありません。</p>
+            {isAdmin && <button onClick={openNew} className="mt-3 text-sm font-semibold text-orange-500 hover:underline">最初のカードを追加する →</button>}
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-100 bg-slate-50">
+                <th className="w-10 px-3 py-3 text-left text-xs font-semibold text-slate-500"></th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500">ラベル</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500">タイトル</th>
+                <th className="hidden px-5 py-3 text-left text-xs font-semibold text-slate-500 md:table-cell">カラー</th>
+                <th className="px-5 py-3 text-right">
+                  {isAdmin && <button onClick={openNew} className="admin-btn-primary inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs">新規作成</button>}
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {items.map((item) => (
+                <tr
+                  key={item.id}
+                  draggable={isAdmin}
+                  onDragStart={() => setDraggingId(item.id)}
+                  onDragOver={(e) => {
+                    if (!isAdmin) return;
+                    e.preventDefault();
+                  }}
+                  onDrop={() => {
+                    if (draggingId !== null) void handleReorder(draggingId, item.id);
+                  }}
+                  onDragEnd={() => setDraggingId(null)}
+                  className={`cursor-pointer hover:bg-slate-50 ${draggingId === item.id ? "opacity-50" : ""} ${reordering ? "pointer-events-none" : ""}`}
+                  onClick={() => {
+                    setSelectedItem(item);
+                    setView("detail");
+                  }}
+                >
+                  <td className="px-3 py-3.5">
+                    <div className="flex items-center justify-center text-slate-300">
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01" />
+                      </svg>
+                    </div>
+                  </td>
+                  <td className="px-5 py-3.5">
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">{item.label}</span>
+                  </td>
+                  <td className="px-5 py-3.5">
+                    <p className="max-w-xs truncate font-medium text-slate-900">{item.title}</p>
+                    <p className="mt-1 max-w-md truncate text-xs text-slate-400">{item.description}</p>
+                  </td>
+                  <td className="hidden px-5 py-3.5 md:table-cell">
+                    <span className="text-xs font-semibold capitalize text-slate-500">{item.accent}</span>
+                  </td>
+                  <td className="px-5 py-3.5">
+                    {isAdmin ? (
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEdit(item);
+                          }}
+                          className="px-2 py-1 text-xs font-semibold text-slate-500 hover:text-orange-500"
+                        >
+                          編集
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(item.id);
+                          }}
+                          className="px-2 py-1 text-xs font-semibold text-red-400 hover:text-red-600"
+                        >
+                          削除
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex justify-end">
+                        <span className="px-2 py-1 text-xs text-slate-300">-</span>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
     </div>

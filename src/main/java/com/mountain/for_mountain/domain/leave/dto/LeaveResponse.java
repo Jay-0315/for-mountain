@@ -15,6 +15,7 @@ public class LeaveResponse {
     private String endDate;
     private Double days;
     private String reason;
+    private String rejectReason;
     private String status;
     private String appliedAt;
 }

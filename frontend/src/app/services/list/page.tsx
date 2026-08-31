@@ -8,7 +8,7 @@ import { BASE_URL, withTrailingSlash } from "@/lib/site";
 export const metadata: Metadata = {
   title: "事業分野",
   description:
-    "株式会社マウンテンの事業分野一覧。各カテゴリのサービス内容をご紹介します。",
+    "株式会社MOUNTAINの事業分野一覧。各カテゴリのサービス内容をご紹介します。",
   alternates: { canonical: withTrailingSlash("/services/list") },
 };
 
