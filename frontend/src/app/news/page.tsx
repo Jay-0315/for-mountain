@@ -21,6 +21,8 @@ export default function NewsPage() {
           eyebrow="News"
           title="お知らせ"
           subtitle="株式会社MOUNTAIN > お知らせ"
+          imageSrc="/images/notice-hero.png"
+          imageAlt="会議室のテーブル"
         />
         <NewsSection showHeader={false} />
       </main>
