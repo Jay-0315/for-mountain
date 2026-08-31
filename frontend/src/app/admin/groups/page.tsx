@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   createGroup,
   deleteGroup,
   fetchEmployees,
   fetchGroups,
+  moveGroup,
   type EmployeeDto,
   type GroupDto,
   updateGroup,
@@ -465,6 +467,7 @@ function GroupCard({
   canManage,
   onEdit,
   onDelete,
+  onMove,
   compact = false,
 }: {
   group: GroupDto;
@@ -473,6 +476,7 @@ function GroupCard({
   canManage: boolean;
   onEdit: (group: GroupDto) => void;
   onDelete: (groupId: number) => void;
+  onMove?: (groupId: number, parentGroupId: number | null, beforeGroupId: number | null) => void;
   compact?: boolean;
 }) {
   const members = employees.filter((employee) => group.memberIds.includes(employee.id));
@@ -483,6 +487,14 @@ function GroupCard({
 
   return (
     <div
+      draggable={canManage}
+      onDragStart={(event) => event.dataTransfer.setData("text/group-id", String(group.id))}
+      onDragOver={(event) => { if (canManage) event.preventDefault(); }}
+      onDrop={(event) => {
+        event.preventDefault();
+        const sourceId = Number(event.dataTransfer.getData("text/group-id"));
+        if (sourceId && sourceId !== group.id) onMove?.(sourceId, group.parentGroupId, group.id);
+      }}
       className={`rounded-2xl border border-slate-100 border-l-4 ${accent.border} bg-white shadow-sm transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-md ${
         compact ? "p-4" : "p-5"
       }`}
@@ -563,6 +575,7 @@ function TreeNode({
   onToggle,
   onEdit,
   onDelete,
+  onMove,
   depth = 0,
 }: {
   group: GroupDto;
@@ -573,9 +586,12 @@ function TreeNode({
   onToggle: (id: number) => void;
   onEdit: (group: GroupDto) => void;
   onDelete: (groupId: number) => void;
+  onMove?: (groupId: number, parentGroupId: number | null, beforeGroupId: number | null) => void;
   depth?: number;
 }) {
-  const children = allGroups.filter((item) => item.parentGroupId === group.id);
+  const children = allGroups
+    .filter((item) => item.parentGroupId === group.id)
+    .sort((a, b) => (a.displayOrder ?? Number.MAX_SAFE_INTEGER) - (b.displayOrder ?? Number.MAX_SAFE_INTEGER));
   const hasChildren = children.length > 0;
   const isOpen = expanded[group.id] ?? true;
 
@@ -610,6 +626,7 @@ function TreeNode({
               canManage={canManage}
               onEdit={onEdit}
               onDelete={onDelete}
+              onMove={onMove}
               compact={depth > 0}
             />
           </div>
@@ -628,6 +645,7 @@ function TreeNode({
                 onToggle={onToggle}
                 onEdit={onEdit}
                 onDelete={onDelete}
+                onMove={onMove}
                 depth={depth + 1}
               />
             ))}
@@ -639,25 +657,31 @@ function TreeNode({
 }
 
 export default function GroupsPage() {
+  const router = useRouter();
   const [groups, setGroups] = useState<GroupDto[]>([]);
   const [employees, setEmployees] = useState<EmployeeDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalGroup, setModalGroup] = useState<GroupDto | null | undefined>(undefined);
   const [token, setToken] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
-    const t = sessionStorage.getItem("admin_token") ?? "";
-    setToken(t);
-    setIsAdmin(getSessionRole(t) === "ADMIN");
+    const timer = window.setTimeout(() => {
+      const t = sessionStorage.getItem("admin_token") ?? "";
+      setToken(t);
+      setIsAdmin(getSessionRole(t) === "ADMIN");
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
 
   const load = () => {
     setLoading(true);
+    setLoadError("");
     const t = sessionStorage.getItem("admin_token") ?? "";
     const { sub } = getSessionPayload(t);
-    Promise.all([fetchGroups(), fetchEmployees()])
+    Promise.all([fetchGroups(t), fetchEmployees(t)])
       .then(([allGroups, employees]) => {
         setEmployees(employees);
         const me = employees.find((e) => e.employeeNumber === sub);
@@ -681,6 +705,11 @@ export default function GroupsPage() {
         }
         setGroups(allGroups.filter((g) => visibleIds.has(g.id)));
       })
+      .catch(() => {
+        setGroups([]);
+        setEmployees([]);
+        setLoadError("セッションの有効期限が切れたか、データの読み込みに失敗しました。再ログインしてください。");
+      })
       .finally(() => setLoading(false));
   };
 
@@ -693,9 +722,9 @@ export default function GroupsPage() {
     return !groups.some((group) => group.memberIds.includes(employee.id));
   });
 
-  const rootGroups = groups.filter(
-    (g) => !g.parentGroupId || !groups.find((p) => p.id === g.parentGroupId)
-  );
+  const rootGroups = groups
+    .filter((g) => !g.parentGroupId || !groups.find((p) => p.id === g.parentGroupId))
+    .sort((a, b) => (a.displayOrder ?? Number.MAX_SAFE_INTEGER) - (b.displayOrder ?? Number.MAX_SAFE_INTEGER));
 
   const collectSubtree = (rootId: number): GroupDto[] => {
     const result: GroupDto[] = [];
@@ -722,10 +751,33 @@ export default function GroupsPage() {
     deleteGroup(token, groupId).then(load).catch(() => {});
   };
 
+  const handleMove = async (groupId: number, parentGroupId: number | null, beforeGroupId: number | null) => {
+    const source = groups.find((group) => group.id === groupId);
+    if (!source || (source.parentGroupId === parentGroupId && beforeGroupId === source.id)) return;
+    if (parentGroupId !== null && collectSubtree(groupId).some((group) => group.id === parentGroupId)) {
+      alert("自分の下位グループには移動できません。");
+      return;
+    }
+    try {
+      await moveGroup(token, source.id, parentGroupId, beforeGroupId);
+      await load();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "グループの移動に失敗しました。");
+    }
+  };
+
   const isModalOpen = modalGroup !== undefined;
 
   return (
     <>
+      {loadError && (
+        <div className="mb-4 flex items-center justify-between gap-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <span>{loadError}</span>
+          <button className="shrink-0 font-semibold underline" onClick={() => { sessionStorage.removeItem("admin_token"); router.replace("/admin?redirect=/admin/groups"); }}>
+            再ログイン
+          </button>
+        </div>
+      )}
       {isAdmin && isModalOpen && (
         <GroupModal
           groups={groups}
@@ -807,6 +859,19 @@ export default function GroupsPage() {
           </div>
         ) : (
           <div className="space-y-6">
+            {isAdmin && (
+              <div
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  const sourceId = Number(event.dataTransfer.getData("text/group-id"));
+                  if (sourceId) void handleMove(sourceId, null, null);
+                }}
+                className="rounded-xl border border-dashed border-slate-200 px-4 py-3 text-center text-xs font-medium text-slate-400"
+              >
+                独立部門として配置
+              </div>
+            )}
             {rootGroups.map((rootGroup) => (
               <section key={rootGroup.id} className="space-y-4">
                 <TreeNode
@@ -818,6 +883,7 @@ export default function GroupsPage() {
                   onToggle={toggleGroup}
                   onEdit={(nextGroup) => setModalGroup(nextGroup)}
                   onDelete={handleDelete}
+                  onMove={handleMove}
                 />
               </section>
             ))}

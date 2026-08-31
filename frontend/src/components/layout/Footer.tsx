@@ -18,7 +18,7 @@ export default function Footer() {
         <div className="flex flex-col md:flex-row justify-between gap-8">
           <div>
             <p className="text-white text-lg font-bold mb-2">
-              <span className="text-orange-400">株式会社</span>マウンテン
+              <span className="text-orange-400">株式会社</span>MOUNTAIN
             </p>
             <p className="text-sm text-slate-400 max-w-sm leading-relaxed">
               システム開発、ソリューション販売・技術支援、<br />

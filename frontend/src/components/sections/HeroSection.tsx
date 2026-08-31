@@ -170,15 +170,6 @@ export default function HeroSection() {
       </div>
 
       <div
-        className="absolute inset-0 pointer-events-none opacity-[0.025]"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)",
-          backgroundSize: "44px 44px",
-        }}
-      />
-
-      <div
         ref={haloRef}
         className="pointer-events-none absolute left-1/2 top-1/2 h-[32rem] w-[32rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-orange-300/6 bg-[radial-gradient(circle,rgba(251,146,60,0.08)_0%,rgba(251,146,60,0.025)_36%,rgba(6,11,24,0)_74%)] blur-xl"
       />
@@ -205,7 +196,7 @@ export default function HeroSection() {
 
         <p className="hero-sub mx-auto mb-10 max-w-3xl text-lg leading-relaxed text-slate-200/88 md:text-xl">
           <span className="block whitespace-nowrap">
-            <span className="text-orange-300">株式会社マウンテンは</span>
+            <span className="text-orange-300">株式会社MOUNTAINは</span>
             <span className="ml-1 bg-gradient-to-r from-orange-300 to-amber-200 bg-clip-text text-transparent">
               ITソリューションとシステム開発に
             </span>

@@ -147,7 +147,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const { sub } = getSessionPayload(token);
     if (!sub) return;
 
-    Promise.all([fetchEmployees(), fetchGroups(), fetchLeaves(undefined, token ?? "")])
+    Promise.all([fetchEmployees(token), fetchGroups(token), fetchLeaves(undefined, token ?? "")])
       .then(([employees, groups, leaves]) => {
         const emp = employees.find((e) => e.employeeNumber === sub) ?? null;
         setCurrentEmployee(emp);
@@ -232,7 +232,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Link href="/admin/dashboard" className="flex items-center gap-2.5 group">
             <Image
                 src="/mountain-logo.png"
-                alt="株式会社マウンテン symbol"
+                alt="株式会社MOUNTAIN symbol"
                 width={34}
                 height={34}
                 className="object-contain shrink-0 w-[34px] h-[34px]"

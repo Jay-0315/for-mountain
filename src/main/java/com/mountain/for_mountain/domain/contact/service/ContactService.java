@@ -37,7 +37,7 @@ public class ContactService {
     private String buildMailBody(ContactRequest req) {
         return String.join("\n",
             "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
-            "株式会社マウンテン お問い合わせフォーム",
+            "株式会社MOUNTAIN お問い合わせフォーム",
             "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
             "氏名       : " + req.getName(),
             "フリガナ   : " + req.getNameKana(),

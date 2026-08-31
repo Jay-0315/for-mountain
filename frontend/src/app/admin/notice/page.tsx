@@ -46,7 +46,7 @@ import {
   fetchServiceCategories,
   fetchServiceItems,
 } from "@/lib/api";
-import { DEPARTMENTS } from "../mock-data";
+import { ALL_DEPARTMENTS, DEPARTMENTS } from "../mock-data";
 import { getSessionPayload, getSessionRole } from "@/lib/session";
 import { isMockAdminSession } from "../mock-store";
 
@@ -377,7 +377,7 @@ function WebsitePostForm({
               type="text"
               value={author}
               onChange={(e) => setAuthor(e.target.value)}
-              placeholder="株式会社マウンテン"
+              placeholder="株式会社MOUNTAIN"
               className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder:text-slate-300 text-sm"
             />
           </div>
@@ -550,7 +550,7 @@ function WebsiteTab() {
         badge={selectedPost.category}
         title={selectedPost.title}
         content={selectedPost.content}
-        author={selectedPost.author || "株式会社マウンテン"}
+        author={selectedPost.author || "株式会社MOUNTAIN"}
         createdAt={selectedPost.createdAt}
         imageName={selectedPost.imageName}
         imageUrl={selectedPost.imageData}
@@ -732,13 +732,13 @@ function InternalTab() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setAnnouncements(await fetchAnnouncements());
+      setAnnouncements(await fetchAnnouncements(token));
     } catch {
       setAnnouncements([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [token]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -968,8 +968,8 @@ function DepartmentTab({ initialNoticeId }: { initialNoticeId: number | null }) 
     setLoading(true);
     try {
       const [notices, employees] = await Promise.all([
-        fetchDeptNotices(),
-        fetchEmployees().catch(() => [] as EmployeeDto[]),
+        fetchDeptNotices(token),
+        fetchEmployees(token).catch(() => [] as EmployeeDto[]),
       ]);
       const subject = getSessionPayload(token).sub;
       const employee = employees.find((item) => item.employeeNumber === subject) ?? null;
@@ -1046,9 +1046,13 @@ function DepartmentTab({ initialNoticeId }: { initialNoticeId: number | null }) 
     }
   };
 
+  // 일반 사원은 본인 부서 공지 + 전사 공지를 본다.
   const filtered = isAdmin
     ? items
-    : items.filter((item) => item.department === currentEmployee?.department);
+    : items.filter(
+        (item) =>
+          item.department === ALL_DEPARTMENTS || item.department === currentEmployee?.department
+      );
   const sorted = [...filtered].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
   if (view === "form") {

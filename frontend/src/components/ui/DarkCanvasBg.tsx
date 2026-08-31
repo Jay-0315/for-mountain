@@ -124,14 +124,6 @@ export default function DarkCanvasBg() {
       <div className="absolute top-[18%] left-[18%] h-[420px] w-[420px] rounded-full bg-orange-500/14 blur-3xl" />
       <div className="absolute bottom-[18%] right-[16%] h-[340px] w-[340px] rounded-full bg-amber-400/10 blur-3xl" />
 
-      {/* grid overlay */}
-      <div
-        className="absolute inset-0 opacity-[0.025]"
-        style={{
-          backgroundImage: "linear-gradient(rgba(255,255,255,1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,1) 1px,transparent 1px)",
-          backgroundSize: "44px 44px",
-        }}
-      />
     </div>
   );
 }

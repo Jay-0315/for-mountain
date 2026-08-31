@@ -3,9 +3,10 @@ spring:
     activate:
       on-profile: dev
   datasource:
-    url: jdbc:mysql://localhost:3306/mountain_db?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&serverTimezone=Asia/Seoul
-    username: root
-    password: h3069315
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/mountain_db?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&serverTimezone=Asia/Seoul}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    # 자격증명은 저장소에 커밋하지 않는다. .env 또는 환경변수로 주입할 것.
+    password: ${SPRING_DATASOURCE_PASSWORD:}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       minimum-idle: ${SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE:0}
@@ -53,3 +54,12 @@ app:
   frontend-base-url: ${APP_FRONTEND_BASE_URL:http://localhost:3000}
   mail:
     to: ${MAIL_TO:info@for-mountain.co.jp}
+
+line-works:
+  enabled: ${LINE_WORKS_ENABLED:false}
+  client-id: ${LINE_WORKS_CLIENT_ID:}
+  client-secret: ${LINE_WORKS_CLIENT_SECRET:}
+  service-account: ${LINE_WORKS_SERVICE_ACCOUNT:}
+  private-key: ${LINE_WORKS_PRIVATE_KEY:}
+  oauth-redirect-uri: ${LINE_WORKS_OAUTH_REDIRECT_URI:http://localhost:3000/oauth/lineworks/callback}
+  sync-cron: ${LINE_WORKS_SYNC_CRON:0 15 2 * * *}

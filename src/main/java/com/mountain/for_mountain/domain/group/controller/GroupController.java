@@ -2,6 +2,7 @@ package com.mountain.for_mountain.domain.group.controller;
 
 import com.mountain.for_mountain.domain.group.dto.GroupRequest;
 import com.mountain.for_mountain.domain.group.dto.GroupResponse;
+import com.mountain.for_mountain.domain.group.dto.GroupMoveRequest;
 import com.mountain.for_mountain.domain.group.service.GroupService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -44,6 +45,13 @@ public class GroupController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         groupService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Move group", security = @SecurityRequirement(name = "bearerAuth"))
+    @PutMapping("/{id}/move")
+    public ResponseEntity<Void> move(@PathVariable Long id, @RequestBody GroupMoveRequest request) {
+        groupService.move(id, request);
         return ResponseEntity.noContent().build();
     }
 }

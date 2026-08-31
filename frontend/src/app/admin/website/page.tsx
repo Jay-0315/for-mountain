@@ -2,9 +2,9 @@
 
 import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
-import { PartnersTab, ServiceItemsTab, WebsiteTab } from "./tabs";
+import { PartnersTab, ProductCardsTab, ServiceItemsTab, WebsiteTab } from "./tabs";
 
-type WebsiteManageTab = "website" | "partners" | "services";
+type WebsiteManageTab = "website" | "products" | "partners" | "services";
 
 function WebsiteManageTabBar({
   active,
@@ -15,6 +15,7 @@ function WebsiteManageTabBar({
 }) {
   const tabs: { key: WebsiteManageTab; label: string }[] = [
     { key: "website", label: "ウェブサイトお知らせ" },
+    { key: "products", label: "プロダクトカード" },
     { key: "partners", label: "協力会社カード" },
     { key: "services", label: "事業分野管理" },
   ];
@@ -40,7 +41,7 @@ function WebsiteManagementPageContent() {
   const searchParams = useSearchParams();
   const initialTab = searchParams?.get("tab");
   const [activeTab, setActiveTab] = useState<WebsiteManageTab>(
-    initialTab === "partners" || initialTab === "services" ? initialTab : "website"
+    initialTab === "products" || initialTab === "partners" || initialTab === "services" ? initialTab : "website"
   );
 
   return (
@@ -55,6 +56,7 @@ function WebsiteManagementPageContent() {
       <WebsiteManageTabBar active={activeTab} onChange={setActiveTab} />
       <div>
         {activeTab === "website" && <WebsiteTab />}
+        {activeTab === "products" && <ProductCardsTab />}
         {activeTab === "partners" && <PartnersTab />}
         {activeTab === "services" && <ServiceItemsTab />}
       </div>

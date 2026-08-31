@@ -16,6 +16,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -37,8 +38,11 @@ public class LeaveController {
 
     @Operation(summary = "Create leave", security = @SecurityRequirement(name = "bearerAuth"))
     @PostMapping
-    public ResponseEntity<LeaveResponse> create(@Valid @RequestBody LeaveCreateRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(leaveService.create(request));
+    public ResponseEntity<LeaveResponse> create(
+            @Valid @RequestBody LeaveCreateRequest request,
+            Authentication authentication
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(leaveService.create(request, authentication));
     }
 
     @Operation(summary = "Update own pending leave", security = @SecurityRequirement(name = "bearerAuth"))
@@ -58,7 +62,7 @@ public class LeaveController {
             @Valid @RequestBody LeaveStatusUpdateRequest request,
             Authentication authentication
     ) {
-        return ResponseEntity.ok(leaveService.updateStatus(id, request.getStatus(), authentication));
+        return ResponseEntity.ok(leaveService.updateStatus(id, request.getStatus(), request.getRejectReason(), authentication));
     }
 
     @Operation(summary = "Cancel own pending leave", security = @SecurityRequirement(name = "bearerAuth"))
@@ -66,5 +70,15 @@ public class LeaveController {
     public ResponseEntity<Void> cancel(@PathVariable Long id, Authentication authentication) {
         leaveService.cancelOwnPendingLeave(id, authentication.getName());
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Calculate leave days", security = @SecurityRequirement(name = "bearerAuth"))
+    @GetMapping("/calc-days")
+    public ResponseEntity<Map<String, Object>> calcDays(
+            @RequestParam String leaveType,
+            @RequestParam String startDate,
+            @RequestParam String endDate
+    ) {
+        return ResponseEntity.ok(leaveService.calcDaysPreview(leaveType, startDate, endDate));
     }
 }

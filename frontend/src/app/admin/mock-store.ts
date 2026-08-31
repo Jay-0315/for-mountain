@@ -37,7 +37,7 @@ const ISSUED_ACCOUNTS_KEY = "mock_admin_issued_accounts";
 const COMPANY_SETTINGS_KEY = "mock_admin_company_settings";
 
 const DEFAULT_COMPANY_SETTINGS: CompanySettings = {
-  companyName: "株式会社マウンテン",
+  companyName: "株式会社MOUNTAIN",
   companyEmail: "info@for-mountain.co.jp",
   companyAddress: "東京都千代田区岩本町2-13-6 リアライズ岩本町ビル 5F",
 };

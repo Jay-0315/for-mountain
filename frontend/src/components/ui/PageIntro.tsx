@@ -16,19 +16,22 @@ const INTRO_CODE_LINES = [
 
 export default function PageIntro() {
   const pathname = usePathname() ?? "";
-  const [done, setDone] = useState(false);
+  const [done, setDone] = useState(() => pathname.startsWith("/admin"));
   const introRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // 어드민 경로 또는 불필요한 경우 즉시 종료
     if (pathname.startsWith("/admin")) {
-      setDone(true);
+      const fallback = window.setTimeout(() => setDone(true), 0);
+      return () => window.clearTimeout(fallback);
+    }
+    if (done) {
       return;
     }
     // Never let the intro permanently cover the page if an animation step fails.
     const fallback = window.setTimeout(() => setDone(true), 1500);
     return () => window.clearTimeout(fallback);
-  }, [pathname]);
+  }, [done, pathname]);
 
   useGSAP(
     () => {
@@ -196,7 +199,7 @@ export default function PageIntro() {
 
         <p className="intro-logo text-4xl font-semibold tracking-[0.08em] text-white opacity-0 md:text-6xl">
           <span className="text-orange-400">株式会社</span>
-          <span className="text-white">マウンテン</span>
+          <span className="text-white">MOUNTAIN</span>
         </p>
 
         <p className="intro-sub mt-4 text-sm tracking-[0.22em] text-orange-100/70 opacity-0 md:text-base">

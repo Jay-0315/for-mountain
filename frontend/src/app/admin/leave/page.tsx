@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState, useEffect, useCallback } from "react";
 import {
+  calcLeaveDays,
   cancelLeave,
   createLeave,
   fetchEmployees,
@@ -15,6 +16,8 @@ import {
   type LeaveDto,
   updateLeaveStatus,
 } from "@/lib/api";
+import CommonModal from "./components/CommonModal";
+import { calcLeavePools, formatDateDisplay, type LeavePool } from "@/lib/leaveUtils";
 import { getSessionPayload } from "@/lib/session";
 
 const STATUS_COLOR: Record<string, string> = {
@@ -42,7 +45,7 @@ type LeaveType = "" | (typeof LEAVE_TYPES)[number];
 type FilterStatus = "すべて" | "待機中" | "上位承認待ち" | "承認" | "拒否";
 type ScopeFilter = "全て" | "自分の申請" | "承認対象";
 type PageView = "list" | "apply";
-const CANCELLABLE_STATUSES = new Set<LeaveDto["status"]>(["待機中", "拒否"]);
+const CANCELLABLE_STATUS: LeaveDto["status"] = "待機中";
 
 function isHalfDayLeave(leaveType: string) {
   return leaveType === "午前給(有給)" || leaveType === "午後給(有給)";
@@ -50,16 +53,6 @@ function isHalfDayLeave(leaveType: string) {
 
 function formatLeaveDays(days: number): string {
   return Number.isInteger(days) ? String(days) : days.toFixed(1);
-}
-
-function calcDays(leaveType: string, start: string, end: string): number {
-  if (!start) return 0;
-  if (isHalfDayLeave(leaveType)) return 0.5;
-  if (!end) return 0;
-  const s = new Date(start).getTime();
-  const e = new Date(end).getTime();
-  if (e < s) return 0;
-  return Math.round((e - s) / 86400000) + 1;
 }
 
 function getTodayDateString() {
@@ -70,10 +63,37 @@ function getTodayDateString() {
   return `${year}-${month}-${day}`;
 }
 
+function LeaveBalanceSummary({ pools }: { pools: LeavePool[] }) {
+  if (pools.length === 0) return null;
+
+  return (
+    <div className="space-y-3">
+      {pools.map((pool, index) => {
+        const totalDays = pool.remainingDays + pool.usedDays;
+
+        return (
+          <div
+            key={`${pool.expiryDate.toISOString()}-${index}`}
+            className="rounded-2xl border border-orange-200 bg-orange-50 p-4 shadow-sm"
+          >
+            <p className="text-base font-bold text-orange-500">
+              {formatDateDisplay(pool.expiryDate)}までに {formatLeaveDays(pool.remainingDays)}日 消化が必要です！
+            </p>
+            <p className="mt-2 text-sm font-semibold text-orange-500">
+              残: {formatLeaveDays(pool.remainingDays)}日/{formatLeaveDays(totalDays)}日
+            </p>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function ApplyForm({
   employee,
   employees,
   groups,
+  myPools,
   onDone,
   onCancel,
   initialStartDate,
@@ -82,6 +102,7 @@ function ApplyForm({
   employee: EmployeeDto | null;
   employees: EmployeeDto[];
   groups: GroupDto[];
+  myPools: LeavePool[];
   onDone: () => void;
   onCancel: () => void;
   initialStartDate?: string;
@@ -95,6 +116,7 @@ function ApplyForm({
   const [loading, setLoading]       = useState(false);
   const [error, setError]           = useState("");
   const [today, setToday]           = useState("");
+  const [days, setDays]             = useState(0);
 
   useEffect(() => {
     setToken(sessionStorage.getItem("admin_token") ?? "");
@@ -107,7 +129,25 @@ function ApplyForm({
     }
   }, [leaveType, startDate]);
 
-  const days = calcDays(leaveType, startDate, endDate);
+  useEffect(() => {
+    if (!leaveType || !startDate || !endDate || !token) {
+      setDays(0);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const actualEndDate = isHalfDayLeave(leaveType) ? startDate : endDate;
+        const data = await calcLeaveDays(token, { leaveType, startDate, endDate: actualEndDate });
+        setDays(data.days ?? 0);
+      } catch {
+        setDays(0);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [leaveType, startDate, endDate, token]);
+
   const employeeById = new Map(employees.map((item) => [item.id, item]));
   const firstApproverId = resolveApprovalLeaderId(employee, groups);
   const upperApproverId = resolveUpperApprovalLeaderId(employee, groups);
@@ -131,7 +171,6 @@ function ApplyForm({
     setLoading(true);
     try {
       await createLeave(token, {
-        employeeId: employee.id,
         leaveType,
         startDate,
         endDate: actualEndDate,
@@ -184,6 +223,8 @@ function ApplyForm({
             </div>
           )}
         </div>
+
+        <LeaveBalanceSummary pools={myPools} />
 
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1.5">休暇種類</label>
@@ -259,6 +300,10 @@ function LeavePageContent() {
   const [groups, setGroups]             = useState<GroupDto[]>([]);
   const [loading, setLoading]           = useState(true);
   const [token, setToken]               = useState("");
+  const [showModal, setShowModal]       = useState(false);
+  const [selectedLeave, setSelectedLeave] = useState<LeaveDto | null>(null);
+  const [modalAction, setModalAction]   = useState<"承認" | "拒否" | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
 
   useEffect(() => {
     const t = sessionStorage.getItem("admin_token") ?? "";
@@ -275,7 +320,7 @@ function LeavePageContent() {
     setLoading(true);
     try {
       const token = sessionStorage.getItem("admin_token") ?? "";
-      const [leaves, employees, groups] = await Promise.all([fetchLeaves(undefined, token), fetchEmployees(), fetchGroups()]);
+      const [leaves, employees, groups] = await Promise.all([fetchLeaves(undefined, token), fetchEmployees(token), fetchGroups(token)]);
       setRecords(leaves);
       setEmployees(employees);
       setGroups(groups);
@@ -299,6 +344,14 @@ function LeavePageContent() {
   const currentEmployee = employees.find((employee) => {
     return employee.employeeNumber === currentEmployeeNumber;
   }) ?? null;
+
+  const myPools = currentEmployee?.joinDate
+    ? calcLeavePools(
+        currentEmployee.joinDate,
+        records.filter((record) => record.employeeId === currentEmployee.id && record.status === "承認"),
+        new Date()
+      )
+    : [];
 
   const employeeById = new Map(employees.map((employee) => [employee.id, employee]));
   const canViewManagedLeave = (leave: LeaveDto) => {
@@ -348,11 +401,26 @@ function LeavePageContent() {
     (r) => (r.status === "待機中" || r.status === "上位承認待ち") && canApproveLeave(r)
   ).length;
 
-  const handleStatusUpdate = async (id: number, status: LeaveDto["status"]) => {
+  const handleStatusUpdate = async (id: number, status: LeaveDto["status"], rejectReason?: string) => {
     try {
-      const updated = await updateLeaveStatus(token, id, status);
+      const updated = await updateLeaveStatus(token, id, status, rejectReason);
       setRecords((prev) => prev.map((r) => r.id === id ? updated : r));
+      setTimeout(() => load(), 500);
     } catch { /* ignore */ }
+  };
+
+  const openRejectModal = (leave: LeaveDto) => {
+    setSelectedLeave(leave);
+    setModalAction("拒否");
+    setRejectReason("");
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedLeave(null);
+    setModalAction(null);
+    setRejectReason("");
   };
 
   const handleCancelLeave = async (id: number) => {
@@ -375,6 +443,7 @@ function LeavePageContent() {
       <ApplyForm employee={currentEmployee}
         employees={employees}
         groups={groups}
+        myPools={myPools}
         initialStartDate={prefilledStartDate}
         initialEndDate={prefilledEndDate}
         onDone={() => { setView("list"); load(); }}
@@ -532,7 +601,7 @@ function LeavePageContent() {
                     <button
                       onClick={(event) => {
                         event.stopPropagation();
-                        handleStatusUpdate(req.id, "拒否");
+                        openRejectModal(req);
                       }}
                       className="flex-1 rounded-lg border border-rose-200 px-3 py-2 text-xs font-semibold text-rose-600 transition-colors hover:bg-rose-50"
                     >
@@ -551,7 +620,7 @@ function LeavePageContent() {
                     待機中に戻す
                   </button>
                 )
-              ) : currentEmployee && req.employeeId === currentEmployee.id && CANCELLABLE_STATUSES.has(req.status) ? (
+              ) : currentEmployee && req.employeeId === currentEmployee.id && req.status === CANCELLABLE_STATUS ? (
                 <button
                   onClick={(event) => {
                     event.stopPropagation();
@@ -643,7 +712,7 @@ function LeavePageContent() {
                             </button>
                             <button onClick={(event) => {
                               event.stopPropagation();
-                              handleStatusUpdate(req.id, "拒否");
+                              openRejectModal(req);
                             }}
                               className="rounded-lg border border-rose-200 px-2 py-1 text-xs font-semibold text-rose-500 transition-colors hover:bg-rose-50 hover:text-rose-600">
                               拒否
@@ -663,7 +732,7 @@ function LeavePageContent() {
                         )
                       ) : (
                         <div className="flex justify-end">
-                          {currentEmployee && req.employeeId === currentEmployee.id && CANCELLABLE_STATUSES.has(req.status) ? (
+                          {currentEmployee && req.employeeId === currentEmployee.id && req.status === CANCELLABLE_STATUS ? (
                             <button
                               onClick={(event) => {
                                 event.stopPropagation();
@@ -689,6 +758,22 @@ function LeavePageContent() {
           </div>
         )}
       </div>
+
+      <CommonModal
+        show={showModal}
+        title="休暇申請の拒否"
+        applicantName={selectedLeave?.employeeName ?? ""}
+        applicationReason={selectedLeave?.reason ?? ""}
+        action={modalAction}
+        rejectReason={rejectReason}
+        onRejectReasonChange={setRejectReason}
+        onClose={closeModal}
+        onConfirm={async () => {
+          if (!selectedLeave || !modalAction) return;
+          await handleStatusUpdate(selectedLeave.id, modalAction, rejectReason.trim());
+          closeModal();
+        }}
+      />
     </div>
   );
 }

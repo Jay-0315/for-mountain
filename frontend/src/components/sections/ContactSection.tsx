@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
@@ -238,70 +239,62 @@ export default function ContactSection() {
   };
 
   return (
-    <section ref={sectionRef} id="contact" className="pt-44 pb-[32rem] bg-gray-50 overflow-hidden">
-      <div className="max-w-6xl mx-auto px-6 sm:px-10 lg:px-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+    <section
+      ref={sectionRef}
+      id="contact"
+      className="relative isolate min-h-screen overflow-hidden bg-slate-100 px-6 py-28 sm:px-10 lg:px-6"
+    >
+      <Image
+        src="/images/contact-office-inquiry.png"
+        alt="お問い合わせ対応イメージ"
+        fill
+        priority
+        sizes="100vw"
+        className="absolute inset-0 -z-20 object-cover object-center"
+      />
+      <div className="absolute inset-0 -z-10 bg-white/10" />
+      <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(248,250,252,0.82)_0%,rgba(248,250,252,0.56)_42%,rgba(248,250,252,0.02)_100%)]" />
 
-          {/* 왼쪽 설명 */}
+      <div className="mx-auto flex min-h-[calc(100vh-10rem)] w-full max-w-6xl items-center">
+        <div className="w-full max-w-xl rounded-2xl bg-white/94 p-7 shadow-2xl shadow-slate-900/10 ring-1 ring-white/80 backdrop-blur md:p-10">
           <div className="contact-left">
-            <p className="text-orange-600 text-sm font-semibold uppercase tracking-widest mb-3">
+            <p className="mb-3 text-xs font-bold uppercase tracking-[0.28em] text-orange-500">
               Contact
             </p>
-            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-6">
+            <h2 className="text-3xl font-bold leading-tight text-slate-950 md:text-5xl">
               お問い合わせ
             </h2>
-            <p className="text-slate-600 leading-relaxed mb-8">
+            <p className="mt-5 text-sm leading-7 text-slate-600 md:text-base">
               採用や当社に関するご質問など、お気軽にお問い合わせください。
               担当者より折り返しご連絡いたします。
             </p>
-
-            <div className="p-5 bg-slate-50 rounded-2xl flex items-start gap-4">
-              <div className="w-10 h-10 bg-orange-50 text-orange-500 rounded-lg flex items-center justify-center shrink-0">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-slate-700 mb-0.5">所在地</p>
-                <p className="text-sm text-slate-500 leading-relaxed">
-                  〒101-0032<br />
-                  東京都千代田区岩本町2-13-6<br />
-                  リアライズ岩本町ビル 5F
-                </p>
-              </div>
-            </div>
           </div>
 
-          {/* 오른쪽 폼 */}
-          <div className="contact-form">
+          <div className="contact-form mt-8">
             {submitted ? (
-              <div className="flex flex-col items-center justify-center h-full text-center py-16">
-                <div className="w-16 h-16 bg-green-50 text-green-500 rounded-full flex items-center justify-center mb-4">
-                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex flex-col items-center justify-center rounded-xl bg-slate-50 px-6 py-14 text-center ring-1 ring-slate-100">
+                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-50 text-green-500">
+                  <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-2">送信完了しました</h3>
-                <p className="text-slate-500 text-sm">
+                <h3 className="mb-2 text-xl font-bold text-slate-900">送信完了しました</h3>
+                <p className="text-sm text-slate-500">
                   お問い合わせありがとうございます。<br />
                   担当者より折り返しご連絡いたします。
                 </p>
               </div>
             ) : (
-              <form
-                onSubmit={handleSubmit}
-                noValidate
-                className="contact-form space-y-5"
-              >
-                {/* API 에러 배너 */}
+              <form onSubmit={handleSubmit} noValidate className="space-y-4">
                 {apiError && (
-                  <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
-                    <svg className="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">
+                    <svg className="mt-0.5 h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                      />
                     </svg>
                     {apiError}
                   </div>
@@ -339,30 +332,30 @@ export default function ContactSection() {
                   onChange={handleChange}
                 />
 
-                <div className="flex justify-center pt-2">
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full py-4 bg-orange-500 text-white font-semibold rounded-xl
-                               transition-all hover:-translate-y-0.5 hover:bg-orange-400
-                               hover:shadow-xl hover:shadow-orange-300/40
-                               disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0
-                               flex items-center justify-center gap-2"
-                  >
-                    {isLoading ? (
-                      <>
-                        <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                        </svg>
-                        送信中...
-                      </>
-                    ) : "送信する"}
-                  </button>
-                </div>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 py-4 font-semibold text-white
+                             transition-all hover:-translate-y-0.5 hover:bg-orange-400
+                             hover:shadow-xl hover:shadow-orange-300/40
+                             disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+                >
+                  {isLoading ? (
+                    <>
+                      <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                        />
+                      </svg>
+                      送信中...
+                    </>
+                  ) : "送信する"}
+                </button>
 
-                <p className="text-xs text-slate-400 text-center">
+                <p className="text-center text-xs text-slate-400">
                   <span className="text-red-400">*</span> は必須項目です。
                 </p>
               </form>

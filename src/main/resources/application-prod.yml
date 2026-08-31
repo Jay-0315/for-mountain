@@ -28,7 +28,10 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      # 운영 스키마를 하이버네이트가 자동 변경하지 않도록 validate 를 기본값으로 둔다.
+      # 기존 스키마가 엔티티와 어긋나 부팅이 실패하면
+      # SPRING_JPA_HIBERNATE_DDL_AUTO=none 으로 우회한 뒤 마이그레이션으로 정렬할 것.
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:validate}
     properties:
       hibernate:
         show_sql: false
@@ -70,7 +73,7 @@ app:
   mail:
     to: ${MAIL_TO}
     # 표시용 발신 주소(From). 미설정 시 SMTP 인증 계정이 발신자가 된다.
-    # 예) MAIL_FROM=株式会社マウンテン <info@for-mountain.co.jp>
+    # 예) MAIL_FROM=株式会社MOUNTAIN <info@for-mountain.co.jp>
     from: ${MAIL_FROM:}
   upload:
     dir: ${UPLOAD_DIR:/home/xs799946/mountain-info.com/uploads}
@@ -79,3 +82,12 @@ app:
     bucket: ${S3_BUCKET:}
     public-base-url: ${S3_PUBLIC_BASE_URL:}
     upload-expiration-minutes: ${S3_UPLOAD_EXPIRATION_MINUTES:10}
+
+line-works:
+  enabled: ${LINE_WORKS_ENABLED:false}
+  client-id: ${LINE_WORKS_CLIENT_ID:}
+  client-secret: ${LINE_WORKS_CLIENT_SECRET:}
+  service-account: ${LINE_WORKS_SERVICE_ACCOUNT:}
+  private-key: ${LINE_WORKS_PRIVATE_KEY:}
+  oauth-redirect-uri: ${LINE_WORKS_OAUTH_REDIRECT_URI:}
+  sync-cron: ${LINE_WORKS_SYNC_CRON:0 15 2 * * *}

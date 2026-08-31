@@ -51,7 +51,7 @@ export default function LeaveDetailPage() {
     setLoading(true);
     setError("");
     try {
-      const [leaves, employees, groups] = await Promise.all([fetchLeaves(undefined, t), fetchEmployees(), fetchGroups()]);
+      const [leaves, employees, groups] = await Promise.all([fetchLeaves(undefined, t), fetchEmployees(t), fetchGroups(t)]);
       setEmployees(employees);
       setGroups(groups);
       setLeave(leaves.find((item) => item.id === leaveId) ?? null);

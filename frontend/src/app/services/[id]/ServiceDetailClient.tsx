@@ -53,7 +53,7 @@ export default function ServiceDetailClient() {
               <span>MOUNTAIN</span>
             </Link>
             <button
-              onClick={() => router.push("/#services")}
+              onClick={() => router.push("/services/list/")}
               className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-slate-200 transition-all hover:-translate-y-0.5 hover:border-orange-300/40 hover:bg-white/10 hover:text-white"
             >
               一覧へ戻る
@@ -81,7 +81,7 @@ export default function ServiceDetailClient() {
                   {item.title}
                 </h1>
                 <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
-                  株式会社マウンテンの事業紹介詳細です。画像・動画・関連資料をご確認いただけます。
+                  株式会社MOUNTAINの事業紹介詳細です。画像・動画・関連資料をご確認いただけます。
                 </p>
               </>
             )}
@@ -92,7 +92,7 @@ export default function ServiceDetailClient() {
       <section className="mx-auto max-w-5xl px-6 py-10 sm:py-14">
         {!loading && item && (
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px] lg:items-start">
-            <article className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
+            <article className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
               <div className="space-y-8 px-6 py-8 sm:px-8 sm:py-10">
                 {imageAssets.length > 0 && (
                   <div className="grid gap-4 sm:grid-cols-2">
@@ -126,7 +126,7 @@ export default function ServiceDetailClient() {
             </article>
 
             <aside className="space-y-4">
-              <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <p className="text-xs font-semibold uppercase tracking-[0.24em] text-orange-500">Detail</p>
                 <dl className="mt-4 space-y-4">
                   <div>

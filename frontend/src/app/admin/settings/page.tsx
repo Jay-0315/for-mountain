@@ -2,7 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createEmployeeAccount, type CreateEmployeeAccountResponse } from "@/lib/api";
+import {
+  compareLineWorksDirectory,
+  createEmployeeAccount,
+  syncLineWorksDirectory,
+  type CreateEmployeeAccountResponse,
+  type LineWorksDirectoryCompareResponse,
+  type LineWorksSyncResponse,
+} from "@/lib/api";
 import { getSessionRole } from "@/lib/session";
 import { getCompanySettings, saveCompanySettings } from "../mock-store";
 
@@ -35,18 +42,15 @@ export default function SettingsPage() {
   );
   const isAdmin = getSessionRole(token) === "ADMIN";
 
-  const [companyName, setCompanyName] = useState("株式会社マウンテン");
-  const [companyEmail, setCompanyEmail] = useState("info@for-mountain.co.jp");
-  const [companyAddress, setCompanyAddress] = useState("東京都千代田区岩本町2-13-6 リアライズ岩本町ビル 5F");
+  const [companyName, setCompanyName] = useState(() => getCompanySettings().companyName);
+  const [companyEmail, setCompanyEmail] = useState(() => getCompanySettings().companyEmail);
+  const [companyAddress, setCompanyAddress] = useState(() => getCompanySettings().companyAddress);
   const [companyMsg, setCompanyMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [companySaving, setCompanySaving] = useState(false);
-
-  useEffect(() => {
-    const settings = getCompanySettings();
-    setCompanyName(settings.companyName);
-    setCompanyEmail(settings.companyEmail);
-    setCompanyAddress(settings.companyAddress);
-  }, []);
+  const [lineWorksSaving, setLineWorksSaving] = useState(false);
+  const [lineWorksResult, setLineWorksResult] = useState<LineWorksSyncResponse | null>(null);
+  const [lineWorksCompareResult, setLineWorksCompareResult] = useState<LineWorksDirectoryCompareResponse | null>(null);
+  const [lineWorksMsg, setLineWorksMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
   useEffect(() => {
     if (!isAdmin) {
@@ -148,6 +152,49 @@ export default function SettingsPage() {
     saveCompanySettings({ companyName, companyEmail, companyAddress });
     setCompanyMsg({ type: "ok", text: "会社情報を保存しました。（※バックエンド連携後に有効）" });
     setCompanySaving(false);
+  };
+
+  const handleLineWorksSync = async () => {
+    setLineWorksSaving(true);
+    setLineWorksMsg(null);
+    setLineWorksResult(null);
+    try {
+      const result = await syncLineWorksDirectory(token);
+      setLineWorksResult(result);
+      setLineWorksMsg({
+        type: result.enabled ? "ok" : "err",
+        text: result.message,
+      });
+    } catch (err: unknown) {
+      setLineWorksMsg({
+        type: "err",
+        text: err instanceof Error ? err.message : "LINE WORKS 同期に失敗しました。",
+      });
+    } finally {
+      setLineWorksSaving(false);
+    }
+  };
+
+  const handleLineWorksCompare = async () => {
+    setLineWorksSaving(true);
+    setLineWorksMsg(null);
+    setLineWorksResult(null);
+    setLineWorksCompareResult(null);
+    try {
+      const result = await compareLineWorksDirectory(token);
+      setLineWorksCompareResult(result);
+      setLineWorksMsg({
+        type: result.enabled ? "ok" : "err",
+        text: result.message,
+      });
+    } catch (err: unknown) {
+      setLineWorksMsg({
+        type: "err",
+        text: err instanceof Error ? err.message : "LINE WORKS 比較に失敗しました。",
+      });
+    } finally {
+      setLineWorksSaving(false);
+    }
   };
 
   if (!isAdmin) {
@@ -279,6 +326,154 @@ export default function SettingsPage() {
             )}
           </div>
         )}
+      </SectionCard>
+
+      <SectionCard title="LINE WORKS 同期">
+        <div className="space-y-4">
+          <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+            <p className="text-sm font-semibold text-slate-800">社員・組織構成同期</p>
+            <p className="mt-1 text-xs leading-5 text-slate-500">
+              LINE WORKS Directory API からユーザーと組織を取得し、社員・グループ構成へ反映します。
+            </p>
+          </div>
+
+          {lineWorksMsg && (
+            <p
+              className={`rounded-lg px-3 py-2 text-xs ${
+                lineWorksMsg.type === "ok" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"
+              }`}
+            >
+              {lineWorksMsg.text}
+            </p>
+          )}
+
+          {lineWorksResult && (
+            <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-3">
+              {[
+                ["Users", lineWorksResult.usersFetched],
+                ["Employees linked", lineWorksResult.employeesLinked],
+                ["Employees kept", lineWorksResult.employeesAlreadyLinked],
+                ["Employees created", lineWorksResult.employeesCreated],
+                ["Skipped", lineWorksResult.employeesSkipped],
+                ["OrgUnits", lineWorksResult.orgUnitsFetched],
+                ["Groups linked", lineWorksResult.groupsLinked],
+                ["Members synced", lineWorksResult.groupMembersSynced],
+                ["Member skipped", lineWorksResult.groupMembersSkipped],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-lg border border-slate-100 bg-white px-3 py-2">
+                  <p className="font-mono text-base font-semibold text-slate-900">{value}</p>
+                  <p className="mt-0.5 text-slate-400">{label}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {lineWorksCompareResult && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+                {[
+                  ["Users", lineWorksCompareResult.usersFetched],
+                  ["OrgUnits", lineWorksCompareResult.orgUnitsFetched],
+                  ["Employee diffs", lineWorksCompareResult.employeeDiffs.length],
+                  ["Group diffs", lineWorksCompareResult.groupDiffs.length],
+                  ["Member diffs", lineWorksCompareResult.groupMembershipDiffs.length],
+                  ["Unmatched orgs", lineWorksCompareResult.unmatchedOrgUnits.length],
+                ].map(([label, value]) => (
+                  <div key={label} className="rounded-lg border border-slate-100 bg-white px-3 py-2">
+                    <p className="font-mono text-base font-semibold text-slate-900">{value}</p>
+                    <p className="mt-0.5 text-slate-400">{label}</p>
+                  </div>
+                ))}
+              </div>
+
+              {lineWorksCompareResult.employeeDiffs.slice(0, 10).map((item) => (
+                <div key={item.employeeId} className="rounded-xl border border-slate-100 bg-white p-3 text-xs">
+                  <p className="font-semibold text-slate-800">{item.employeeNumber}</p>
+                  <div className="mt-2 space-y-1">
+                    {item.fields.map((field) => (
+                      <p key={field.field} className="text-slate-500">
+                        <span className="font-semibold text-slate-700">{field.field}</span>
+                        <span> : {field.currentValue || "-"} → {field.lineWorksValue || "-"}</span>
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              {lineWorksCompareResult.unmatchedLineWorksUsers.length > 0 && (
+                <div className="rounded-xl border border-amber-100 bg-amber-50 p-3 text-xs text-amber-800">
+                  <p className="font-semibold">未マッチ LINE WORKS ユーザー</p>
+                  <div className="mt-2 space-y-1">
+                    {lineWorksCompareResult.unmatchedLineWorksUsers.slice(0, 10).map((user) => (
+                      <p key={user.userId}>{user.name || "-"} / {user.email || "-"} / {user.externalKey || "-"}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {lineWorksCompareResult.unmatchedEmployees.length > 0 && (
+                <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-600">
+                  <p className="font-semibold text-slate-800">未マッチ 社員</p>
+                  <div className="mt-2 space-y-1">
+                    {lineWorksCompareResult.unmatchedEmployees.slice(0, 10).map((employee) => (
+                      <p key={employee.employeeId}>{employee.employeeNumber} / {employee.name} / {employee.email}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {lineWorksCompareResult.groupMembershipDiffs.map((item) => (
+                <div key={item.groupId} className="rounded-xl border border-orange-100 bg-orange-50 p-3 text-xs text-orange-900">
+                  <p className="font-semibold">{item.groupName} のメンバー差分</p>
+                  {item.addedEmployees.length > 0 && <p className="mt-2">追加: {item.addedEmployees.map((employee) => employee.name || employee.employeeNumber).join(", ")}</p>}
+                  {item.removedEmployees.length > 0 && <p className="mt-1">削除: {item.removedEmployees.map((employee) => employee.name || employee.employeeNumber).join(", ")}</p>}
+                  {item.unmatchedMembers.length > 0 && <p className="mt-1">未マッチ構成員: {item.unmatchedMembers.length}名</p>}
+                </div>
+              ))}
+
+              {lineWorksCompareResult.unmatchedOrgUnits.length > 0 && (
+                <div className="rounded-xl border border-amber-100 bg-amber-50 p-3 text-xs text-amber-800">
+                  <p className="font-semibold">未マッチ LINE WORKS 組織</p>
+                  <div className="mt-2 space-y-1">
+                    {lineWorksCompareResult.unmatchedOrgUnits.slice(0, 10).map((orgUnit) => (
+                      <p key={orgUnit.lineWorksOrgUnitId}>{orgUnit.name || "-"} / {orgUnit.externalKey || "-"}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {lineWorksCompareResult.unmatchedGroups.length > 0 && (
+                <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-600">
+                  <p className="font-semibold text-slate-800">未マッチ システムグループ</p>
+                  <div className="mt-2 space-y-1">
+                    {lineWorksCompareResult.unmatchedGroups.slice(0, 10).map((group) => (
+                      <p key={group.groupId}>{group.name}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={handleLineWorksCompare}
+              disabled={lineWorksSaving}
+              className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-50"
+            >
+              {lineWorksSaving ? "処理中..." : "比較する"}
+            </button>
+            <button
+              type="button"
+              onClick={handleLineWorksSync}
+              disabled={lineWorksSaving}
+              className="admin-btn-primary px-5 py-2.5 transition-colors"
+            >
+              {lineWorksSaving ? "同期中..." : "今すぐ同期"}
+            </button>
+          </div>
+        </div>
       </SectionCard>
 
       <SectionCard title="会社情報">

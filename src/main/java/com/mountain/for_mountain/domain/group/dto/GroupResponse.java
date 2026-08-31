@@ -15,6 +15,9 @@ public class GroupResponse {
     private String leaderName;
     private List<Long> memberIds;
     private Long parentGroupId;
+    private Integer displayOrder;
     private String color;
     private Boolean excludeFromApproval;
+    private String lineWorksOrgUnitId;
+    private String lineWorksExternalKey;
 }

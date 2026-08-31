@@ -29,8 +29,17 @@ public class Group {
     @Column(name = "parent_group_id")
     private Long parentGroupId;
 
+    @Column(name = "display_order", nullable = false)
+    private Integer displayOrder;
+
     @Column(length = 30)
     private String color;
+
+    @Column(name = "line_works_org_unit_id", unique = true, length = 100)
+    private String lineWorksOrgUnitId;
+
+    @Column(name = "line_works_external_key", unique = true, length = 100)
+    private String lineWorksExternalKey;
 
     /** 휴가 승인 라인에서 제외할 그룹(예: 本部). null/false = 포함, true = 제외. */
     @Column(name = "exclude_from_approval")
@@ -48,6 +57,7 @@ public class Group {
         g.description = description;
         g.leaderId = leaderId;
         g.parentGroupId = parentGroupId;
+        g.displayOrder = 0;
         g.color = color;
         g.excludeFromApproval = excludeFromApproval;
         g.createdAt = LocalDateTime.now();
@@ -65,8 +75,45 @@ public class Group {
         this.updatedAt = LocalDateTime.now();
     }
 
+    public void syncLineWorksIdentity(String orgUnitId, String externalKey) {
+        this.lineWorksOrgUnitId = orgUnitId;
+        this.lineWorksExternalKey = externalKey;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void syncFromLineWorks(String name, String description, Long leaderId, Long parentGroupId,
+                                  String orgUnitId, String externalKey) {
+        this.name = name;
+        this.description = description;
+        this.leaderId = leaderId;
+        this.parentGroupId = parentGroupId;
+        this.lineWorksOrgUnitId = orgUnitId;
+        this.lineWorksExternalKey = externalKey;
+        this.updatedAt = LocalDateTime.now();
+    }
+
     public void clearLeader() {
         this.leaderId = null;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void clearParent() {
+        this.parentGroupId = null;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void syncDisplayOrder(int displayOrder) {
+        this.displayOrder = displayOrder;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void moveToParent(Long parentGroupId) {
+        this.parentGroupId = parentGroupId;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void syncLeader(Long leaderId) {
+        this.leaderId = leaderId;
         this.updatedAt = LocalDateTime.now();
     }
 }

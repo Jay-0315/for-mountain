@@ -18,11 +18,11 @@ import {
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   title: {
-    default: "株式会社マウンテン | ITエンジニアリング・ネットワーク通信機器",
-    template: "%s | 株式会社マウンテン",
+    default: "株式会社MOUNTAIN | ITエンジニアリング・ネットワーク通信機器",
+    template: "%s | 株式会社MOUNTAIN",
   },
   description:
-    "株式会社マウンテンは東京都千代田区岩本町を拠点に、システム開発、ソリューション販売・技術支援、インフラ構築・技術支援、コンサルを提供するIT総合カンパニーです。",
+    "株式会社MOUNTAINは東京都千代田区岩本町を拠点に、システム開発、ソリューション販売・技術支援、インフラ構築・技術支援、コンサルを提供するIT総合カンパニーです。",
   keywords: [
     COMPANY_NAME_JA,
     COMPANY_NAME_EN,
@@ -40,9 +40,9 @@ export const metadata: Metadata = {
     locale: "ja_JP",
     url: BASE_URL,
     siteName: COMPANY_NAME_JA,
-    title: "株式会社マウンテン | ITエンジニアリング・ネットワーク通信機器",
+    title: "株式会社MOUNTAIN | ITエンジニアリング・ネットワーク通信機器",
     description:
-      "株式会社マウンテンは東京都千代田区岩本町を拠点に、システム開発、ソリューション販売・技術支援、インフラ構築・技術支援、コンサルを提供するIT総合カンパニーです。",
+      "株式会社MOUNTAINは東京都千代田区岩本町を拠点に、システム開発、ソリューション販売・技術支援、インフラ構築・技術支援、コンサルを提供するIT総合カンパニーです。",
     images: [
       {
         url: DEFAULT_OG_IMAGE,
@@ -54,9 +54,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "株式会社マウンテン | ITエンジニアリング・ネットワーク通信機器",
+    title: "株式会社MOUNTAIN | ITエンジニアリング・ネットワーク通信機器",
     description:
-      "株式会社マウンテンは東京都千代田区岩本町を拠点に、システム開発、ソリューション販売・技術支援、インフラ構築・技術支援、コンサルを提供するIT総合カンパニーです。",
+      "株式会社MOUNTAINは東京都千代田区岩本町を拠点に、システム開発、ソリューション販売・技術支援、インフラ構築・技術支援、コンサルを提供するIT総合カンパニーです。",
     images: [DEFAULT_OG_IMAGE],
   },
   robots: { index: true, follow: true },
@@ -70,7 +70,7 @@ const jsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
   name: COMPANY_NAME_JA,
-  alternateName: [COMPANY_NAME_EN, "マウンテン"],
+  alternateName: [COMPANY_NAME_EN, "MOUNTAIN"],
   url: BASE_URL,
   logo: DEFAULT_OG_IMAGE,
   description:

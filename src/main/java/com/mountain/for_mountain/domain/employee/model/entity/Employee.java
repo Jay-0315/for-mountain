@@ -51,6 +51,12 @@ public class Employee {
     @Column(nullable = false, unique = true, length = 100)
     private String email;
 
+    @Column(name = "line_works_user_id", unique = true, length = 100)
+    private String lineWorksUserId;
+
+    @Column(name = "line_works_external_key", unique = true, length = 100)
+    private String lineWorksExternalKey;
+
     // 在籍 / 休職 / 退職
     @Column(nullable = false, length = 10)
     private String status;
@@ -63,6 +69,9 @@ public class Employee {
 
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+
+    @Column(name = "profile_complete", nullable = false)
+    private boolean profileComplete = true;
 
     public static Employee create(String employeeNumber, String name, String nameKana,
                                   String nationality, LocalDate birthDate, String department,
@@ -81,6 +90,7 @@ public class Employee {
         e.email = email;
         e.status = status;
         e.annualLeaveDays = annualLeaveDays;
+        e.profileComplete = true;
         e.createdAt = LocalDateTime.now();
         e.updatedAt = LocalDateTime.now();
         return e;
@@ -101,11 +111,70 @@ public class Employee {
         this.email = email;
         this.status = status;
         this.annualLeaveDays = annualLeaveDays;
+        this.profileComplete = true;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void syncLineWorksIdentity(String userId, String externalKey) {
+        this.lineWorksUserId = userId;
+        this.lineWorksExternalKey = externalKey;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void syncFromLineWorks(String employeeNumber, String name, String nameKana, String department,
+                                  String position, String jobTitle, String email, String status,
+                                  String lineWorksUserId, String lineWorksExternalKey) {
+        this.employeeNumber = employeeNumber;
+        this.name = name;
+        this.nameKana = nameKana;
+        this.department = department;
+        this.position = position;
+        this.jobTitle = jobTitle;
+        this.email = email;
+        this.status = status;
+        this.lineWorksUserId = lineWorksUserId;
+        this.lineWorksExternalKey = lineWorksExternalKey;
         this.updatedAt = LocalDateTime.now();
     }
 
     public void updateDepartment(String department) {
         this.department = department;
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public void syncDirectoryProfile(String name, String email, String department, String position, String status) {
+        if (name != null && !name.isBlank()) this.name = name.trim();
+        if (email != null && !email.isBlank()) this.email = email.trim();
+        if (department != null && !department.isBlank()) this.department = department.trim();
+        if (position != null && !position.isBlank()) this.position = position.trim();
+        if (status != null && !status.isBlank()) this.status = status.trim();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public static Employee createFromLineWorks(String employeeNumber, String name, String department,
+                                               String position, String email, String status,
+                                               String lineWorksUserId, String externalKey) {
+        Employee e = create(
+                employeeNumber,
+                name,
+                name,
+                "未設定",
+                LocalDate.of(1900, 1, 1),
+                department,
+                position,
+                "一般社員",
+                LocalDate.now(),
+                email,
+                status,
+                0
+        );
+        e.profileComplete = false;
+        e.lineWorksUserId = lineWorksUserId;
+        e.lineWorksExternalKey = externalKey;
+        return e;
+    }
+
+    public boolean isProfileComplete() {
+        return profileComplete;
     }
 }

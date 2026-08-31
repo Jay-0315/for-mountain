@@ -16,7 +16,7 @@ type NewsItem = {
 
 // ── 백엔드 미연결 시 fallback 데이터 ──────────────────────────
 const FALLBACK_NEWS: NewsItem[] = [
-  { id: 1, date: "2025-03-01", category: "お知らせ", title: "株式会社マウンテン ウェブサイトをリニューアルしました" },
+  { id: 1, date: "2025-03-01", category: "お知らせ", title: "株式会社MOUNTAIN ウェブサイトをリニューアルしました" },
   { id: 2, date: "2025-02-07", category: "会社",     title: "会社設立3周年を迎えました" },
   { id: 3, date: "2025-01-15", category: "採用",     title: "2025年度 新卒採用・中途採用を開始しました" },
   { id: 4, date: "2024-12-01", category: "製品",     title: "AI マモリージ 新バージョンをリリースしました" },
@@ -46,7 +46,11 @@ function SkeletonRow({ last = false }: { last?: boolean }) {
 }
 
 // ── メインコンポーネント ───────────────────────────────────────
-export default function NewsSection() {
+type NewsSectionProps = {
+  showHeader?: boolean;
+};
+
+export default function NewsSection({ showHeader = true }: NewsSectionProps) {
   const router = useRouter();
   const sectionRef = useRef<HTMLElement>(null);
   const listRef    = useRef<HTMLDivElement>(null);
@@ -195,23 +199,29 @@ export default function NewsSection() {
   const formatDate = (iso: string) => iso.replaceAll("-", ".");
 
   return (
-    <section ref={sectionRef} id="news" className="pt-44 pb-[32rem] bg-gray-50 overflow-hidden">
+    <section
+      ref={sectionRef}
+      id="news"
+      className={`${showHeader ? "pt-24 md:pt-28" : "pt-16 md:pt-20"} pb-[32rem] bg-gray-50 overflow-hidden`}
+    >
       <div className="max-w-6xl mx-auto px-6 sm:px-10 lg:px-6">
 
         {/* 섹션 헤더 */}
-        <div className="news-header text-center mb-24">
-          <p className="text-orange-600 text-sm font-semibold uppercase tracking-widest mb-3">
-            News
-          </p>
-          <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
-            お知らせ
-          </h2>
+        {showHeader && (
+          <div className="news-header text-center mb-24">
+            <p className="text-orange-600 text-sm font-semibold uppercase tracking-widest mb-3">
+              News
+            </p>
+            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
+              お知らせ
+            </h2>
 
-          <p className="mx-auto max-w-xl text-lg font-semibold text-slate-500">
-            <span className="text-orange-500">株式会社マウンテン</span>
-            <span> &gt; お知らせ</span>
-          </p>
-        </div>
+            <p className="mx-auto max-w-xl text-lg font-semibold text-slate-500">
+              <span className="text-orange-500">株式会社MOUNTAIN</span>
+              <span> &gt; お知らせ</span>
+            </p>
+          </div>
+        )}
 
         {/* 뉴스 목록 */}
         <div className="mx-auto max-w-5xl">

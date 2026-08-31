@@ -3,11 +3,15 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { adminLogin } from "@/lib/api";
+import { adminLogin, getLineWorksAuthorizationUrl } from "@/lib/api";
 import { PasswordInput } from "@/components/PasswordInput";
 import { setMockAdminSession } from "./mock-store";
 
 const REMEMBERED_USERNAME_KEY = "remembered_admin_username";
+
+// 데모 로그인은 기본적으로 꺼져 있다.
+// 데모 환경에서만 NEXT_PUBLIC_ENABLE_DEMO_LOGIN=true 로 켤 것. 운영에서는 절대 켜지 말 것.
+const DEMO_LOGIN_ENABLED = process.env.NEXT_PUBLIC_ENABLE_DEMO_LOGIN === "true";
 
 function AdminPageContent() {
   const router = useRouter();
@@ -17,6 +21,7 @@ function AdminPageContent() {
   const [rememberUsername, setRememberUsername] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [oauthLoading, setOauthLoading] = useState(false);
   const redirectPath = searchParams?.get("redirect");
 
   useEffect(() => {
@@ -41,7 +46,7 @@ function AdminPageContent() {
         localStorage.removeItem(REMEMBERED_USERNAME_KEY);
       }
 
-      if (username === "demo" && password === "demo1234") {
+      if (DEMO_LOGIN_ENABLED && username === "demo" && password === "demo1234") {
         setMockAdminSession();
       } else {
         const { token } = await adminLogin(username, password);
@@ -53,6 +58,17 @@ function AdminPageContent() {
       setError(err instanceof Error ? err.message : "コードが正しくありません。");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleLineWorksLogin = async () => {
+    setError("");
+    setOauthLoading(true);
+    try {
+      window.location.href = await getLineWorksAuthorizationUrl();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "LINE WORKSログインを開始できませんでした。");
+      setOauthLoading(false);
     }
   };
 
@@ -132,6 +148,18 @@ function AdminPageContent() {
             className="admin-btn-primary w-full py-2.5 transition-colors"
           >
             {loading ? "認証中..." : "ログイン"}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleLineWorksLogin}
+            disabled={oauthLoading}
+            className="w-full py-2.5 rounded-lg border border-slate-300 bg-white text-slate-700 font-medium hover:bg-slate-50 transition-colors"
+          >
+            <span className="inline-flex items-center justify-center gap-2">
+              <img src="/images/lineworks-app-icon.png" alt="" className="h-5 w-5" />
+              {oauthLoading ? "LINE WORKSへ移動中..." : "LINE WORKSでログイン"}
+            </span>
           </button>
         </form>
       </div>

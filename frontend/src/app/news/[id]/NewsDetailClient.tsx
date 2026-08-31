@@ -128,7 +128,7 @@ export default function NewsDetailClient() {
                   {post.title}
                 </h1>
                 <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
-                  株式会社マウンテンからのお知らせを掲載しています。本文をご確認ください。
+                  株式会社MOUNTAINからのお知らせを掲載しています。本文をご確認ください。
                 </p>
               </>
             )}
@@ -139,13 +139,13 @@ export default function NewsDetailClient() {
       <section className="mx-auto max-w-5xl px-6 py-10 sm:py-14">
         {!loading && post && (
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_240px] lg:items-start">
-            <article className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
+            <article className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
               <div className="px-6 py-8 sm:px-8 sm:py-10">
                 <ArticleBody content={post.content} />
                 {(post.imageData || post.videoData || post.attachmentData) && (
                   <div className="mt-8 space-y-5 border-t border-slate-100 pt-8">
                     {post.imageData && (
-                      <div className="overflow-hidden rounded-[1.5rem] border border-slate-100 bg-slate-50 p-3">
+                      <div className="overflow-hidden rounded-2xl border border-slate-100 bg-slate-50 p-3">
                         <Image
                           src={post.imageData}
                           alt={post.imageName ?? post.title}
@@ -157,7 +157,7 @@ export default function NewsDetailClient() {
                       </div>
                     )}
                     {post.videoData && (
-                      <div className="overflow-hidden rounded-[1.5rem] border border-slate-100 bg-slate-950">
+                      <div className="overflow-hidden rounded-2xl border border-slate-100 bg-slate-950">
                         <video src={post.videoData} controls playsInline className="w-full bg-black" />
                       </div>
                     )}
@@ -229,7 +229,7 @@ export default function NewsDetailClient() {
             </article>
 
             <aside className="space-y-4">
-              <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <p className="text-xs font-semibold uppercase tracking-[0.24em] text-orange-500">Article Info</p>
                 <dl className="mt-4 space-y-4">
                   <div>

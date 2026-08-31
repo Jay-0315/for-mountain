@@ -216,7 +216,7 @@ export default function ServicesSection({
           <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-orange-600">Services</p>
           <h2 className="mb-4 text-4xl font-bold text-slate-900 md:text-5xl">事業内容</h2>
           <p className="mx-auto max-w-xl text-lg font-semibold text-slate-500">
-            <span className="text-orange-500">株式会社マウンテン</span>
+            <span className="text-orange-500">株式会社MOUNTAIN</span>
             <span> &gt; Services</span>
           </p>
         </div>
@@ -282,7 +282,7 @@ export default function ServicesSection({
                         />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center text-orange-300">
-                          <div className="flex h-20 w-20 items-center justify-center rounded-[1.5rem] border border-white/60 bg-white/80 shadow-sm backdrop-blur">
+                          <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-white/60 bg-white/80 shadow-sm backdrop-blur">
                             {renderServiceCategoryIcon(activeCategory?.iconKey ?? "folder", "h-8 w-8")}
                           </div>
                         </div>

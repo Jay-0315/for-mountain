@@ -7,8 +7,10 @@ import com.mountain.for_mountain.domain.auth.dto.PasswordChangeRequest;
 import com.mountain.for_mountain.domain.auth.dto.PasswordResetRequest;
 import com.mountain.for_mountain.domain.auth.dto.PasswordSetupRequest;
 import com.mountain.for_mountain.domain.auth.dto.TokenResponse;
+import com.mountain.for_mountain.domain.auth.dto.LineWorksOAuthAuthorizeResponse;
 import com.mountain.for_mountain.domain.auth.service.AccountManagementService;
 import com.mountain.for_mountain.domain.auth.service.AuthService;
+import com.mountain.for_mountain.domain.auth.service.LineWorksOAuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -27,6 +29,20 @@ public class AuthController {
 
     private final AuthService authService;
     private final AccountManagementService accountManagementService;
+    private final LineWorksOAuthService lineWorksOAuthService;
+
+    @GetMapping("/lineworks/authorize")
+    public ResponseEntity<LineWorksOAuthAuthorizeResponse> lineWorksAuthorize() {
+        return ResponseEntity.ok(lineWorksOAuthService.createAuthorizationUrl());
+    }
+
+    @PostMapping("/lineworks/exchange")
+    public ResponseEntity<TokenResponse> lineWorksExchange(
+            @RequestParam String code,
+            @RequestParam String state
+    ) {
+        return ResponseEntity.ok(lineWorksOAuthService.exchange(code, state));
+    }
 
     @Operation(
         summary = "Admin Login",

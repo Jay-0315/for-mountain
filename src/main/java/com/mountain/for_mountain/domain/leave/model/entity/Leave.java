@@ -37,6 +37,9 @@ public class Leave {
     @Column(length = 500)
     private String reason;
 
+    @Column(name = "reject_reason", length = 500)
+    private String rejectReason;
+
     // 待機中 / 上位承認待ち / 承認 / 拒否
     @Column(nullable = false, length = 10)
     private String status;
@@ -68,6 +71,13 @@ public class Leave {
 
     public void updateStatus(String status) {
         this.status = status;
+        this.rejectReason = null;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void updateStatus(String status, String rejectReason) {
+        this.status = status;
+        this.rejectReason = rejectReason;
         this.updatedAt = LocalDateTime.now();
     }
 
