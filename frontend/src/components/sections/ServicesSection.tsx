@@ -282,7 +282,7 @@ export default function ServicesSection({
                         />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center text-orange-300">
-                          <div className="flex h-20 w-20 items-center justify-center rounded-[1.5rem] border border-white/60 bg-white/80 shadow-sm backdrop-blur">
+                          <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-white/60 bg-white/80 shadow-sm backdrop-blur">
                             {renderServiceCategoryIcon(activeCategory?.iconKey ?? "folder", "h-8 w-8")}
                           </div>
                         </div>

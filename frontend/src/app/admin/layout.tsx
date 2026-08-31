@@ -147,7 +147,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const { sub } = getSessionPayload(token);
     if (!sub) return;
 
-    Promise.all([fetchEmployees(), fetchGroups(), fetchLeaves(undefined, token ?? "")])
+    Promise.all([fetchEmployees(token), fetchGroups(token), fetchLeaves(undefined, token ?? "")])
       .then(([employees, groups, leaves]) => {
         const emp = employees.find((e) => e.employeeNumber === sub) ?? null;
         setCurrentEmployee(emp);

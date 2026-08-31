@@ -7,6 +7,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: withTrailingSlash("/"), lastModified: new Date(), changeFrequency: "weekly", priority: 1.0 },
     { url: withTrailingSlash("/about"), lastModified: new Date(), changeFrequency: "monthly", priority: 0.8 },
     { url: withTrailingSlash("/services"), lastModified: new Date(), changeFrequency: "weekly", priority: 0.9 },
+    { url: withTrailingSlash("/services/list"), lastModified: new Date(), changeFrequency: "weekly", priority: 0.8 },
     { url: withTrailingSlash("/news"), lastModified: new Date(), changeFrequency: "daily", priority: 0.9 },
     { url: withTrailingSlash("/recruit"), lastModified: new Date(), changeFrequency: "weekly", priority: 0.7 },
     { url: withTrailingSlash("/contact"), lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },

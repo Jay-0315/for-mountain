@@ -24,6 +24,9 @@ export type JobTitle = "役員" | "管理職" | "一般社員";
 
 export type EmployeeStatus = "在籍" | "休職" | "退職";
 
+/** 전 부서에 공개되는 공지의 부서 값. 특정 부서가 아니라 "모두"를 뜻하는 sentinel. */
+export const ALL_DEPARTMENTS = "全部署" as const;
+
 export const DEPARTMENTS: Department[] = [
   "開発 Part1",
   "開発 Part2",
