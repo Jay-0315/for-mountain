@@ -5,19 +5,12 @@ spring:
     active: dev
   servlet:
     multipart:
-      # 무제한(-1)이면 대용량 업로드 한 번으로 디스크/힙을 고갈시킬 수 있다.
-      # 동영상 업로드를 감안해 넉넉히 잡되 상한은 둔다.
-      max-file-size: ${SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE:100MB}
-      max-request-size: ${SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE:110MB}
+      max-file-size: -1
+      max-request-size: -1
   data:
     redis:
       host: localhost
       port: 6379
-
-  cache:
-    redis:
-      # TTL 미설정 시 환율이 영구 캐시된다.
-      time-to-live: ${SPRING_CACHE_REDIS_TTL:1h}
 
   messages:
     basename: messages

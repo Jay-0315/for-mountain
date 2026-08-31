@@ -9,10 +9,6 @@ import { setMockAdminSession } from "./mock-store";
 
 const REMEMBERED_USERNAME_KEY = "remembered_admin_username";
 
-// 데모 로그인은 기본적으로 꺼져 있다.
-// 데모 환경에서만 NEXT_PUBLIC_ENABLE_DEMO_LOGIN=true 로 켤 것. 운영에서는 절대 켜지 말 것.
-const DEMO_LOGIN_ENABLED = process.env.NEXT_PUBLIC_ENABLE_DEMO_LOGIN === "true";
-
 function AdminPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -45,7 +41,7 @@ function AdminPageContent() {
         localStorage.removeItem(REMEMBERED_USERNAME_KEY);
       }
 
-      if (DEMO_LOGIN_ENABLED && username === "demo" && password === "demo1234") {
+      if (username === "demo" && password === "demo1234") {
         setMockAdminSession();
       } else {
         const { token } = await adminLogin(username, password);

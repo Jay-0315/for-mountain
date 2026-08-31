@@ -190,7 +190,7 @@ export default function ServiceDetailQueryPage() {
         <section className="mx-auto max-w-5xl px-6 py-10 sm:py-14">
           {!loading && currentItem ? (
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px] lg:items-start">
-              <article className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
+              <article className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
                 <div className="space-y-8 px-6 py-8 sm:px-8 sm:py-10">
                   {!hasTextBlock && currentItem.content.trim() && (
                     <MarkdownContent content={currentItem.content} className="space-y-4" />
@@ -218,7 +218,7 @@ export default function ServiceDetailQueryPage() {
               </article>
 
               <aside className="space-y-4">
-                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
                   <p className="text-xs font-semibold uppercase tracking-[0.24em] text-orange-500">Detail</p>
                   <dl className="mt-4 space-y-4">
                     <div>
@@ -264,7 +264,7 @@ export default function ServiceDetailQueryPage() {
                 )}
 
                 <Link
-                  href="/services/list/"
+                  href="/services/"
                   className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm font-semibold text-slate-600 transition-all hover:-translate-y-0.5 hover:border-orange-300 hover:text-orange-500 hover:shadow-sm hover:shadow-orange-100"
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

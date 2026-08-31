@@ -46,7 +46,7 @@ import {
   fetchServiceCategories,
   fetchServiceItems,
 } from "@/lib/api";
-import { ALL_DEPARTMENTS, DEPARTMENTS } from "../mock-data";
+import { DEPARTMENTS } from "../mock-data";
 import { getSessionPayload, getSessionRole } from "@/lib/session";
 import { isMockAdminSession } from "../mock-store";
 
@@ -732,13 +732,13 @@ function InternalTab() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setAnnouncements(await fetchAnnouncements(token));
+      setAnnouncements(await fetchAnnouncements());
     } catch {
       setAnnouncements([]);
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => { load(); }, [load]);
 
@@ -968,8 +968,8 @@ function DepartmentTab({ initialNoticeId }: { initialNoticeId: number | null }) 
     setLoading(true);
     try {
       const [notices, employees] = await Promise.all([
-        fetchDeptNotices(token),
-        fetchEmployees(token).catch(() => [] as EmployeeDto[]),
+        fetchDeptNotices(),
+        fetchEmployees().catch(() => [] as EmployeeDto[]),
       ]);
       const subject = getSessionPayload(token).sub;
       const employee = employees.find((item) => item.employeeNumber === subject) ?? null;
@@ -1046,13 +1046,9 @@ function DepartmentTab({ initialNoticeId }: { initialNoticeId: number | null }) 
     }
   };
 
-  // 일반 사원은 본인 부서 공지 + 전사 공지를 본다.
   const filtered = isAdmin
     ? items
-    : items.filter(
-        (item) =>
-          item.department === ALL_DEPARTMENTS || item.department === currentEmployee?.department
-      );
+    : items.filter((item) => item.department === currentEmployee?.department);
   const sorted = [...filtered].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
   if (view === "form") {

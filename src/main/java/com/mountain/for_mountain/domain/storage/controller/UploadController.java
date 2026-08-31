@@ -51,15 +51,9 @@ public class UploadController {
                 return ResponseEntity.notFound().build();
             }
             String contentType = determineContentType(filePath.getFileName().toString());
-            ResponseEntity.BodyBuilder response = ResponseEntity.ok()
+            return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(contentType))
-                    // 브라우저가 확장자를 보고 타입을 추측해 스크립트로 실행하지 못하게 한다.
-                    .header("X-Content-Type-Options", "nosniff");
-            // 이미지·동영상만 인라인 표시하고, 나머지는 내려받게 한다.
-            if (!contentType.startsWith("image/") && !contentType.startsWith("video/")) {
-                response = response.header("Content-Disposition", "attachment");
-            }
-            return response.body(resource);
+                    .body(resource);
         } catch (MalformedURLException e) {
             return ResponseEntity.badRequest().build();
         }
@@ -71,10 +65,6 @@ public class UploadController {
         if (lower.endsWith(".png"))  return "image/png";
         if (lower.endsWith(".gif"))  return "image/gif";
         if (lower.endsWith(".webp")) return "image/webp";
-        // 동영상은 인라인 재생이 필요하므로 정확한 타입을 내려준다.
-        if (lower.endsWith(".mp4"))  return "video/mp4";
-        if (lower.endsWith(".webm")) return "video/webm";
-        if (lower.endsWith(".mov"))  return "video/quicktime";
         if (lower.endsWith(".pdf"))  return "application/pdf";
         return "application/octet-stream";
     }

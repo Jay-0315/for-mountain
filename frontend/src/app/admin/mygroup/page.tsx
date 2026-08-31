@@ -178,7 +178,7 @@ export default function MyGroupPage() {
   useEffect(() => {
     const token = sessionStorage.getItem("admin_token");
     const { sub } = getSessionPayload(token);
-    Promise.all([fetchEmployees(token ?? ""), fetchGroups(token ?? "")])
+    Promise.all([fetchEmployees(), fetchGroups()])
       .then(([emps, groups]) => {
         setEmployees(emps);
         const me = emps.find((e) => e.employeeNumber === sub);

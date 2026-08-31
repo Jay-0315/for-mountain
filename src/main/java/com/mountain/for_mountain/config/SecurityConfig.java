@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,6 +29,14 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final ObjectMapper objectMapper;
+
+    @Bean
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        return web -> web.ignoring().requestMatchers(
+            "/api/v1/groups",
+            "/api/v1/groups/**"
+        );
+    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -49,17 +58,8 @@ public class SecurityConfig {
                 // Auth endpoint (public)
                 .requestMatchers("/api/v1/auth/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/password/setup").permitAll()
-                // ── 공개 웹사이트가 실제로 사용하는 읽기 전용 API만 공개한다 ──
-                // 사내 데이터(employees / groups / leaves / announcements / dept-notices)는
-                // 아래 anyRequest().authenticated() 로 넘어가 인증을 요구한다.
-                .requestMatchers(HttpMethod.GET,
-                    "/api/v1/board/**",
-                    "/api/v1/service-items/**",
-                    "/api/v1/service-categories/**",
-                    "/api/v1/partner-cards/**",
-                    // 공개 페이지에 삽입된 이미지·첨부를 서빙하는 경로
-                    "/api/v1/uploads/files/**"
-                ).permitAll()
+                // All read APIs are public
+                .requestMatchers(HttpMethod.GET, "/api/v1/**").permitAll()
                 // Admin account management (admin only)
                 .requestMatchers(HttpMethod.POST, "/api/v1/admin/accounts").hasRole("ADMIN")
                 // Contact (public)
@@ -68,9 +68,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST,   "/api/v1/board/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT,    "/api/v1/board/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/v1/board/**").hasRole("ADMIN")
-                // Uploads (admin only) — presign 뿐 아니라 멀티파트 업로드 자체도 막는다.
                 .requestMatchers(HttpMethod.POST,   "/api/v1/uploads/presign").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.POST,   "/api/v1/uploads").hasRole("ADMIN")
                 // Department notice writes (admin only)
                 .requestMatchers(HttpMethod.POST,   "/api/v1/dept-notices").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT,    "/api/v1/dept-notices").hasRole("ADMIN")
@@ -168,8 +166,7 @@ public class SecurityConfig {
             "https://mountain-info.com",
             "http://mountain-info.com"
         ));
-        // PATCH: 휴가 승인/거부(PATCH /api/v1/leaves/{id}/status)에 필요하다.
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
