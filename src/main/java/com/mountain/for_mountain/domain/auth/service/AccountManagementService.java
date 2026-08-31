@@ -25,9 +25,6 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class AccountManagementService {
 
-    /** 최소 비밀번호 길이. 기존 4자는 사실상 무의미해 8자로 올렸다. */
-    private static final int MIN_PASSWORD_LENGTH = 8;
-
     private final AdminAccountRepository adminAccountRepository;
     private final EmployeeRepository employeeRepository;
     private final PasswordEncoder passwordEncoder;
@@ -64,7 +61,7 @@ public class AccountManagementService {
 
     @Transactional
     public void setupPassword(String username, String setupToken, String newPassword) {
-        if (newPassword == null || newPassword.length() < MIN_PASSWORD_LENGTH) {
+        if (newPassword == null || newPassword.length() < 4) {
             throw new CustomException(ErrorCode.WEAK_PASSWORD);
         }
 
@@ -114,7 +111,7 @@ public class AccountManagementService {
     /** 로그인된 사용자의 비밀번호 변경. 현재 비밀번호 확인 후 변경한다. */
     @Transactional
     public void changePassword(String username, String currentPassword, String newPassword) {
-        if (newPassword == null || newPassword.length() < MIN_PASSWORD_LENGTH) {
+        if (newPassword == null || newPassword.length() < 4) {
             throw new CustomException(ErrorCode.WEAK_PASSWORD);
         }
 

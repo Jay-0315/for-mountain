@@ -30,15 +30,15 @@ export default function PartnersSection() {
         </div>
 
         {cards.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-slate-700 bg-slate-900/50 px-6 py-14 text-center text-sm text-slate-500">
+          <div className="rounded-[2rem] border border-dashed border-slate-700 bg-slate-900/50 px-6 py-14 text-center text-sm text-slate-500">
             登録された協力会社カードがありません。
           </div>
         ) : (
           <div className="grid grid-cols-3 gap-3 xl:grid-cols-4">
             {cards.map((card) => {
               const content = (
-                <div className="group relative overflow-hidden rounded-2xl border border-slate-700/60 bg-slate-900 shadow-sm shadow-black/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:shadow-orange-900/40">
-                  <div className="absolute -inset-4 -z-10 rounded-3xl bg-slate-100/80 opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-100" />
+                <div className="group relative overflow-hidden rounded-[1.35rem] border border-slate-700/60 bg-slate-900 shadow-sm shadow-black/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:shadow-orange-900/40">
+                  <div className="absolute -inset-4 -z-10 rounded-[2.25rem] bg-slate-100/80 opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-100" />
                   <div className="relative aspect-[1.15/1] overflow-hidden bg-white p-4">
                     <Image
                       src={card.imageSrc}

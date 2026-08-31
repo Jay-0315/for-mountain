@@ -50,31 +50,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 filterChain.doFilter(request, response);
                 return;
             }
-            // 액세스 토큰만 인증에 사용한다. (리프레시 토큰 등 다른 타입은 거부)
-            String type = jwtService.extractType(token);
-            if (type != null && !"access".equals(type)) {
-                log.debug("Rejecting non-access token type '{}' for request: {} {}",
-                        type, request.getMethod(), request.getRequestURI());
-                SecurityContextHolder.clearContext();
-                filterChain.doFilter(request, response);
-                return;
-            }
-
             String subject = jwtService.extractSubject(token);
             String role = jwtService.extractRole(token);
-            // role 클레임이 없으면 권한을 부여하지 않는다.
-            // (예전에는 ROLE_ADMIN 으로 폴백해 fail-open 이었다.)
-            if (role == null || role.isBlank()) {
-                log.warn("JWT without a role claim for subject '{}'; refusing to authenticate.", subject);
-                SecurityContextHolder.clearContext();
-                filterChain.doFilter(request, response);
-                return;
-            }
-
+            String authority = (role != null) ? "ROLE_" + role : "ROLE_ADMIN";
             UsernamePasswordAuthenticationToken auth =
                     new UsernamePasswordAuthenticationToken(
                             subject, null,
-                            List.of(new SimpleGrantedAuthority("ROLE_" + role)));
+                            List.of(new SimpleGrantedAuthority(authority)));
             SecurityContextHolder.getContext().setAuthentication(auth);
         }
 

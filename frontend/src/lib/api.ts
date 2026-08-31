@@ -275,7 +275,7 @@ function normalizeEmployee(employee: EmployeeDto): EmployeeDto {
   };
 }
 
-export async function fetchEmployees(token: string, params?: {
+export async function fetchEmployees(params?: {
   status?: string;
   department?: string;
   keyword?: string;
@@ -284,9 +284,7 @@ export async function fetchEmployees(token: string, params?: {
   if (params?.status)     q.set("status", params.status);
   if (params?.department) q.set("department", params.department);
   if (params?.keyword)    q.set("keyword", params.keyword);
-  const res = await fetch(`${API_BASE}${withQuery("/api/v1/employees", q)}`, {
-    headers: authRequestHeaders(token),
-  });
+  const res = await fetch(`${API_BASE}${withQuery("/api/v1/employees", q)}`);
   if (!res.ok) throw new Error("Failed to fetch employees");
   const employees = (await res.json()) as EmployeeDto[];
   return employees.map(normalizeEmployee);
@@ -341,10 +339,8 @@ export type GroupDto = {
   excludeFromApproval?: boolean | null;
 };
 
-export async function fetchGroups(token: string): Promise<GroupDto[]> {
-  const res = await fetch(`${API_BASE}/api/v1/groups`, {
-    headers: authRequestHeaders(token),
-  });
+export async function fetchGroups(): Promise<GroupDto[]> {
+  const res = await fetch(`${API_BASE}/api/v1/groups`);
   if (!res.ok) throw new Error("Failed to fetch groups");
   return res.json();
 }
@@ -498,10 +494,9 @@ export async function fetchLeaves(params?: {
   return leaves.map(normalizeLeave);
 }
 
-// 신청자는 서버가 토큰에서 결정한다. employeeId 는 보내지 않는다.
 export async function createLeave(
   token: string,
-  data: { leaveType: string; startDate: string; endDate: string; days: number; reason: string }
+  data: { employeeId: number; leaveType: string; startDate: string; endDate: string; days: number; reason: string }
 ): Promise<LeaveDto> {
   const res = await fetch(`${API_BASE}/api/v1/leaves`, {
     method: "POST",
@@ -553,10 +548,8 @@ export type AnnouncementDto = {
   createdAt: string;
 };
 
-export async function fetchAnnouncements(token: string): Promise<AnnouncementDto[]> {
-  const res = await fetch(`${API_BASE}/api/v1/announcements`, {
-    headers: authRequestHeaders(token),
-  });
+export async function fetchAnnouncements(): Promise<AnnouncementDto[]> {
+  const res = await fetch(`${API_BASE}/api/v1/announcements`);
   if (!res.ok) throw new Error("Failed to fetch announcements");
   return res.json();
 }
@@ -659,12 +652,10 @@ export type ServiceItemDto = {
   updatedAt: string;
 };
 
-export async function fetchDeptNotices(token: string, department?: string): Promise<DeptNoticeDto[]> {
+export async function fetchDeptNotices(department?: string): Promise<DeptNoticeDto[]> {
   const q = new URLSearchParams();
   if (department) q.set("department", department);
-  const res = await fetch(`${API_BASE}${withQuery("/api/v1/dept-notices", q)}`, {
-    headers: authRequestHeaders(token),
-  });
+  const res = await fetch(`${API_BASE}${withQuery("/api/v1/dept-notices", q)}`);
   if (!res.ok) throw new Error("Failed to fetch dept notices");
   return res.json();
 }

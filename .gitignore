@@ -36,12 +36,3 @@ out/
 
 ### VS Code ###
 .vscode/
-
-### macOS ###
-.DS_Store
-
-### Local machine-specific Gradle settings (JDK path 등) ###
-gradle.properties
-
-### Claude Code ###
-.claude/

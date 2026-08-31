@@ -15,7 +15,7 @@ import {
   type LeaveDto,
 } from "@/lib/api";
 import { isMockAdminSession } from "../mock-store";
-import { ALL_DEPARTMENTS, type Department, type DeptNotice } from "../mock-data";
+import { type Department, type DeptNotice } from "../mock-data";
 
 const MANAGEMENT_JOB_TITLES = new Set(["管理職", "役員"]);
 const RESTRICTED_DEPARTMENTS = new Set<string>(["開発 Part1", "開発 Part2"]);
@@ -212,16 +212,11 @@ function leaveIncludesDate(leave: LeaveDto, dateKey: string) {
   return leave.startDate <= dateKey && leave.endDate >= dateKey;
 }
 
-/**
- * 일반 사원에게 보여줄 공지 부서 목록.
- * 본인 부서에서 상위 부서로 거슬러 올라가며 모으고, 전사 공지({@link ALL_DEPARTMENTS})는 항상 포함한다.
- * 소속 부서를 못 찾은 경우에도 전사 공지는 보여야 한다.
- */
-function getVisibleNoticeDepartments(
-  department: Department | null | undefined
-): Array<Department | typeof ALL_DEPARTMENTS> {
-  const result: Array<Department | typeof ALL_DEPARTMENTS> = [ALL_DEPARTMENTS];
-  let current: Department | undefined = department ?? undefined;
+function getVisibleNoticeDepartments(department: Department | null | undefined) {
+  if (!department) return [] as Department[];
+
+  const result: Department[] = [];
+  let current: Department | undefined = department;
   while (current) {
     result.push(current);
     current = NOTICE_PARENT_MAP[current];
@@ -369,19 +364,16 @@ export default function DashboardPage() {
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [summaryModal, setSummaryModal] = useState<"birthdays" | "pendingLeaves" | "monthLeaves" | null>(null);
 
-  const authToken =
-    typeof window !== "undefined" ? window.sessionStorage.getItem("admin_token") ?? "" : "";
-
   useEffect(() => {
-    fetchDeptNotices(authToken)
+    fetchDeptNotices()
       .then((items) => setDeptNotices(items as DeptNotice[]))
       .catch(() => setDeptNotices([]));
-  }, [authToken]);
+  }, []);
   useEffect(() => {
     Promise.all([
-      fetchEmployees(authToken).catch(() => [] as EmployeeDto[]),
-      fetchLeaves(undefined, authToken).catch(() => [] as LeaveDto[]),
-      fetchGroups(authToken).catch(() => []),
+      fetchEmployees().catch(() => [] as EmployeeDto[]),
+      fetchLeaves(undefined, typeof window !== "undefined" ? window.sessionStorage.getItem("admin_token") ?? "" : "").catch(() => [] as LeaveDto[]),
+      fetchGroups().catch(() => []),
     ])
       .then(([employees, leaves, groups]) => {
         setEmployees(employees);
@@ -394,7 +386,7 @@ export default function DashboardPage() {
         setLeaderMemberIds(currentEmp ? resolveLeaderMemberIds(groups, currentEmp.id) : null);
       })
       .finally(() => setLoadingPeople(false));
-  }, [authToken]);
+  }, []);
   const viewer = useMemo(() => resolveViewer(employees), [employees]);
   const employeeById = useMemo(() => new Map(employees.map((employee) => [employee.id, employee])), [employees]);
   const canApproveLeave = (leave: LeaveDto) => {
@@ -453,10 +445,8 @@ export default function DashboardPage() {
     const allowedDepartments = viewer.canViewAll
       ? effectiveDepartment === "全部門"
         ? null
-        : new Set<Department | typeof ALL_DEPARTMENTS>([effectiveDepartment as Department, ALL_DEPARTMENTS])
-      : new Set<Department | typeof ALL_DEPARTMENTS>(
-          getVisibleNoticeDepartments(viewer.employee?.department as Department | undefined)
-        );
+        : new Set<Department | "全部署">([effectiveDepartment as Department, "全部署"])
+      : new Set<Department>(getVisibleNoticeDepartments(viewer.employee?.department as Department | undefined));
 
     const filtered = deptNotices.filter((notice) => (allowedDepartments ? allowedDepartments.has(notice.department) : true));
     return filtered.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5);

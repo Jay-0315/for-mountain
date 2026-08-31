@@ -11,7 +11,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,10 +27,9 @@ public class DeptNoticeController {
     @GetMapping
     public ResponseEntity<List<DeptNoticeResponse>> getList(
             @Parameter(description = "Department filter (optional)", example = "開発 Part1")
-            @RequestParam(required = false) String department,
-            Authentication authentication
+            @RequestParam(required = false) String department
     ) {
-        return ResponseEntity.ok(deptNoticeService.getList(department, authentication));
+        return ResponseEntity.ok(deptNoticeService.getList(department));
     }
 
     @Operation(
@@ -40,11 +38,8 @@ public class DeptNoticeController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @PostMapping
-    public ResponseEntity<DeptNoticeResponse> create(
-            @Valid @RequestBody DeptNoticeRequest request,
-            Authentication authentication
-    ) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(deptNoticeService.create(request, authentication));
+    public ResponseEntity<DeptNoticeResponse> create(@Valid @RequestBody DeptNoticeRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(deptNoticeService.create(request));
     }
 
     @Operation(
@@ -55,10 +50,9 @@ public class DeptNoticeController {
     @PutMapping("/{id}")
     public ResponseEntity<DeptNoticeResponse> update(
             @PathVariable Long id,
-            @Valid @RequestBody DeptNoticeRequest request,
-            Authentication authentication
+            @Valid @RequestBody DeptNoticeRequest request
     ) {
-        return ResponseEntity.ok(deptNoticeService.update(id, request, authentication));
+        return ResponseEntity.ok(deptNoticeService.update(id, request));
     }
 
     @Operation(

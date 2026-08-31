@@ -657,7 +657,7 @@ export default function GroupsPage() {
     setLoading(true);
     const t = sessionStorage.getItem("admin_token") ?? "";
     const { sub } = getSessionPayload(t);
-    Promise.all([fetchGroups(t), fetchEmployees(t)])
+    Promise.all([fetchGroups(), fetchEmployees()])
       .then(([allGroups, employees]) => {
         setEmployees(employees);
         const me = employees.find((e) => e.employeeNumber === sub);

@@ -257,7 +257,7 @@ export default function EmployeesPage() {
     try {
       const t = sessionStorage.getItem("admin_token") ?? "";
       const { sub } = getSessionPayload(t);
-      const [allEmployees, groups] = await Promise.all([fetchEmployees(t), fetchGroups(t)]);
+      const [allEmployees, groups] = await Promise.all([fetchEmployees(), fetchGroups()]);
       setGroups(groups);
       const me = allEmployees.find((e) => e.employeeNumber === sub) ?? null;
       const memberIds = me ? resolveLeaderMemberIds(groups, me.id) : null;
