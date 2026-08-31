@@ -667,9 +667,12 @@ export default function GroupsPage() {
   const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
-    const t = sessionStorage.getItem("admin_token") ?? "";
-    setToken(t);
-    setIsAdmin(getSessionRole(t) === "ADMIN");
+    const timer = window.setTimeout(() => {
+      const t = sessionStorage.getItem("admin_token") ?? "";
+      setToken(t);
+      setIsAdmin(getSessionRole(t) === "ADMIN");
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
 

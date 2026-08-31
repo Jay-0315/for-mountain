@@ -14,9 +14,14 @@ function CallbackContent() {
     const state = searchParams?.get("state");
     const error = searchParams?.get("error");
     if (error || !code || !state) {
-      setMessage("LINE WORKSログインに失敗しました。ログイン画面へ戻ります。");
+      const messageTimer = window.setTimeout(() => {
+        setMessage("LINE WORKSログインに失敗しました。ログイン画面へ戻ります。");
+      }, 0);
       const timer = window.setTimeout(() => router.replace("/admin"), 1500);
-      return () => window.clearTimeout(timer);
+      return () => {
+        window.clearTimeout(messageTimer);
+        window.clearTimeout(timer);
+      };
     }
 
     exchangeLineWorksOAuth(code, state)
