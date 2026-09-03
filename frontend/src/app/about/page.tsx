@@ -21,6 +21,8 @@ export default function AboutPage() {
           eyebrow="About Us"
           title="企業情報"
           subtitle="株式会社MOUNTAIN > About Us"
+          videoSrc="/videos/about/about-hero.mp4"
+          imageAlt="デジタルネットワーク"
         />
         <AboutSection showHeader={false} />
       </main>

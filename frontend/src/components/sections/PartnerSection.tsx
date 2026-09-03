@@ -222,7 +222,7 @@ export default function PartnersSection() {
             MOUNTAIN PARTNERS
           </p>
           <h2 className="mb-6 text-4xl font-bold text-white md:text-5xl">
-            株式会社MOUNTAIN 協力会社
+            株式会社MOUNTAIN 取引先
           </h2>
           <div className="mx-auto mb-6 h-1 w-20 bg-orange-500" />
           <p className="mx-auto max-w-2xl text-lg text-slate-400">

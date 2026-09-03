@@ -6,6 +6,7 @@ type SubpageVideoHeroProps = {
   subtitle?: string;
   imageSrc?: string;
   imageAlt?: string;
+  videoSrc?: string;
 };
 
 export default function SubpageVideoHero({
@@ -14,6 +15,7 @@ export default function SubpageVideoHero({
   subtitle,
   imageSrc = "/images/subpage-hero.png",
   imageAlt = "",
+  videoSrc,
 }: SubpageVideoHeroProps) {
   const hasContent = eyebrow || title || subtitle;
 
@@ -22,13 +24,25 @@ export default function SubpageVideoHero({
       data-transparent-header
       className="relative isolate flex min-h-[22rem] items-center overflow-hidden bg-slate-950 px-6 py-20 text-center text-white sm:px-10 md:min-h-[26rem]"
     >
-      <Image
-        src={imageSrc}
-        alt={imageAlt}
-        fill
-        priority
-        className="absolute inset-0 -z-20 object-cover object-center"
-      />
+      {videoSrc ? (
+        <video
+          className="absolute inset-0 -z-20 h-full w-full object-cover object-center"
+          src={videoSrc}
+          autoPlay
+          muted
+          loop
+          playsInline
+          aria-label={imageAlt}
+        />
+      ) : (
+        <Image
+          src={imageSrc}
+          alt={imageAlt}
+          fill
+          priority
+          className="absolute inset-0 -z-20 object-cover object-center"
+        />
+      )}
       <div className="absolute inset-0 -z-10 bg-slate-950/42" />
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_35%,rgba(251,146,60,0.16),transparent_42%),linear-gradient(180deg,rgba(2,6,23,0.18)_0%,rgba(2,6,23,0.70)_100%)]" />
 
