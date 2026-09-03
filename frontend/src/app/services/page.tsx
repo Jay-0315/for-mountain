@@ -28,6 +28,8 @@ export default function ServicesPage() {
           eyebrow="Services"
           title="事業内容"
           subtitle="株式会社MOUNTAIN > Services"
+          imageSrc="/images/services/services-hero.gif"
+          imageAlt="デジタルネットワーク"
         />
         <section className="overflow-hidden pb-24 pt-16 md:pb-32 md:pt-20">
           <div className="mx-auto max-w-5xl px-6 sm:px-10 lg:px-6">
