@@ -60,6 +60,7 @@ jobs:
           username: ${{ secrets.XSERVER_USER }}
           key: ${{ secrets.XSERVER_SSH_KEY }}
           port: ${{ secrets.XSERVER_PORT }}
+          timeout: 120s
           source: "build/libs/*.jar"
           target: ${{ env.BACKEND_DIR }}
           strip_components: 2
