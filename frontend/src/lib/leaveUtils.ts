@@ -1,6 +1,6 @@
 /** 부여 일수 시퀀스 (index = a차수, 상한 20일) */
 const GRANT_SCHEDULE = [10, 11, 12, 14, 16, 18, 20] as const;
-const BALANCE_DEDUCTING_LEAVE_TYPES = new Set(["有給", "午前給(有給)", "午後給(有給)", "代休"]);
+const BALANCE_DEDUCTING_LEAVE_TYPES = new Set(["有給", "午前給(有給)", "午後給(有給)"]);
 
 
 function getGrantDays(a: number): number {

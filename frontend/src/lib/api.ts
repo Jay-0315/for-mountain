@@ -508,10 +508,8 @@ export function resolveUpperApprovalLeaderId(
 ): number | null {
   const chain = resolveApprovalChain(employee, groups);
   if (chain.length < 2) return null;
-  // 신청자가 그룹 리더(파트장/그룹장 등)이면 상위 승인자는 항상 최상위(대표).
-  // 일반 직원이면 직속 상급의 상급(그룹장 = chain[1]).
-  const isLeader = employee != null && groups.some((g) => g.leaderId === employee.id);
-  return isLeader ? chain[chain.length - 1] : chain[1];
+  // 중간 그룹이 여러 단계여도 대표 승인이 생략되지 않도록 최상위 승인자를 사용한다.
+  return chain[chain.length - 1];
 }
 
 export async function createGroup(

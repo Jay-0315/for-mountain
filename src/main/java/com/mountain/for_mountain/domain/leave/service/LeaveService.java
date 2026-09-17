@@ -44,7 +44,7 @@ public class LeaveService {
     private static final String STATUS_APPROVED = "承認";
     private static final String STATUS_REJECTED = "拒否";
     private static final List<String> CANCELLABLE_STATUSES = List.of(STATUS_PENDING);
-    private static final Set<String> BALANCE_DEDUCTING_LEAVE_TYPES = Set.of("有給", "午前給(有給)", "午後給(有給)", "代休");
+    private static final Set<String> BALANCE_DEDUCTING_LEAVE_TYPES = Set.of("有給", "午前給(有給)", "午後給(有給)");
     private static final Set<String> BALANCE_RESERVED_STATUSES = Set.of(STATUS_PENDING, STATUS_UPPER_PENDING, STATUS_APPROVED);
     private static final int[] GRANT_SCHEDULE = {10, 11, 12, 14, 16, 18, 20};
     private static final Set<String> HALF_DAY_TYPES = Set.of("午前給(有給)", "午後給(有給)");
@@ -157,7 +157,7 @@ public class LeaveService {
                 .orElseThrow(() -> new CustomException(ErrorCode.ACCOUNT_NOT_FOUND));
         List<Employee> approvalChain = resolveApprovalChain(applicant);
         java.util.Optional<Employee> firstApprover = resolveFirstApprover(approvalChain);
-        java.util.Optional<Employee> upperApprover = resolveUpperApprover(applicant, approvalChain);
+        java.util.Optional<Employee> upperApprover = resolveUpperApprover(approvalChain);
 
         if (STATUS_APPROVED.equals(status)) {
             if (STATUS_PENDING.equals(leave.getStatus())) {
@@ -258,7 +258,7 @@ public class LeaveService {
                 .orElseThrow(() -> new CustomException(ErrorCode.ACCOUNT_NOT_FOUND));
         List<Employee> chain = resolveApprovalChain(applicant);
         return isSameEmployee(resolveFirstApprover(chain), caller)
-                || isSameEmployee(resolveUpperApprover(applicant, chain), caller);
+                || isSameEmployee(resolveUpperApprover(chain), caller);
     }
 
     /** 1차 승인자 = 신청자 직속 상급 그룹 리더 (체인의 첫 번째). */
@@ -268,20 +268,15 @@ public class LeaveService {
 
     /**
      * 상위 승인자.
-     * - 신청자가 그룹 리더(파트장/그룹장 등)이면 → 체인 최상위 = 대표
-     * - 일반 직원이면 → 체인의 두 번째(직속 상급의 상급 = 그룹장)
+     * 1차 승인자 이후의 최상위 승인자(대표).
+     * 중간 그룹이 여러 단계인 조직에서 체인의 두 번째를 상위 승인자로 삼으면
+     * 부장 승인 후 대표 승인이 생략되므로 항상 체인의 마지막 승인자를 사용한다.
      */
-    private java.util.Optional<Employee> resolveUpperApprover(Employee applicant, List<Employee> chain) {
+    private java.util.Optional<Employee> resolveUpperApprover(List<Employee> chain) {
         if (chain.size() < 2) {
             return java.util.Optional.empty();
         }
-        int index = isGroupLeader(applicant) ? chain.size() - 1 : 1;
-        return java.util.Optional.of(chain.get(index));
-    }
-
-    /** 신청자가 어떤 그룹이든 리더로 지정되어 있는지 여부. */
-    private boolean isGroupLeader(Employee employee) {
-        return employee != null && !groupRepository.findByLeaderId(employee.getId()).isEmpty();
+        return java.util.Optional.of(chain.get(chain.size() - 1));
     }
 
     @Transactional
