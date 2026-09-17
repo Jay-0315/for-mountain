@@ -1,6 +1,7 @@
 name: Deploy to Xserver
 
 on:
+  workflow_dispatch:
   push:
     branches: ["main"]
     paths:
@@ -54,16 +55,40 @@ jobs:
 
       # ── 3. 파일 전송 ────────────────────────────────────────────
       - name: Copy JAR to Xserver
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.XSERVER_HOST }}
-          username: ${{ secrets.XSERVER_USER }}
-          key: ${{ secrets.XSERVER_SSH_KEY }}
-          port: ${{ secrets.XSERVER_PORT }}
-          timeout: 120s
-          source: "build/libs/*.jar"
-          target: ${{ env.BACKEND_DIR }}
-          strip_components: 2
+        env:
+          XSERVER_HOST: ${{ secrets.XSERVER_HOST }}
+          XSERVER_USER: ${{ secrets.XSERVER_USER }}
+          XSERVER_PORT: ${{ secrets.XSERVER_PORT }}
+          XSERVER_SSH_KEY: ${{ secrets.XSERVER_SSH_KEY }}
+        run: |
+          set -eu
+          KEY_FILE="${RUNNER_TEMP}/xserver_key"
+          printf '%s\n' "$XSERVER_SSH_KEY" > "$KEY_FILE"
+          chmod 600 "$KEY_FILE"
+
+          for ATTEMPT in 1 2 3; do
+            if scp \
+              -i "$KEY_FILE" \
+              -P "$XSERVER_PORT" \
+              -o BatchMode=yes \
+              -o StrictHostKeyChecking=accept-new \
+              -o ConnectTimeout=120 \
+              -o ServerAliveInterval=15 \
+              -o ServerAliveCountMax=4 \
+              build/libs/for-mountain-0.0.1-SNAPSHOT.jar \
+              "${XSERVER_USER}@${XSERVER_HOST}:${BACKEND_DIR}/for-mountain-0.0.1-SNAPSHOT.jar"; then
+              rm -f "$KEY_FILE"
+              exit 0
+            fi
+
+            if [ "$ATTEMPT" -lt 3 ]; then
+              echo "JAR upload attempt ${ATTEMPT} failed; retrying in 15 seconds..."
+              sleep 15
+            fi
+          done
+
+          rm -f "$KEY_FILE"
+          exit 1
 
       - name: Copy Static Frontend to Xserver temp directory
         uses: appleboy/scp-action@v0.1.7
