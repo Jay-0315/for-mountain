@@ -402,14 +402,14 @@ export default function DashboardPage() {
     if (!viewer.employee) return false;
     const applicant = employeeById.get(leave.employeeId);
     if (leave.status === "待機中") {
-      return resolveApprovalLeaderId(applicant, groups) === viewer.employee.id;
+      return resolveApprovalLeaderId(applicant, groups, employees) === viewer.employee.id;
     }
     if (leave.status === "上位承認待ち") {
-      return resolveUpperApprovalLeaderId(applicant, groups) === viewer.employee.id;
+      return resolveUpperApprovalLeaderId(applicant, groups, employees) === viewer.employee.id;
     }
     return (
-      resolveApprovalLeaderId(applicant, groups) === viewer.employee.id
-      || resolveUpperApprovalLeaderId(applicant, groups) === viewer.employee.id
+      resolveApprovalLeaderId(applicant, groups, employees) === viewer.employee.id
+      || resolveUpperApprovalLeaderId(applicant, groups, employees) === viewer.employee.id
     );
   };
 
@@ -419,8 +419,8 @@ export default function DashboardPage() {
     if (!viewer.employee) return false;
     const applicant = employeeById.get(leave.employeeId);
     return leave.status === "待機中"
-      ? resolveApprovalLeaderId(applicant, groups) === viewer.employee.id
-      : resolveUpperApprovalLeaderId(applicant, groups) === viewer.employee.id;
+      ? resolveApprovalLeaderId(applicant, groups, employees) === viewer.employee.id
+      : resolveUpperApprovalLeaderId(applicant, groups, employees) === viewer.employee.id;
   });
   const pendingLeave = pendingLeavesForViewer.length;
   const effectiveDepartment = viewer.canViewAll ? "全部門" : viewer.employee?.department ?? "全部門";

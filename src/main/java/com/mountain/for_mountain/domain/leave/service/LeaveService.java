@@ -43,6 +43,8 @@ public class LeaveService {
     private static final String STATUS_UPPER_PENDING = "上位承認待ち";
     private static final String STATUS_APPROVED = "承認";
     private static final String STATUS_REJECTED = "拒否";
+    private static final String PRESIDENT_POSITION = "代表取締役";
+    private static final String EMPLOYEE_ACTIVE_STATUS = "在籍";
     private static final List<String> CANCELLABLE_STATUSES = List.of(STATUS_PENDING);
     private static final Set<String> BALANCE_DEDUCTING_LEAVE_TYPES = Set.of("有給", "午前給(有給)", "午後給(有給)");
     private static final Set<String> BALANCE_RESERVED_STATUSES = Set.of(STATUS_PENDING, STATUS_UPPER_PENDING, STATUS_APPROVED);
@@ -351,6 +353,12 @@ public class LeaveService {
                     ? null
                     : groupRepository.findById(group.getParentGroupId()).orElse(null);
         }
+        // 조직 동기화 등으로 상위 그룹 연결이 끊겨도 대표 승인이 누락되지 않도록 한다.
+        // 대표 본인의 신청이거나 이미 승인 체인에 포함된 경우에는 중복 추가하지 않는다.
+        employeeRepository.findFirstByPositionAndStatusOrderByIdAsc(PRESIDENT_POSITION, EMPLOYEE_ACTIVE_STATUS)
+                .filter(president -> !president.getId().equals(applicant.getId()))
+                .filter(president -> chain.stream().noneMatch(employee -> employee.getId().equals(president.getId())))
+                .ifPresent(chain::add);
         return chain;
     }
 

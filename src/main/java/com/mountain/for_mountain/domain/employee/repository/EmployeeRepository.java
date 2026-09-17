@@ -16,5 +16,7 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     Optional<Employee> findByLineWorksExternalKey(String lineWorksExternalKey);
 
+    Optional<Employee> findFirstByPositionAndStatusOrderByIdAsc(String position, String status);
+
     List<Employee> findAllByOrderByJoinDateDesc();
 }

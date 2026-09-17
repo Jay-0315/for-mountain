@@ -476,7 +476,8 @@ export function resolveLeaderMemberIds(groups: GroupDto[], employeeId: number): 
  */
 export function resolveApprovalChain(
   employee: Pick<EmployeeDto, "id" | "department"> | null | undefined,
-  groups: GroupDto[]
+  groups: GroupDto[],
+  employees: Pick<EmployeeDto, "id" | "position" | "status">[] = []
 ): number[] {
   if (!employee) return [];
   const chain: number[] = [];
@@ -492,21 +493,28 @@ export function resolveApprovalChain(
     const parentId = group.parentGroupId;
     group = parentId == null ? null : groups.find((g) => g.id === parentId) ?? null;
   }
+  // 조직 계층 연결이 끊겨도 재직 중인 대표를 최종 승인자로 보장한다.
+  const president = employees.find((item) => item.position === "代表取締役" && item.status === "在籍");
+  if (president && president.id !== employee.id && !chain.includes(president.id)) {
+    chain.push(president.id);
+  }
   return chain;
 }
 
 export function resolveApprovalLeaderId(
   employee: Pick<EmployeeDto, "id" | "department"> | null | undefined,
-  groups: GroupDto[]
+  groups: GroupDto[],
+  employees: Pick<EmployeeDto, "id" | "position" | "status">[] = []
 ): number | null {
-  return resolveApprovalChain(employee, groups)[0] ?? null;
+  return resolveApprovalChain(employee, groups, employees)[0] ?? null;
 }
 
 export function resolveUpperApprovalLeaderId(
   employee: Pick<EmployeeDto, "id" | "department"> | null | undefined,
-  groups: GroupDto[]
+  groups: GroupDto[],
+  employees: Pick<EmployeeDto, "id" | "position" | "status">[] = []
 ): number | null {
-  const chain = resolveApprovalChain(employee, groups);
+  const chain = resolveApprovalChain(employee, groups, employees);
   if (chain.length < 2) return null;
   // 중간 그룹이 여러 단계여도 대표 승인이 생략되지 않도록 최상위 승인자를 사용한다.
   return chain[chain.length - 1];

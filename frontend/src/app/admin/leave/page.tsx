@@ -149,8 +149,8 @@ function ApplyForm({
   }, [leaveType, startDate, endDate, token]);
 
   const employeeById = new Map(employees.map((item) => [item.id, item]));
-  const firstApproverId = resolveApprovalLeaderId(employee, groups);
-  const upperApproverId = resolveUpperApprovalLeaderId(employee, groups);
+  const firstApproverId = resolveApprovalLeaderId(employee, groups, employees);
+  const upperApproverId = resolveUpperApprovalLeaderId(employee, groups, employees);
   const firstApprover = firstApproverId != null ? employeeById.get(firstApproverId) ?? null : null;
   const upperApprover = upperApproverId != null ? employeeById.get(upperApproverId) ?? null : null;
   const approvers = [
@@ -358,8 +358,8 @@ function LeavePageContent() {
     if (!currentEmployee) return false;
     const applicant = employeeById.get(leave.employeeId);
     return (
-      resolveApprovalLeaderId(applicant, groups) === currentEmployee.id
-      || resolveUpperApprovalLeaderId(applicant, groups) === currentEmployee.id
+      resolveApprovalLeaderId(applicant, groups, employees) === currentEmployee.id
+      || resolveUpperApprovalLeaderId(applicant, groups, employees) === currentEmployee.id
     );
   };
 
@@ -368,14 +368,14 @@ function LeavePageContent() {
     if (!currentEmployee) return false;
     const applicant = employeeById.get(leave.employeeId);
     if (leave.status === "待機中") {
-      return resolveApprovalLeaderId(applicant, groups) === currentEmployee.id;
+      return resolveApprovalLeaderId(applicant, groups, employees) === currentEmployee.id;
     }
     if (leave.status === "上位承認待ち") {
-      return resolveUpperApprovalLeaderId(applicant, groups) === currentEmployee.id;
+      return resolveUpperApprovalLeaderId(applicant, groups, employees) === currentEmployee.id;
     }
     return (
-      resolveApprovalLeaderId(applicant, groups) === currentEmployee.id
-      || resolveUpperApprovalLeaderId(applicant, groups) === currentEmployee.id
+      resolveApprovalLeaderId(applicant, groups, employees) === currentEmployee.id
+      || resolveUpperApprovalLeaderId(applicant, groups, employees) === currentEmployee.id
     );
   };
 

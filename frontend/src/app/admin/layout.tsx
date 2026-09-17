@@ -161,8 +161,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               if (l.status !== "待機中" && l.status !== "上位承認待ち") return false;
               const applicant = byId.get(l.employeeId);
               return l.status === "待機中"
-                ? resolveApprovalLeaderId(applicant, groups) === emp.id
-                : resolveUpperApprovalLeaderId(applicant, groups) === emp.id;
+                ? resolveApprovalLeaderId(applicant, groups, employees) === emp.id
+                : resolveUpperApprovalLeaderId(applicant, groups, employees) === emp.id;
             }).length
           : 0;
         setPendingCount(myApprovalCount);
