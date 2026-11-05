@@ -24,6 +24,7 @@ import org.springframework.security.core.Authentication;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -108,11 +109,15 @@ public class LeaveService {
                 request.getReason()
         );
         Leave saved = leaveRepository.save(leave);
-        // 승인자가 없는 신청(대표 등 최상위)은 자동 승인한다.
-        if (resolveApprovalChain(employee).isEmpty()) {
+        List<Employee> approvalChain = resolveApprovalChain(employee);
+        // 대표 본인의 신청만 자동 승인한다. 조직 설정 오류로 승인자를 찾지 못한 일반 직원의
+        // 신청이 조용히 자동 승인되는 것을 방지한다.
+        if (approvalChain.isEmpty() && isPresident(employee)) {
             saved.updateStatus(STATUS_APPROVED);
+        } else if (approvalChain.isEmpty()) {
+            throw new CustomException(ErrorCode.LEAVE_APPROVER_NOT_CONFIGURED);
         } else {
-            sendLeaveRequestMail(employee, saved);
+            sendLeaveRequestMail(employee, saved, approvalChain.get(0));
         }
         return toResponse(saved);
     }
@@ -270,9 +275,8 @@ public class LeaveService {
 
     /**
      * 상위 승인자.
-     * 1차 승인자 이후의 최상위 승인자(대표).
-     * 중간 그룹이 여러 단계인 조직에서 체인의 두 번째를 상위 승인자로 삼으면
-     * 부장 승인 후 대표 승인이 생략되므로 항상 체인의 마지막 승인자를 사용한다.
+     * 1차 승인자 이후의 최상위 승인자.
+     * 중간 그룹이 여러 단계인 조직에서도 체인의 마지막 승인자를 사용한다.
      */
     private java.util.Optional<Employee> resolveUpperApprover(List<Employee> chain) {
         if (chain.size() < 2) {
@@ -326,14 +330,14 @@ public class LeaveService {
     /**
      * 신청자의 부서 그룹부터 상위 그룹으로 올라가며 승인자(각 그룹 리더)를 순서대로 모은다.
      * 신청자 본인이 리더인 그룹은 건너뛰어 본인 승인을 방지한다.
-     * 예) 파트장 신청 → [그룹장, 사장], 그룹장 신청 → [사장]
+     * 조직에서 승인자를 찾지 못한 경우에만 대표를 대체 승인자로 추가한다.
      */
     private List<Employee> resolveApprovalChain(Employee applicant) {
         List<Employee> chain = new ArrayList<>();
         if (applicant == null) {
             return chain;
         }
-        Group group = groupRepository.findByName(applicant.getDepartment()).orElse(null);
+        Group group = resolveApplicantGroup(applicant.getDepartment()).orElse(null);
         Set<Long> visitedGroups = new HashSet<>();
         while (group != null && !visitedGroups.contains(group.getId())) {
             visitedGroups.add(group.getId());
@@ -353,13 +357,58 @@ public class LeaveService {
                     ? null
                     : groupRepository.findById(group.getParentGroupId()).orElse(null);
         }
-        // 조직 동기화 등으로 상위 그룹 연결이 끊겨도 대표 승인이 누락되지 않도록 한다.
-        // 대표 본인의 신청이거나 이미 승인 체인에 포함된 경우에는 중복 추가하지 않는다.
-        employeeRepository.findFirstByPositionAndStatusOrderByIdAsc(PRESIDENT_POSITION, EMPLOYEE_ACTIVE_STATUS)
-                .filter(president -> !president.getId().equals(applicant.getId()))
-                .filter(president -> chain.stream().noneMatch(employee -> employee.getId().equals(president.getId())))
-                .ifPresent(chain::add);
+        // 본인과 승인 제외 그룹을 건너뛴 뒤 승인자가 없을 때만 대표에게 보낸다.
+        if (chain.isEmpty()) {
+            resolvePresident()
+                    .filter(president -> !president.getId().equals(applicant.getId()))
+                    .ifPresent(chain::add);
+        }
         return chain;
+    }
+
+    private java.util.Optional<Group> resolveApplicantGroup(String department) {
+        if (department == null || department.isBlank()) {
+            return java.util.Optional.empty();
+        }
+        java.util.Optional<Group> exact = groupRepository.findByName(department.trim());
+        if (exact.isPresent()) {
+            return exact;
+        }
+        String normalizedDepartment = normalizeOrganizationLabel(department);
+        return groupRepository.findAllByOrderByCreatedAtAsc().stream()
+                .filter(group -> normalizeOrganizationLabel(group.getName()).equals(normalizedDepartment))
+                .findFirst();
+    }
+
+    private java.util.Optional<Employee> resolvePresident() {
+        java.util.Optional<Employee> exact = employeeRepository
+                .findFirstByPositionAndStatusOrderByIdAsc(PRESIDENT_POSITION, EMPLOYEE_ACTIVE_STATUS);
+        if (exact.isPresent()) {
+            return exact;
+        }
+        String normalizedPosition = normalizeOrganizationLabel(PRESIDENT_POSITION);
+        String normalizedStatus = normalizeOrganizationLabel(EMPLOYEE_ACTIVE_STATUS);
+        return employeeRepository.findAllByOrderByJoinDateDesc().stream()
+                .filter(employee -> normalizeOrganizationLabel(employee.getPosition()).equals(normalizedPosition))
+                .filter(employee -> normalizeOrganizationLabel(employee.getStatus()).equals(normalizedStatus))
+                .min(Comparator.comparing(Employee::getId));
+    }
+
+    private boolean isPresident(Employee employee) {
+        return employee != null
+                && normalizeOrganizationLabel(employee.getPosition())
+                .equals(normalizeOrganizationLabel(PRESIDENT_POSITION));
+    }
+
+    private String normalizeOrganizationLabel(String value) {
+        if (value == null) {
+            return "";
+        }
+        return Normalizer.normalize(value, Normalizer.Form.NFKC)
+                .replace("Part", "パート")
+                .replace("part", "パート")
+                .replaceAll("\\s+", "")
+                .trim();
     }
 
     private void sendLeaveRequestMail(Employee employee, Leave leave, Employee leader) {

@@ -16,6 +16,7 @@ public enum ErrorCode {
     INVALID_UPLOAD_REQUEST(HttpStatus.BAD_REQUEST, "Invalid upload request."),
     INSUFFICIENT_LEAVE_BALANCE(HttpStatus.BAD_REQUEST, "申請日数が残りの休暇日数を超えています。"),
     EMPLOYEE_PROFILE_INCOMPLETE(HttpStatus.BAD_REQUEST, "Employee profile must be completed before applying for leave."),
+    LEAVE_APPROVER_NOT_CONFIGURED(HttpStatus.BAD_REQUEST, "休暇承認者が設定されていません。管理者にお問い合わせください。"),
     INVALID_GROUP_PARENT(HttpStatus.BAD_REQUEST, "Invalid parent group."),
     INVALID_GROUP_MEMBER(HttpStatus.BAD_REQUEST, "Invalid group member."),
     WEAK_PASSWORD(HttpStatus.BAD_REQUEST, "パスワードは8文字以上で設定してください。"),

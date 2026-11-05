@@ -472,7 +472,7 @@ export function resolveLeaderMemberIds(groups: GroupDto[], employeeId: number): 
 /**
  * 신청자의 부서 그룹부터 상위 그룹으로 올라가며 승인자(각 그룹의 리더) ID 목록을 만든다.
  * 신청자 본인이 리더인 그룹은 건너뛰어 본인 승인을 방지한다.
- * 예) 파트장 신청 → [그룹장, 사장], 그룹장 신청 → [사장]
+ * 조직에서 승인자를 찾지 못한 경우에만 대표를 대체 승인자로 추가한다.
  */
 export function resolveApprovalChain(
   employee: Pick<EmployeeDto, "id" | "department"> | null | undefined,
@@ -482,7 +482,8 @@ export function resolveApprovalChain(
   if (!employee) return [];
   const chain: number[] = [];
   const visited = new Set<number>();
-  let group = groups.find((g) => g.name === employee.department) ?? null;
+  const normalizedDepartment = normalizeApprovalLabel(employee.department);
+  let group = groups.find((g) => normalizeApprovalLabel(g.name) === normalizedDepartment) ?? null;
   while (group && !visited.has(group.id)) {
     visited.add(group.id);
     // 승인 라인에서 제외된 그룹(예: 本部)은 리더를 건너뛰고 상위로 통과시킨다.
@@ -493,12 +494,25 @@ export function resolveApprovalChain(
     const parentId = group.parentGroupId;
     group = parentId == null ? null : groups.find((g) => g.id === parentId) ?? null;
   }
-  // 조직 계층 연결이 끊겨도 재직 중인 대표를 최종 승인자로 보장한다.
-  const president = employees.find((item) => item.position === "代表取締役" && item.status === "在籍");
-  if (president && president.id !== employee.id && !chain.includes(president.id)) {
-    chain.push(president.id);
+  // 본인과 승인 제외 그룹을 건너뛴 뒤 승인자가 없을 때만 대표에게 보낸다.
+  if (chain.length === 0) {
+    const president = employees.find(
+      (item) => normalizeApprovalLabel(item.position) === normalizeApprovalLabel("代表取締役")
+        && normalizeApprovalLabel(item.status) === normalizeApprovalLabel("在籍")
+    );
+    if (president && president.id !== employee.id) {
+      chain.push(president.id);
+    }
   }
   return chain;
+}
+
+function normalizeApprovalLabel(value: string | null | undefined): string {
+  return (value ?? "")
+    .normalize("NFKC")
+    .replace(/Part/gi, "パート")
+    .replace(/\s+/g, "")
+    .trim();
 }
 
 export function resolveApprovalLeaderId(
@@ -516,7 +530,7 @@ export function resolveUpperApprovalLeaderId(
 ): number | null {
   const chain = resolveApprovalChain(employee, groups, employees);
   if (chain.length < 2) return null;
-  // 중간 그룹이 여러 단계여도 대표 승인이 생략되지 않도록 최상위 승인자를 사용한다.
+  // 조직에서 수집한 승인자 중 최상위 승인자를 사용한다.
   return chain[chain.length - 1];
 }
 

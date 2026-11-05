@@ -67,21 +67,86 @@ class LeaveServiceTest {
     }
 
     @Test
-    void presidentIsAppendedWhenGroupHierarchyHasNoUpperApprover() {
+    void presidentIsNotAppendedWhenGroupHasAnApprover() {
         Employee applicant = employee(1L, "applicant", "社員");
         Employee manager = employee(2L, "manager", "課長");
-        Employee president = employee(4L, "president", "代表取締役");
         Group department = Group.create("department", "", manager.getId(), null, null, false);
         ReflectionTestUtils.setField(department, "id", 10L);
 
         when(groupRepository.findByName("department")).thenReturn(Optional.of(department));
         when(employeeRepository.findById(manager.getId())).thenReturn(Optional.of(manager));
-        when(employeeRepository.findFirstByPositionAndStatusOrderByIdAsc("代表取締役", "在籍"))
-                .thenReturn(Optional.of(president));
 
         List<Employee> chain = ReflectionTestUtils.invokeMethod(leaveService, "resolveApprovalChain", applicant);
 
-        assertThat(chain).containsExactly(manager, president);
+        assertThat(chain).containsExactly(manager);
+    }
+
+    @Test
+    void approvalChainMatchesNormalizedDepartment() {
+        Employee applicant = employee(1L, "applicant", "主任");
+        ReflectionTestUtils.setField(applicant, "department", "開発パート２");
+        Employee manager = employee(2L, "manager", "課長");
+        Group department = Group.create("開発Part2", "", manager.getId(), null, null, false);
+        ReflectionTestUtils.setField(department, "id", 10L);
+
+        when(groupRepository.findByName("開発パート２")).thenReturn(Optional.empty());
+        when(groupRepository.findAllByOrderByCreatedAtAsc()).thenReturn(List.of(department));
+        when(employeeRepository.findById(manager.getId())).thenReturn(Optional.of(manager));
+
+        List<Employee> chain = ReflectionTestUtils.invokeMethod(leaveService, "resolveApprovalChain", applicant);
+
+        assertThat(chain).containsExactly(manager);
+    }
+
+    @Test
+    void parentLeaderApprovesWhenDepartmentHasNoLeader() {
+        Employee applicant = employee(1L, "applicant");
+        Employee manager = employee(2L, "manager");
+        Group department = Group.create("department", "", null, 20L, null, false);
+        Group parent = Group.create("parent", "", manager.getId(), null, null, false);
+        ReflectionTestUtils.setField(department, "id", 10L);
+        ReflectionTestUtils.setField(parent, "id", 20L);
+        when(groupRepository.findByName("department")).thenReturn(Optional.of(department));
+        when(groupRepository.findById(20L)).thenReturn(Optional.of(parent));
+        when(employeeRepository.findById(manager.getId())).thenReturn(Optional.of(manager));
+
+        List<Employee> chain = ReflectionTestUtils.invokeMethod(leaveService, "resolveApprovalChain", applicant);
+
+        assertThat(chain).containsExactly(manager);
+    }
+
+    @Test
+    void presidentIsFallbackWhenOnlySelfAndExcludedLeadersExist() {
+        Employee applicant = employee(1L, "applicant");
+        Employee president = employee(4L, "president", "代表 取締役");
+        Group department = Group.create("department", "", applicant.getId(), 20L, null, false);
+        Group parent = Group.create("parent", "", 2L, null, null, true);
+        ReflectionTestUtils.setField(department, "id", 10L);
+        ReflectionTestUtils.setField(parent, "id", 20L);
+        when(groupRepository.findByName("department")).thenReturn(Optional.of(department));
+        when(groupRepository.findById(20L)).thenReturn(Optional.of(parent));
+        when(employeeRepository.findById(applicant.getId())).thenReturn(Optional.of(applicant));
+        when(employeeRepository.findFirstByPositionAndStatusOrderByIdAsc("代表取締役", "在籍"))
+                .thenReturn(Optional.empty());
+        when(employeeRepository.findAllByOrderByJoinDateDesc()).thenReturn(List.of(president, applicant));
+
+        List<Employee> chain = ReflectionTestUtils.invokeMethod(leaveService, "resolveApprovalChain", applicant);
+
+        assertThat(chain).containsExactly(president);
+    }
+
+    @Test
+    void presidentDoesNotApproveOwnApplicationAsFallback() {
+        Employee president = employee(1L, "president", "代表取締役");
+        Group department = Group.create("department", "", president.getId(), null, null, true);
+        ReflectionTestUtils.setField(department, "id", 10L);
+        when(groupRepository.findByName("department")).thenReturn(Optional.of(department));
+        when(employeeRepository.findFirstByPositionAndStatusOrderByIdAsc("代表取締役", "在籍"))
+                .thenReturn(Optional.of(president));
+
+        List<Employee> chain = ReflectionTestUtils.invokeMethod(leaveService, "resolveApprovalChain", president);
+
+        assertThat(chain).isEmpty();
     }
 
     private Employee employee(Long id, String employeeNumber) {
